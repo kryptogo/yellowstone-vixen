@@ -8122,7 +8122,9 @@ dependencies = [
  "bs58",
  "regex",
  "thiserror 1.0.69",
+ "tokio",
  "yellowstone-grpc-proto",
+ "yellowstone-vixen-mock",
  "yellowstone-vixen-proto",
 ]
 

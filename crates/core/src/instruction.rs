@@ -528,3 +528,87 @@ impl<'a> Iterator for VisitAll<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    #[tokio::test]
+    async fn test_instruction_logs_assignment() {
+        use yellowstone_vixen_mock::{
+            create_mock_transaction_update, parse_instructions_from_txn_update,
+        };
+
+        let fixture_signature = "3VChbqC1CpbiN6seqo7aGvRaPPkvxh5c4W1y7NNRt23mk8cfX4fac6FPB9Z47APLnTtgZJ3eWEnnhfa2kJdnSbUr";
+
+        // Create a mock transaction update using the utility
+        let transaction_update = create_mock_transaction_update(fixture_signature)
+            .await
+            .expect("Failed to create mock transaction update");
+
+        // Parse instructions using the core parse_from_txn logic
+        let instruction_updates = parse_instructions_from_txn_update(&transaction_update)
+            .expect("Failed to parse instructions from transaction update");
+
+        println!(
+            "Testing log assignment on {} instructions",
+            instruction_updates.len()
+        );
+
+        for (i, ix) in instruction_updates.iter().enumerate() {
+            println!("\n=== Instruction {} ===", i);
+            println!(
+                "Program: {}, Parsed logs count: {}, Raw logs count: {}",
+                ix.program.to_string(),
+                ix.parsed_logs.len(),
+                ix.shared.log_messages.len()
+            );
+
+            // Print all parsed logs for this instruction
+            println!("Parsed logs:");
+            for (j, parsed_log) in ix.parsed_logs.iter().enumerate() {
+                println!("  Parsed log {}: {}", j, parsed_log);
+            }
+
+            // Test inner instructions
+            for (inner_i, inner_ix) in ix.inner.iter().enumerate() {
+                println!("\n  === Inner Instruction {} ===", inner_i);
+                println!(
+                    "  Program: {}, Parsed logs count: {}",
+                    inner_ix.program.to_string(),
+                    inner_ix.parsed_logs.len()
+                );
+
+                // Print all parsed logs for inner instructions
+                println!("  Inner parsed logs:");
+                for (j, log) in inner_ix.parsed_logs.iter().enumerate() {
+                    println!("    Inner parsed log {}: {}", j, log);
+                }
+            }
+        }
+
+        // Verify that we have some instructions
+        assert!(
+            !instruction_updates.is_empty(),
+            "Should have parsed some instructions"
+        );
+
+        // Verify that logs are properly assigned to instructions
+        let instructions_with_logs = instruction_updates
+            .iter()
+            .filter(|ix| !ix.parsed_logs.is_empty())
+            .count();
+
+        // At least some instructions should have logs assigned
+        assert!(
+            instructions_with_logs > 0,
+            "At least some instructions should have logs assigned"
+        );
+
+        println!("✓ Instruction log assignment test completed successfully");
+        println!(
+            "✓ {} out of {} instructions have assigned logs",
+            instructions_with_logs,
+            instruction_updates.len()
+        );
+    }
+}
