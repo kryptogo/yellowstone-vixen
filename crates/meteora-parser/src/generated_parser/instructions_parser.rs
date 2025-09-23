@@ -112,6 +112,7 @@ use crate::{
         WithdrawProtocolFee as WithdrawProtocolFeeIxAccounts,
         WithdrawProtocolFeeInstructionArgs as WithdrawProtocolFeeIxData,
     },
+    types::SwapEvent,
     ID,
 };
 
@@ -151,9 +152,9 @@ pub enum ProgramIxs {
         UpdatePositionOperatorIxAccounts,
         UpdatePositionOperatorIxData,
     ),
-    Swap(SwapIxAccounts, SwapIxData),
-    SwapExactOut(SwapExactOutIxAccounts, SwapExactOutIxData),
-    SwapWithPriceImpact(SwapWithPriceImpactIxAccounts, SwapWithPriceImpactIxData),
+    Swap(SwapIxAccounts, SwapIxData, Option<SwapEvent>),
+    SwapExactOut(SwapExactOutIxAccounts, SwapExactOutIxData, Option<SwapEvent>),
+    SwapWithPriceImpact(SwapWithPriceImpactIxAccounts, SwapWithPriceImpactIxData, Option<SwapEvent>),
     WithdrawProtocolFee(WithdrawProtocolFeeIxAccounts, WithdrawProtocolFeeIxData),
     InitializeReward(InitializeRewardIxAccounts, InitializeRewardIxData),
     FundReward(FundRewardIxAccounts, FundRewardIxData),
@@ -236,9 +237,9 @@ pub enum ProgramIxs {
         RemoveLiquidityByRange2IxAccounts,
         RemoveLiquidityByRange2IxData,
     ),
-    Swap2(Swap2IxAccounts, Swap2IxData),
-    SwapExactOut2(SwapExactOut2IxAccounts, SwapExactOut2IxData),
-    SwapWithPriceImpact2(SwapWithPriceImpact2IxAccounts, SwapWithPriceImpact2IxData),
+    Swap2(Swap2IxAccounts, Swap2IxData, Option<SwapEvent>),
+    SwapExactOut2(SwapExactOut2IxAccounts, SwapExactOut2IxData, Option<SwapEvent>),
+    SwapWithPriceImpact2(SwapWithPriceImpact2IxAccounts, SwapWithPriceImpact2IxData, Option<SwapEvent>),
     ClosePosition2(ClosePosition2IxAccounts),
     UpdateFeesAndReward2(UpdateFeesAndReward2IxAccounts, UpdateFeesAndReward2IxData),
     ClosePositionIfEmpty(ClosePositionIfEmptyIxAccounts),
@@ -692,7 +693,13 @@ impl InstructionParser {
                     program: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: SwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(ProgramIxs::Swap(ix_accounts, de_ix_data))
+
+                // Search for SwapEvent in inner instructions
+                let swap_event = ix.inner.iter().find_map(|inner_ix| {
+                    SwapEvent::from_inner_instruction_data(&inner_ix.data)
+                });
+
+                Ok(ProgramIxs::Swap(ix_accounts, de_ix_data, swap_event))
             },
             [250, 73, 101, 33, 38, 207, 75, 184] => {
                 check_min_accounts_req(accounts_len, 15)?;
@@ -726,7 +733,13 @@ impl InstructionParser {
                     program: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: SwapExactOutIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(ProgramIxs::SwapExactOut(ix_accounts, de_ix_data))
+
+                // Search for SwapEvent in inner instructions
+                let swap_event = ix.inner.iter().find_map(|inner_ix| {
+                    SwapEvent::from_inner_instruction_data(&inner_ix.data)
+                });
+
+                Ok(ProgramIxs::SwapExactOut(ix_accounts, de_ix_data, swap_event))
             },
             [56, 173, 230, 208, 173, 228, 156, 205] => {
                 check_min_accounts_req(accounts_len, 15)?;
@@ -761,7 +774,13 @@ impl InstructionParser {
                 };
                 let de_ix_data: SwapWithPriceImpactIxData =
                     BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(ProgramIxs::SwapWithPriceImpact(ix_accounts, de_ix_data))
+
+                // Search for SwapEvent in inner instructions
+                let swap_event = ix.inner.iter().find_map(|inner_ix| {
+                    SwapEvent::from_inner_instruction_data(&inner_ix.data)
+                });
+
+                Ok(ProgramIxs::SwapWithPriceImpact(ix_accounts, de_ix_data, swap_event))
             },
             [158, 201, 158, 189, 33, 93, 162, 103] => {
                 check_min_accounts_req(accounts_len, 12)?;
@@ -1546,7 +1565,13 @@ impl InstructionParser {
                     program: ix.accounts[15].0.into(),
                 };
                 let de_ix_data: Swap2IxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(ProgramIxs::Swap2(ix_accounts, de_ix_data))
+
+                // Search for SwapEvent in inner instructions
+                let swap_event = ix.inner.iter().find_map(|inner_ix| {
+                    SwapEvent::from_inner_instruction_data(&inner_ix.data)
+                });
+
+                Ok(ProgramIxs::Swap2(ix_accounts, de_ix_data, swap_event))
             },
             [43, 215, 247, 132, 137, 60, 243, 81] => {
                 check_min_accounts_req(accounts_len, 16)?;
@@ -1581,7 +1606,13 @@ impl InstructionParser {
                     program: ix.accounts[15].0.into(),
                 };
                 let de_ix_data: SwapExactOut2IxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(ProgramIxs::SwapExactOut2(ix_accounts, de_ix_data))
+
+                // Search for SwapEvent in inner instructions
+                let swap_event = ix.inner.iter().find_map(|inner_ix| {
+                    SwapEvent::from_inner_instruction_data(&inner_ix.data)
+                });
+
+                Ok(ProgramIxs::SwapExactOut2(ix_accounts, de_ix_data, swap_event))
             },
             [74, 98, 192, 214, 177, 51, 75, 51] => {
                 check_min_accounts_req(accounts_len, 16)?;
@@ -1617,7 +1648,13 @@ impl InstructionParser {
                 };
                 let de_ix_data: SwapWithPriceImpact2IxData =
                     BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(ProgramIxs::SwapWithPriceImpact2(ix_accounts, de_ix_data))
+
+                // Search for SwapEvent in inner instructions
+                let swap_event = ix.inner.iter().find_map(|inner_ix| {
+                    SwapEvent::from_inner_instruction_data(&inner_ix.data)
+                });
+
+                Ok(ProgramIxs::SwapWithPriceImpact2(ix_accounts, de_ix_data, swap_event))
             },
             [174, 90, 35, 115, 186, 40, 147, 226] => {
                 check_min_accounts_req(accounts_len, 5)?;
@@ -3387,7 +3424,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                ProgramIxs::Swap(acc, data) => proto_def::ProgramIxs {
+                ProgramIxs::Swap(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap(
                         proto_def::SwapIx {
                             accounts: Some(acc.into_proto()),
@@ -3395,7 +3432,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                ProgramIxs::SwapExactOut(acc, data) => proto_def::ProgramIxs {
+                ProgramIxs::SwapExactOut(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapExactOut(
                         proto_def::SwapExactOutIx {
                             accounts: Some(acc.into_proto()),
@@ -3403,7 +3440,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                ProgramIxs::SwapWithPriceImpact(acc, data) => proto_def::ProgramIxs {
+                ProgramIxs::SwapWithPriceImpact(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapWithPriceImpact(
                         proto_def::SwapWithPriceImpactIx {
                             accounts: Some(acc.into_proto()),
@@ -3668,19 +3705,19 @@ mod proto_parser {
                                 data: Some(data.into_proto()),
                             })),
                         },
-                                                                                ProgramIxs::Swap2(acc, data) => proto_def::ProgramIxs {
+                                                                                ProgramIxs::Swap2(acc, data, _) => proto_def::ProgramIxs {
                             ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap2(proto_def::Swap2Ix {
                                 accounts: Some(acc.into_proto()),
                                 data: Some(data.into_proto()),
                             })),
                         },
-                                                                                ProgramIxs::SwapExactOut2(acc, data) => proto_def::ProgramIxs {
+                                                                                ProgramIxs::SwapExactOut2(acc, data, _) => proto_def::ProgramIxs {
                             ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapExactOut2(proto_def::SwapExactOut2Ix {
                                 accounts: Some(acc.into_proto()),
                                 data: Some(data.into_proto()),
                             })),
                         },
-                                                                                ProgramIxs::SwapWithPriceImpact2(acc, data) => proto_def::ProgramIxs {
+                                                                                ProgramIxs::SwapWithPriceImpact2(acc, data, _) => proto_def::ProgramIxs {
                             ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapWithPriceImpact2(proto_def::SwapWithPriceImpact2Ix {
                                 accounts: Some(acc.into_proto()),
                                 data: Some(data.into_proto()),
