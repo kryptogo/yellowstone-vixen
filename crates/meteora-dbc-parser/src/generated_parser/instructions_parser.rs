@@ -8,6 +8,7 @@
 use borsh::BorshDeserialize;
 
 use crate::{
+    generated::types::EvtSwap,
     instructions::{
         ClaimCreatorTradingFee as ClaimCreatorTradingFeeIxAccounts,
         ClaimCreatorTradingFeeInstructionArgs as ClaimCreatorTradingFeeIxData,
@@ -76,7 +77,7 @@ pub enum DynamicBondingCurveProgramIx {
     MigrationMeteoraDammCreateMetadata(MigrationMeteoraDammCreateMetadataIxAccounts),
     PartnerWithdrawSurplus(PartnerWithdrawSurplusIxAccounts),
     ProtocolWithdrawSurplus(ProtocolWithdrawSurplusIxAccounts),
-    Swap(SwapIxAccounts, SwapIxData),
+    Swap(SwapIxAccounts, SwapIxData, Option<EvtSwap>),
     WithdrawLeftover(WithdrawLeftoverIxAccounts),
 }
 
@@ -87,7 +88,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     type Input = yellowstone_vixen_core::instruction::InstructionUpdate;
     type Output = DynamicBondingCurveProgramIx;
 
-    fn id(&self) -> std::borrow::Cow<str> { "DynamicBondingCurve::InstructionParser".into() }
+    fn id(&self) -> std::borrow::Cow<str> {
+        "DynamicBondingCurve::InstructionParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -110,7 +113,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
@@ -588,7 +593,18 @@ impl InstructionParser {
                     program: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: SwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(DynamicBondingCurveProgramIx::Swap(ix_accounts, de_ix_data))
+
+                // Search for EvtSwap in inner instructions
+                let evt_swap = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| EvtSwap::from_inner_instruction_data(&inner_ix.data));
+
+                Ok(DynamicBondingCurveProgramIx::Swap(
+                    ix_accounts,
+                    de_ix_data,
+                    evt_swap,
+                ))
             },
             [20, 198, 202, 237, 235, 243, 183, 66] => {
                 check_min_accounts_req(accounts_len, 10)?;
@@ -1378,7 +1394,7 @@ mod proto_parser {
                         )),
                     }
                 },
-                DynamicBondingCurveProgramIx::Swap(acc, data) => proto_def::ProgramIxs {
+                DynamicBondingCurveProgramIx::Swap(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap(proto_def::SwapIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
@@ -1398,6 +1414,8 @@ mod proto_parser {
     impl ParseProto for InstructionParser {
         type Message = proto_def::ProgramIxs;
 
-        fn output_into_message(value: Self::Output) -> Self::Message { value.into_proto() }
+        fn output_into_message(value: Self::Output) -> Self::Message {
+            value.into_proto()
+        }
     }
 }
