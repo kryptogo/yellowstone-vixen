@@ -8266,6 +8266,7 @@ dependencies = [
 name = "yellowstone-vixen-meteora-pools-parser"
 version = "0.3.0"
 dependencies = [
+ "base64 0.22.1",
  "borsh 0.10.4",
  "num-derive",
  "num-traits",

@@ -8,6 +8,7 @@
 use borsh::BorshDeserialize;
 
 use crate::{
+    generated::types::SwapEvent,
     instructions::{
         AddBalanceLiquidity as AddBalanceLiquidityIxAccounts,
         AddBalanceLiquidityInstructionArgs as AddBalanceLiquidityIxData,
@@ -72,7 +73,7 @@ pub enum AmmProgramIx {
         InitializePermissionlessPoolWithFeeTierIxData,
     ),
     EnableOrDisablePool(EnableOrDisablePoolIxAccounts, EnableOrDisablePoolIxData),
-    Swap(SwapIxAccounts, SwapIxData),
+    Swap(SwapIxAccounts, SwapIxData, Option<SwapEvent>),
     RemoveLiquiditySingleSide(
         RemoveLiquiditySingleSideIxAccounts,
         RemoveLiquiditySingleSideIxData,
@@ -118,7 +119,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     type Input = yellowstone_vixen_core::instruction::InstructionUpdate;
     type Output = AmmProgramIx;
 
-    fn id(&self) -> std::borrow::Cow<str> { "Amm::InstructionParser".into() }
+    fn id(&self) -> std::borrow::Cow<str> {
+        "Amm::InstructionParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -141,7 +144,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
@@ -297,7 +302,11 @@ impl InstructionParser {
                     token_program: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: SwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(AmmProgramIx::Swap(ix_accounts, de_ix_data))
+
+                // Parse SwapEvent from logs
+                let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
+
+                Ok(AmmProgramIx::Swap(ix_accounts, de_ix_data, swap_event))
             },
             [84, 84, 177, 66, 254, 185, 10, 251] => {
                 check_min_accounts_req(accounts_len, 15)?;
@@ -1538,7 +1547,7 @@ mod proto_parser {
                                 data: Some(data.into_proto()),
                             })),
                         },
-                                                                                AmmProgramIx::Swap(acc, data) => proto_def::ProgramIxs {
+                                                                                AmmProgramIx::Swap(acc, data, _) => proto_def::ProgramIxs {
                             ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap(proto_def::SwapIx {
                                 accounts: Some(acc.into_proto()),
                                 data: Some(data.into_proto()),
@@ -1672,6 +1681,8 @@ mod proto_parser {
     impl ParseProto for InstructionParser {
         type Message = proto_def::ProgramIxs;
 
-        fn output_into_message(value: Self::Output) -> Self::Message { value.into_proto() }
+        fn output_into_message(value: Self::Output) -> Self::Message {
+            value.into_proto()
+        }
     }
 }
