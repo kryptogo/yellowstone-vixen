@@ -8120,8 +8120,11 @@ name = "yellowstone-vixen-core"
 version = "0.3.0"
 dependencies = [
  "bs58",
+ "regex",
  "thiserror 1.0.69",
+ "tokio",
  "yellowstone-grpc-proto",
+ "yellowstone-vixen-mock",
  "yellowstone-vixen-proto",
 ]
 
@@ -8136,8 +8139,10 @@ dependencies = [
  "prost-build",
  "solana-program",
  "thiserror 1.0.69",
+ "tokio",
  "tonic",
  "yellowstone-vixen-core",
+ "yellowstone-vixen-mock",
 ]
 
 [[package]]

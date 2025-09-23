@@ -27,5 +27,9 @@ test-sbf = []
 fetch = []
 
 
+[dev-dependencies]
+yellowstone-vixen-mock = { workspace = true }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+
 [build-dependencies]
 prost-build = "0.13.1"
