@@ -28,6 +28,7 @@ use crate::{
         WithdrawPnl as WithdrawPnlIxAccounts, WithdrawSrm as WithdrawSrmIxAccounts,
         WithdrawSrmInstructionArgs as WithdrawSrmIxData,
     },
+    types::SwapEvent,
     ID,
 };
 
@@ -44,9 +45,9 @@ pub enum RaydiumAmmProgramIx {
     SetParams(SetParamsIxAccounts, SetParamsIxData),
     WithdrawPnl(WithdrawPnlIxAccounts),
     WithdrawSrm(WithdrawSrmIxAccounts, WithdrawSrmIxData),
-    SwapBaseIn(SwapBaseInIxAccounts, SwapBaseInIxData),
+    SwapBaseIn(SwapBaseInIxAccounts, SwapBaseInIxData, Option<SwapEvent>),
     PreInitialize(PreInitializeIxAccounts, PreInitializeIxData),
-    SwapBaseOut(SwapBaseOutIxAccounts, SwapBaseOutIxData),
+    SwapBaseOut(SwapBaseOutIxAccounts, SwapBaseOutIxData, Option<SwapEvent>),
     SimulateInfo(SimulateInfoIxAccounts, SimulateInfoIxData),
     AdminCancelOrders(AdminCancelOrdersIxAccounts, AdminCancelOrdersIxData),
     CreateConfigAccount(CreateConfigAccountIxAccounts),
@@ -338,7 +339,8 @@ impl InstructionParser {
                     user_source_owner: ix.accounts[17].0.into(),
                 };
                 let de_ix_data: SwapBaseInIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(RaydiumAmmProgramIx::SwapBaseIn(ix_accounts, de_ix_data))
+                let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
+                Ok(RaydiumAmmProgramIx::SwapBaseIn(ix_accounts, de_ix_data, swap_event))
             },
             [10] => {
                 check_min_accounts_req(accounts_len, 14)?;
@@ -384,7 +386,8 @@ impl InstructionParser {
                     user_source_owner: ix.accounts[17].0.into(),
                 };
                 let de_ix_data: SwapBaseOutIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(RaydiumAmmProgramIx::SwapBaseOut(ix_accounts, de_ix_data))
+                let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
+                Ok(RaydiumAmmProgramIx::SwapBaseOut(ix_accounts, de_ix_data, swap_event))
             },
             [12] => {
                 check_min_accounts_req(accounts_len, 8)?;
@@ -1046,7 +1049,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                RaydiumAmmProgramIx::SwapBaseIn(acc, data) => proto_def::ProgramIxs {
+                RaydiumAmmProgramIx::SwapBaseIn(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapBaseIn(
                         proto_def::SwapBaseInIx {
                             accounts: Some(acc.into_proto()),
@@ -1062,7 +1065,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                RaydiumAmmProgramIx::SwapBaseOut(acc, data) => proto_def::ProgramIxs {
+                RaydiumAmmProgramIx::SwapBaseOut(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapBaseOut(
                         proto_def::SwapBaseOutIx {
                             accounts: Some(acc.into_proto()),
