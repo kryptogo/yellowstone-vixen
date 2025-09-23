@@ -12,6 +12,7 @@ use std::sync::Arc;
 use yellowstone_vixen_core::InstructionUpdateOutput;
 
 use crate::deserialize_checked;
+use crate::generated::types::{EvtSwap, EvtSwap2};
 
 use crate::instructions::{
     ClaimCreatorTradingFee as ClaimCreatorTradingFeeIxAccounts,
@@ -83,8 +84,8 @@ pub enum DynamicBondingCurveProgramIx {
     MigrationMeteoraDammCreateMetadata(MigrationMeteoraDammCreateMetadataIxAccounts),
     PartnerWithdrawSurplus(PartnerWithdrawSurplusIxAccounts),
     ProtocolWithdrawSurplus(ProtocolWithdrawSurplusIxAccounts),
-    Swap(SwapIxAccounts, SwapIxData),
-    Swap2(Swap2IxAccounts, Swap2IxData),
+    Swap(SwapIxAccounts, SwapIxData, Option<EvtSwap>),
+    Swap2(Swap2IxAccounts, Swap2IxData, Option<EvtSwap2>),
     TransferPoolCreator(TransferPoolCreatorIxAccounts),
     WithdrawLeftover(WithdrawLeftoverIxAccounts),
     WithdrawMigrationFee(WithdrawMigrationFeeIxAccounts, WithdrawMigrationFeeIxData),
@@ -620,7 +621,17 @@ impl InstructionParser {
                     program: next_account(accounts)?,
                 };
                 let de_ix_data: SwapIxData = deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(DynamicBondingCurveProgramIx::Swap(ix_accounts, de_ix_data))
+
+                let evt_swap = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| EvtSwap::from_inner_instruction_data(&inner_ix.data));
+
+                Ok(DynamicBondingCurveProgramIx::Swap(
+                    ix_accounts,
+                    de_ix_data,
+                    evt_swap,
+                ))
             },
             [65, 75, 63, 76, 235, 91, 91, 136] => {
                 let expected_accounts_len = 15;
@@ -643,7 +654,18 @@ impl InstructionParser {
                     program: next_account(accounts)?,
                 };
                 let de_ix_data: Swap2IxData = deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(DynamicBondingCurveProgramIx::Swap2(ix_accounts, de_ix_data))
+
+                // Search for EvtSwap2 in inner instructions
+                let evt_swap2 = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| EvtSwap2::from_inner_instruction_data(&inner_ix.data));
+
+                Ok(DynamicBondingCurveProgramIx::Swap2(
+                    ix_accounts,
+                    de_ix_data,
+                    evt_swap2,
+                ))
             },
             [20, 7, 169, 33, 58, 147, 166, 33] => {
                 let expected_accounts_len = 6;
@@ -1570,13 +1592,13 @@ mod proto_parser {
                         )),
                     }
                 },
-                DynamicBondingCurveProgramIx::Swap(acc, data) => proto_def::ProgramIxs {
+                DynamicBondingCurveProgramIx::Swap(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap(proto_def::SwapIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
                     })),
                 },
-                DynamicBondingCurveProgramIx::Swap2(acc, data) => proto_def::ProgramIxs {
+                DynamicBondingCurveProgramIx::Swap2(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap2(proto_def::Swap2Ix {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
