@@ -5,6 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+use crate::generated::types::Route;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
@@ -15,5 +16,5 @@ pub struct SwapArgs {
     pub expect_amount_out: u64,
     pub min_return: u64,
     pub amounts: Vec<u64>,
-    pub routes: Vec<Vec<u64>>,
+    pub routes: Vec<Vec<Route>>,
 }

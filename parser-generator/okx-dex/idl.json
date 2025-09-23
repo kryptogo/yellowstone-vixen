@@ -2078,7 +2078,11 @@
             "name": "routes",
             "type": {
               "vec": {
-                "vec": "u64"
+                "vec": {
+                  "defined": {
+                    "name": "Route"
+                  }
+                }
               }
             }
           },
@@ -2647,7 +2651,11 @@
             "name": "routes",
             "type": {
               "vec": {
-                "vec": "u64"
+                "vec": {
+                  "defined": {
+                    "name": "Route"
+                  }
+                }
               }
             }
           }

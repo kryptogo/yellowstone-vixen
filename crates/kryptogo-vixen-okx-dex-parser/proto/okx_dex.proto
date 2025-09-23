@@ -113,7 +113,7 @@ message CommissionSwapArgs {
 	uint64 expect_amount_out = 2;
 	uint64 min_return = 3;
 	repeated uint64 amounts = 4;
-	repeated RepeatedUint64Row routes = 5;
+	repeated Route routes = 5;
 	uint32 commission_rate = 6;
 	bool commission_direction = 7;
 }
@@ -266,7 +266,7 @@ message SwapArgs {
 	uint64 expect_amount_out = 2;
 	uint64 min_return = 3;
 	repeated uint64 amounts = 4;
-	repeated RepeatedUint64Row routes = 5;
+	repeated Route routes = 5;
 }
 
 message SwapEvent {
@@ -619,11 +619,7 @@ message WrapUnwrapV3IxData {
 	bool tob = 5;
 }
 
-
-message ProgramState {
-    oneof state_oneof {
-        }
-}
+// 移除 program state，因為生成之後也沒有值並且不需要 parse
 
 message ProgramIxs {
     oneof ix_oneof {

@@ -41,7 +41,10 @@ pub mod proto_types_parsers {
                 routes: self
                     .routes
                     .into_iter()
-                    .map(|x| proto_def::RepeatedUint64Row { rows: x.to_vec() })
+                    .map(|route_vec| proto_def::Route {
+                        dexes: route_vec.iter().flat_map(|route| route.dexes.iter().map(|&dex| dex as i32)).collect(),
+                        weights: route_vec.iter().flat_map(|route| route.weights.iter().cloned()).collect(),
+                    })
                     .collect(),
                 commission_rate: self.commission_rate.into(),
                 commission_direction: self.commission_direction,
@@ -160,7 +163,10 @@ pub mod proto_types_parsers {
                 routes: self
                     .routes
                     .into_iter()
-                    .map(|x| proto_def::RepeatedUint64Row { rows: x.to_vec() })
+                    .map(|route_vec| proto_def::Route {
+                        dexes: route_vec.iter().flat_map(|route| route.dexes.iter().map(|&dex| dex as i32)).collect(),
+                        weights: route_vec.iter().flat_map(|route| route.weights.iter().cloned()).collect(),
+                    })
                     .collect(),
             }
         }

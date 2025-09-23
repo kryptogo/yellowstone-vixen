@@ -97,8 +97,8 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     #[cfg(feature = "shared-data")]
     type Output = InstructionUpdateOutput<DexSolanaProgramIx>;
 
-    fn id(&self) -> std::borrow::Cow<str> {
-        "DexSolana::InstructionParser".into()
+    fn id(&self) -> std::borrow::Cow<'static, str> {
+        std::borrow::Cow::Borrowed("DexSolana::InstructionParser")
     }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
