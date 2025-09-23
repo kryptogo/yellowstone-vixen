@@ -84,6 +84,7 @@ use crate::{
         TwoHopSwapV2InstructionArgs as TwoHopSwapV2IxData,
         UpdateFeesAndRewards as UpdateFeesAndRewardsIxAccounts,
     },
+    types::TradedEvent,
     ID,
 };
 
@@ -107,7 +108,7 @@ pub enum WhirlpoolProgramIx {
     CollectFees(CollectFeesIxAccounts),
     CollectReward(CollectRewardIxAccounts, CollectRewardIxData),
     CollectProtocolFees(CollectProtocolFeesIxAccounts),
-    Swap(SwapIxAccounts, SwapIxData),
+    Swap(SwapIxAccounts, SwapIxData, Option<TradedEvent>),
     ClosePosition(ClosePositionIxAccounts),
     SetDefaultFeeRate(SetDefaultFeeRateIxAccounts, SetDefaultFeeRateIxData),
     SetDefaultProtocolFeeRate(
@@ -124,7 +125,7 @@ pub enum WhirlpoolProgramIx {
         SetRewardAuthorityBySuperAuthorityIxData,
     ),
     SetRewardEmissionsSuperAuthority(SetRewardEmissionsSuperAuthorityIxAccounts),
-    TwoHopSwap(TwoHopSwapIxAccounts, TwoHopSwapIxData),
+    TwoHopSwap(TwoHopSwapIxAccounts, TwoHopSwapIxData, Vec<TradedEvent>),
     InitializePositionBundle(InitializePositionBundleIxAccounts),
     InitializePositionBundleWithMetadata(InitializePositionBundleWithMetadataIxAccounts),
     DeletePositionBundle(DeletePositionBundleIxAccounts),
@@ -144,8 +145,8 @@ pub enum WhirlpoolProgramIx {
     InitializePoolV2(InitializePoolV2IxAccounts, InitializePoolV2IxData),
     InitializeRewardV2(InitializeRewardV2IxAccounts, InitializeRewardV2IxData),
     SetRewardEmissionsV2(SetRewardEmissionsV2IxAccounts, SetRewardEmissionsV2IxData),
-    SwapV2(SwapV2IxAccounts, SwapV2IxData),
-    TwoHopSwapV2(TwoHopSwapV2IxAccounts, TwoHopSwapV2IxData),
+    SwapV2(SwapV2IxAccounts, SwapV2IxData, Option<TradedEvent>),
+    TwoHopSwapV2(TwoHopSwapV2IxAccounts, TwoHopSwapV2IxData, Vec<TradedEvent>),
     InitializeConfigExtension(InitializeConfigExtensionIxAccounts),
     SetConfigExtensionAuthority(SetConfigExtensionAuthorityIxAccounts),
     SetTokenBadgeAuthority(SetTokenBadgeAuthorityIxAccounts),
@@ -450,7 +451,8 @@ impl InstructionParser {
                     oracle: ix.accounts[10].0.into(),
                 };
                 let de_ix_data: SwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(WhirlpoolProgramIx::Swap(ix_accounts, de_ix_data))
+                let traded_event = TradedEvent::from_logs(&ix.parsed_logs);
+                Ok(WhirlpoolProgramIx::Swap(ix_accounts, de_ix_data, traded_event))
             },
             [123, 134, 81, 0, 49, 68, 98, 98] => {
                 check_min_accounts_req(accounts_len, 6)?;
@@ -600,7 +602,8 @@ impl InstructionParser {
                     oracle_two: ix.accounts[19].0.into(),
                 };
                 let de_ix_data: TwoHopSwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(WhirlpoolProgramIx::TwoHopSwap(ix_accounts, de_ix_data))
+                let traded_events = TradedEvent::from_logs_all(&ix.parsed_logs);
+                Ok(WhirlpoolProgramIx::TwoHopSwap(ix_accounts, de_ix_data, traded_events))
             },
             [117, 45, 241, 149, 24, 18, 194, 65] => {
                 check_min_accounts_req(accounts_len, 9)?;
@@ -926,7 +929,8 @@ impl InstructionParser {
                     oracle: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: SwapV2IxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(WhirlpoolProgramIx::SwapV2(ix_accounts, de_ix_data))
+                let traded_event = TradedEvent::from_logs(&ix.parsed_logs);
+                Ok(WhirlpoolProgramIx::SwapV2(ix_accounts, de_ix_data, traded_event))
             },
             [186, 143, 209, 29, 254, 2, 194, 117] => {
                 check_min_accounts_req(accounts_len, 24)?;
@@ -957,7 +961,8 @@ impl InstructionParser {
                     memo_program: ix.accounts[23].0.into(),
                 };
                 let de_ix_data: TwoHopSwapV2IxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(WhirlpoolProgramIx::TwoHopSwapV2(ix_accounts, de_ix_data))
+                let traded_events = TradedEvent::from_logs_all(&ix.parsed_logs);
+                Ok(WhirlpoolProgramIx::TwoHopSwapV2(ix_accounts, de_ix_data, traded_events))
             },
             [55, 9, 53, 9, 114, 57, 209, 52] => {
                 check_min_accounts_req(accounts_len, 5)?;
@@ -1034,6 +1039,7 @@ pub fn check_min_accounts_req(
         Ok(())
     }
 }
+
 
 // #[cfg(feature = "proto")]
 mod proto_parser {
@@ -2232,7 +2238,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                WhirlpoolProgramIx::Swap(acc, data) => proto_def::ProgramIxs {
+                WhirlpoolProgramIx::Swap(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap(proto_def::SwapIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
@@ -2324,7 +2330,7 @@ mod proto_parser {
                         ),
                     }
                 },
-                WhirlpoolProgramIx::TwoHopSwap(acc, data) => proto_def::ProgramIxs {
+                WhirlpoolProgramIx::TwoHopSwap(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::TwoHopSwap(
                         proto_def::TwoHopSwapIx {
                             accounts: Some(acc.into_proto()),
@@ -2468,7 +2474,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                WhirlpoolProgramIx::SwapV2(acc, data) => proto_def::ProgramIxs {
+                WhirlpoolProgramIx::SwapV2(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapV2(
                         proto_def::SwapV2Ix {
                             accounts: Some(acc.into_proto()),
@@ -2476,7 +2482,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                WhirlpoolProgramIx::TwoHopSwapV2(acc, data) => proto_def::ProgramIxs {
+                WhirlpoolProgramIx::TwoHopSwapV2(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::TwoHopSwapV2(
                         proto_def::TwoHopSwapV2Ix {
                             accounts: Some(acc.into_proto()),

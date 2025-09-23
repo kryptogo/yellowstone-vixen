@@ -8329,6 +8329,7 @@ dependencies = [
 name = "yellowstone-vixen-orca-whirlpool-parser"
 version = "0.3.0"
 dependencies = [
+ "base64 0.22.1",
  "borsh 0.10.4",
  "num-derive",
  "num-traits",
