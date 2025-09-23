@@ -8,6 +8,7 @@
 use borsh::BorshDeserialize;
 
 use crate::{
+    generated::types::SwapEvent,
     instructions::{
         CollectFundFee as CollectFundFeeIxAccounts,
         CollectFundFeeInstructionArgs as CollectFundFeeIxData,
@@ -40,8 +41,16 @@ pub enum RaydiumCpSwapProgramIx {
     Initialize(InitializeIxAccounts, InitializeIxData),
     Deposit(DepositIxAccounts, DepositIxData),
     Withdraw(WithdrawIxAccounts, WithdrawIxData),
-    SwapBaseInput(SwapBaseInputIxAccounts, SwapBaseInputIxData),
-    SwapBaseOutput(SwapBaseOutputIxAccounts, SwapBaseOutputIxData),
+    SwapBaseInput(
+        SwapBaseInputIxAccounts,
+        SwapBaseInputIxData,
+        Option<SwapEvent>,
+    ),
+    SwapBaseOutput(
+        SwapBaseOutputIxAccounts,
+        SwapBaseOutputIxData,
+        Option<SwapEvent>,
+    ),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -51,7 +60,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     type Input = yellowstone_vixen_core::instruction::InstructionUpdate;
     type Output = RaydiumCpSwapProgramIx;
 
-    fn id(&self) -> std::borrow::Cow<str> { "RaydiumCpSwap::InstructionParser".into() }
+    fn id(&self) -> std::borrow::Cow<str> {
+        "RaydiumCpSwap::InstructionParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -74,7 +85,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
@@ -262,9 +275,11 @@ impl InstructionParser {
                     observation_state: ix.accounts[12].0.into(),
                 };
                 let de_ix_data: SwapBaseInputIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+                let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
                 Ok(RaydiumCpSwapProgramIx::SwapBaseInput(
                     ix_accounts,
                     de_ix_data,
+                    swap_event,
                 ))
             },
             [55, 217, 98, 86, 163, 74, 180, 173] => {
@@ -285,9 +300,11 @@ impl InstructionParser {
                     observation_state: ix.accounts[12].0.into(),
                 };
                 let de_ix_data: SwapBaseOutputIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+                let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
                 Ok(RaydiumCpSwapProgramIx::SwapBaseOutput(
                     ix_accounts,
                     de_ix_data,
+                    swap_event,
                 ))
             },
             _ => Err(yellowstone_vixen_core::ParseError::from(
@@ -652,7 +669,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                RaydiumCpSwapProgramIx::SwapBaseInput(acc, data) => proto_def::ProgramIxs {
+                RaydiumCpSwapProgramIx::SwapBaseInput(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapBaseInput(
                         proto_def::SwapBaseInputIx {
                             accounts: Some(acc.into_proto()),
@@ -660,7 +677,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                RaydiumCpSwapProgramIx::SwapBaseOutput(acc, data) => proto_def::ProgramIxs {
+                RaydiumCpSwapProgramIx::SwapBaseOutput(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapBaseOutput(
                         proto_def::SwapBaseOutputIx {
                             accounts: Some(acc.into_proto()),
@@ -675,6 +692,8 @@ mod proto_parser {
     impl ParseProto for InstructionParser {
         type Message = proto_def::ProgramIxs;
 
-        fn output_into_message(value: Self::Output) -> Self::Message { value.into_proto() }
+        fn output_into_message(value: Self::Output) -> Self::Message {
+            value.into_proto()
+        }
     }
 }
