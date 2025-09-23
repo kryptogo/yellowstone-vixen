@@ -5,8 +5,9 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::pubkey::Pubkey;
+use borsh::BorshDeserialize;
+use borsh::BorshSerialize;
+use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -18,12 +19,8 @@ pub struct MeteoraDammMigrationMetadata {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub virtual_pool: Pubkey,
-    /// pool creator
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub pool_creator: Pubkey,
+    /// !!! BE CAREFUL to use tomestone field, previous is pool creator
+    pub padding0: [u8; 32],
     /// partner
     #[cfg_attr(
         feature = "serde",
@@ -45,7 +42,7 @@ pub struct MeteoraDammMigrationMetadata {
     /// creator lp
     pub creator_lp: u64,
     /// padding
-    pub padding0: u8,
+    pub padding0_hidden: u8,
     /// flag to check whether lp is locked for creator
     pub creator_locked_status: u8,
     /// flag to check whether lp is locked for partner
@@ -59,6 +56,9 @@ pub struct MeteoraDammMigrationMetadata {
     pub padding: [u8; 107],
 }
 
+pub const METEORA_DAMM_MIGRATION_METADATA_DISCRIMINATOR: [u8; 8] =
+    [17, 155, 141, 215, 207, 4, 133, 156];
+
 impl MeteoraDammMigrationMetadata {
     pub const LEN: usize = 280;
 
@@ -69,12 +69,10 @@ impl MeteoraDammMigrationMetadata {
     }
 }
 
-impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for MeteoraDammMigrationMetadata {
+impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for MeteoraDammMigrationMetadata {
     type Error = std::io::Error;
 
-    fn try_from(
-        account_info: &solana_program::account_info::AccountInfo<'a>,
-    ) -> Result<Self, Self::Error> {
+    fn try_from(account_info: &solana_account_info::AccountInfo<'a>) -> Result<Self, Self::Error> {
         let mut data: &[u8] = &(*account_info.data).borrow();
         Self::deserialize(&mut data)
     }
@@ -83,7 +81,7 @@ impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for MeteoraDamm
 #[cfg(feature = "fetch")]
 pub fn fetch_meteora_damm_migration_metadata(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::DecodedAccount<MeteoraDammMigrationMetadata>, std::io::Error> {
     let accounts = fetch_all_meteora_damm_migration_metadata(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -92,7 +90,7 @@ pub fn fetch_meteora_damm_migration_metadata(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_meteora_damm_migration_metadata(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::DecodedAccount<MeteoraDammMigrationMetadata>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -118,7 +116,7 @@ pub fn fetch_all_meteora_damm_migration_metadata(
 #[cfg(feature = "fetch")]
 pub fn fetch_maybe_meteora_damm_migration_metadata(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::MaybeAccount<MeteoraDammMigrationMetadata>, std::io::Error> {
     let accounts = fetch_all_maybe_meteora_damm_migration_metadata(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -127,7 +125,7 @@ pub fn fetch_maybe_meteora_damm_migration_metadata(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_maybe_meteora_damm_migration_metadata(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::MaybeAccount<MeteoraDammMigrationMetadata>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -164,7 +162,9 @@ impl anchor_lang::AccountSerialize for MeteoraDammMigrationMetadata {}
 
 #[cfg(feature = "anchor")]
 impl anchor_lang::Owner for MeteoraDammMigrationMetadata {
-    fn owner() -> Pubkey { crate::DYNAMIC_BONDING_CURVE_ID }
+    fn owner() -> Pubkey {
+        crate::DYNAMIC_BONDING_CURVE_ID
+    }
 }
 
 #[cfg(feature = "anchor-idl-build")]
@@ -172,5 +172,5 @@ impl anchor_lang::IdlBuild for MeteoraDammMigrationMetadata {}
 
 #[cfg(feature = "anchor-idl-build")]
 impl anchor_lang::Discriminator for MeteoraDammMigrationMetadata {
-    const DISCRIMINATOR: [u8; 8] = [0; 8];
+    const DISCRIMINATOR: &[u8] = &[0; 8];
 }
