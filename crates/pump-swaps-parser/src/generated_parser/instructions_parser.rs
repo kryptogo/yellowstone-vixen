@@ -20,19 +20,20 @@ use crate::{
         UpdateFeeConfigInstructionArgs as UpdateFeeConfigIxData, Withdraw as WithdrawIxAccounts,
         WithdrawInstructionArgs as WithdrawIxData,
     },
+    types::{BuyEvent, SellEvent},
     ID,
 };
 
 /// PumpAmm Instructions
 #[derive(Debug, strum_macros::Display)]
 pub enum PumpAmmProgramIx {
-    Buy(BuyIxAccounts, BuyIxData),
+    Buy(BuyIxAccounts, BuyIxData, Option<BuyEvent>),
     CreateConfig(CreateConfigIxAccounts, CreateConfigIxData),
     CreatePool(CreatePoolIxAccounts, CreatePoolIxData),
     Deposit(DepositIxAccounts, DepositIxData),
     Disable(DisableIxAccounts, DisableIxData),
     ExtendAccount(ExtendAccountIxAccounts),
-    Sell(SellIxAccounts, SellIxData),
+    Sell(SellIxAccounts, SellIxData, Option<SellEvent>),
     UpdateAdmin(UpdateAdminIxAccounts),
     UpdateFeeConfig(UpdateFeeConfigIxAccounts, UpdateFeeConfigIxData),
     Withdraw(WithdrawIxAccounts, WithdrawIxData),
@@ -45,7 +46,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     type Input = yellowstone_vixen_core::instruction::InstructionUpdate;
     type Output = PumpAmmProgramIx;
 
-    fn id(&self) -> std::borrow::Cow<str> { "PumpAmm::InstructionParser".into() }
+    fn id(&self) -> std::borrow::Cow<str> {
+        "PumpAmm::InstructionParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -68,7 +71,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
@@ -107,7 +112,14 @@ impl InstructionParser {
                     program: ix.accounts[16].0.into(),
                 };
                 let de_ix_data: BuyIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(PumpAmmProgramIx::Buy(ix_accounts, de_ix_data))
+
+                // Parse BuyEvent from inner instructions
+                let buy_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| BuyEvent::from_inner_instruction_data(&inner_ix.data));
+
+                Ok(PumpAmmProgramIx::Buy(ix_accounts, de_ix_data, buy_event))
             },
             [201, 207, 243, 114, 75, 111, 47, 189] => {
                 check_min_accounts_req(accounts_len, 5)?;
@@ -212,7 +224,14 @@ impl InstructionParser {
                     program: ix.accounts[16].0.into(),
                 };
                 let de_ix_data: SellIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(PumpAmmProgramIx::Sell(ix_accounts, de_ix_data))
+
+                // Parse SellEvent from inner instructions
+                let sell_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| SellEvent::from_inner_instruction_data(&inner_ix.data));
+
+                Ok(PumpAmmProgramIx::Sell(ix_accounts, de_ix_data, sell_event))
             },
             [161, 176, 40, 213, 60, 184, 179, 228] => {
                 check_min_accounts_req(accounts_len, 5)?;
@@ -555,7 +574,7 @@ mod proto_parser {
     impl IntoProto<proto_def::ProgramIxs> for PumpAmmProgramIx {
         fn into_proto(self) -> proto_def::ProgramIxs {
             match self {
-                PumpAmmProgramIx::Buy(acc, data) => proto_def::ProgramIxs {
+                PumpAmmProgramIx::Buy(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Buy(proto_def::BuyIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
@@ -600,7 +619,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                PumpAmmProgramIx::Sell(acc, data) => proto_def::ProgramIxs {
+                PumpAmmProgramIx::Sell(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Sell(proto_def::SellIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
@@ -636,6 +655,8 @@ mod proto_parser {
     impl ParseProto for InstructionParser {
         type Message = proto_def::ProgramIxs;
 
-        fn output_into_message(value: Self::Output) -> Self::Message { value.into_proto() }
+        fn output_into_message(value: Self::Output) -> Self::Message {
+            value.into_proto()
+        }
     }
 }
