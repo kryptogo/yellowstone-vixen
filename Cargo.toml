@@ -16,6 +16,8 @@ yellowstone-vixen-boop-parser = { path = "crates/boop-parser", version = "0.3.0"
 yellowstone-vixen-meteora-parser = { path = "crates/meteora-parser", version = "0.3.0" }
 yellowstone-vixen-pumpfun-parser = { path = "crates/pumpfun-parser", version = "0.3.0" }
 yellowstone-vixen-jupiter-swap-parser = { path = "crates/jupiter-swap-parser", version = "0.3.0" }
+yellowstone-vixen-jupiter-dca-parser = { path = "crates/jupiter-dca-parser", version = "0.3.0" }
+yellowstone-vixen-jupiter-limit-order-parser = { path = "crates/jupiter-limit-order-parser", version = "0.3.0" }
 yellowstone-vixen-meteora-amm-parser = { path = "crates/meteora-amm-parser", version = "0.3.0" }
 yellowstone-vixen-meteora-dbc-parser = { path = "crates/meteora-dbc-parser", version = "0.3.0" }
 yellowstone-vixen-meteora-pools-parser = { path = "crates/meteora-pools-parser", version = "0.3.0" }
