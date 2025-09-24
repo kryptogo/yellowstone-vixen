@@ -8,6 +8,7 @@
 use borsh::BorshDeserialize;
 
 use crate::{
+    generated_sdk::types::TradeEvent,
     instructions::{
         BuyExactIn as BuyExactInIxAccounts, BuyExactInInstructionArgs as BuyExactInIxData,
         BuyExactOut as BuyExactOutIxAccounts, BuyExactOutInstructionArgs as BuyExactOutIxData,
@@ -35,8 +36,8 @@ use crate::{
 #[derive(Debug)]
 #[cfg_attr(feature = "tracing", derive(strum_macros::Display))]
 pub enum RaydiumLaunchpadProgramIx {
-    BuyExactIn(BuyExactInIxAccounts, BuyExactInIxData),
-    BuyExactOut(BuyExactOutIxAccounts, BuyExactOutIxData),
+    BuyExactIn(BuyExactInIxAccounts, BuyExactInIxData, Option<TradeEvent>),
+    BuyExactOut(BuyExactOutIxAccounts, BuyExactOutIxData, Option<TradeEvent>),
     ClaimPlatformFee(ClaimPlatformFeeIxAccounts),
     ClaimVestedToken(ClaimVestedTokenIxAccounts),
     CollectFee(CollectFeeIxAccounts),
@@ -47,8 +48,12 @@ pub enum RaydiumLaunchpadProgramIx {
     Initialize(InitializeIxAccounts, InitializeIxData),
     MigrateToAmm(MigrateToAmmIxAccounts, MigrateToAmmIxData),
     MigrateToCpswap(MigrateToCpswapIxAccounts),
-    SellExactIn(SellExactInIxAccounts, SellExactInIxData),
-    SellExactOut(SellExactOutIxAccounts, SellExactOutIxData),
+    SellExactIn(SellExactInIxAccounts, SellExactInIxData, Option<TradeEvent>),
+    SellExactOut(
+        SellExactOutIxAccounts,
+        SellExactOutIxData,
+        Option<TradeEvent>,
+    ),
     UpdateConfig(UpdateConfigIxAccounts, UpdateConfigIxData),
     UpdatePlatformConfig(UpdatePlatformConfigIxAccounts, UpdatePlatformConfigIxData),
 }
@@ -60,7 +65,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     type Input = yellowstone_vixen_core::instruction::InstructionUpdate;
     type Output = RaydiumLaunchpadProgramIx;
 
-    fn id(&self) -> std::borrow::Cow<str> { "RaydiumLaunchpad::InstructionParser".into() }
+    fn id(&self) -> std::borrow::Cow<str> {
+        "RaydiumLaunchpad::InstructionParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -83,7 +90,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
@@ -120,9 +129,14 @@ impl InstructionParser {
                     program: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: BuyExactInIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+                let trade_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner| TradeEvent::from_inner_instruction_data(&inner.data));
                 Ok(RaydiumLaunchpadProgramIx::BuyExactIn(
                     ix_accounts,
                     de_ix_data,
+                    trade_event,
                 ))
             },
             [24, 211, 116, 40, 105, 3, 153, 56] => {
@@ -145,9 +159,14 @@ impl InstructionParser {
                     program: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: BuyExactOutIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+                let trade_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner| TradeEvent::from_inner_instruction_data(&inner.data));
                 Ok(RaydiumLaunchpadProgramIx::BuyExactOut(
                     ix_accounts,
                     de_ix_data,
+                    trade_event,
                 ))
             },
             [156, 39, 208, 135, 76, 237, 61, 72] => {
@@ -384,9 +403,14 @@ impl InstructionParser {
                     program: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: SellExactInIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+                let trade_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner| TradeEvent::from_inner_instruction_data(&inner.data));
                 Ok(RaydiumLaunchpadProgramIx::SellExactIn(
                     ix_accounts,
                     de_ix_data,
+                    trade_event,
                 ))
             },
             [95, 200, 71, 34, 8, 9, 11, 166] => {
@@ -409,9 +433,14 @@ impl InstructionParser {
                     program: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: SellExactOutIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+                let trade_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner| TradeEvent::from_inner_instruction_data(&inner.data));
                 Ok(RaydiumLaunchpadProgramIx::SellExactOut(
                     ix_accounts,
                     de_ix_data,
+                    trade_event,
                 ))
             },
             [29, 158, 252, 191, 10, 83, 219, 99] => {
@@ -908,7 +937,7 @@ mod proto_parser {
     impl IntoProto<proto_def::ProgramIxs> for RaydiumLaunchpadProgramIx {
         fn into_proto(self) -> proto_def::ProgramIxs {
             match self {
-                RaydiumLaunchpadProgramIx::BuyExactIn(acc, data) => proto_def::ProgramIxs {
+                RaydiumLaunchpadProgramIx::BuyExactIn(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::BuyExactIn(
                         proto_def::BuyExactInIx {
                             accounts: Some(acc.into_proto()),
@@ -916,7 +945,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                RaydiumLaunchpadProgramIx::BuyExactOut(acc, data) => proto_def::ProgramIxs {
+                RaydiumLaunchpadProgramIx::BuyExactOut(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::BuyExactOut(
                         proto_def::BuyExactOutIx {
                             accounts: Some(acc.into_proto()),
@@ -1003,7 +1032,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                RaydiumLaunchpadProgramIx::SellExactIn(acc, data) => proto_def::ProgramIxs {
+                RaydiumLaunchpadProgramIx::SellExactIn(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SellExactIn(
                         proto_def::SellExactInIx {
                             accounts: Some(acc.into_proto()),
@@ -1011,7 +1040,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                RaydiumLaunchpadProgramIx::SellExactOut(acc, data) => proto_def::ProgramIxs {
+                RaydiumLaunchpadProgramIx::SellExactOut(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SellExactOut(
                         proto_def::SellExactOutIx {
                             accounts: Some(acc.into_proto()),
@@ -1044,6 +1073,8 @@ mod proto_parser {
     impl ParseProto for InstructionParser {
         type Message = proto_def::ProgramIxs;
 
-        fn output_into_message(value: Self::Output) -> Self::Message { value.into_proto() }
+        fn output_into_message(value: Self::Output) -> Self::Message {
+            value.into_proto()
+        }
     }
 }
