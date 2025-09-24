@@ -8,6 +8,7 @@
 use borsh::BorshDeserialize;
 
 use crate::{
+    generated_sdk::types::TradeEvent,
     instructions::{
         Buy as BuyIxAccounts, BuyInstructionArgs as BuyIxData, ConfigInit as ConfigInitIxAccounts,
         ConfigInitInstructionArgs as ConfigInitIxData, ConfigUpdate as ConfigUpdateIxAccounts,
@@ -22,8 +23,8 @@ use crate::{
 #[derive(Debug, strum_macros::Display)]
 pub enum TokenLaunchpadProgramIx {
     TokenMint(TokenMintIxAccounts, TokenMintIxData),
-    Buy(BuyIxAccounts, BuyIxData),
-    Sell(SellIxAccounts, SellIxData),
+    Buy(BuyIxAccounts, BuyIxData, Option<TradeEvent>),
+    Sell(SellIxAccounts, SellIxData, Option<TradeEvent>),
     MigrateFunds(MigrateFundsIxAccounts),
     ConfigInit(ConfigInitIxAccounts, ConfigInitIxData),
     ConfigUpdate(ConfigUpdateIxAccounts, ConfigUpdateIxData),
@@ -110,7 +111,8 @@ impl InstructionParser {
                     system_program: ix.accounts[10].0.into(),
                 };
                 let de_ix_data: BuyIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(TokenLaunchpadProgramIx::Buy(ix_accounts, de_ix_data))
+                let trade_event = TradeEvent::from_logs(&ix.parsed_logs);
+                Ok(TokenLaunchpadProgramIx::Buy(ix_accounts, de_ix_data, trade_event))
             },
             [51, 230, 133, 164, 1, 127, 131, 173] => {
                 check_min_accounts_req(accounts_len, 11)?;
@@ -128,7 +130,8 @@ impl InstructionParser {
                     system_program: ix.accounts[10].0.into(),
                 };
                 let de_ix_data: SellIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(TokenLaunchpadProgramIx::Sell(ix_accounts, de_ix_data))
+                let trade_event = TradeEvent::from_logs(&ix.parsed_logs);
+                Ok(TokenLaunchpadProgramIx::Sell(ix_accounts, de_ix_data, trade_event))
             },
             [42, 229, 10, 231, 189, 62, 193, 174] => {
                 check_min_accounts_req(accounts_len, 12)?;
@@ -348,13 +351,13 @@ mod proto_parser {
                         },
                     )),
                 },
-                TokenLaunchpadProgramIx::Buy(acc, data) => proto_def::ProgramIxs {
+                TokenLaunchpadProgramIx::Buy(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Buy(proto_def::BuyIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
                     })),
                 },
-                TokenLaunchpadProgramIx::Sell(acc, data) => proto_def::ProgramIxs {
+                TokenLaunchpadProgramIx::Sell(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Sell(proto_def::SellIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
