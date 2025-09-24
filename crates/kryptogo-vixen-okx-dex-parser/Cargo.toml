@@ -1,12 +1,12 @@
 
 
 [package]
-name = "yellowstone-vixen-okx-dex-parser"
+name = "kryptogo-vixen-okx-dex-parser"
 version = "0.1.0"
 edition = "2021"
 description = ""
 license = "MIT"
-repository = "https://github.com/rpcpool/yellowstone-vixen"
+repository = "https://github.com/kryptogo/yellowstone-vixen"
 
 
 [dependencies]

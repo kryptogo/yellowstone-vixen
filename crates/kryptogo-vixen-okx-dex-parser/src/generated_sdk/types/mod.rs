@@ -6,6 +6,7 @@
 //!
 
 pub(crate) mod r#add_resolver_event;
+pub(crate) mod r#aggregation_event;
 pub(crate) mod r#cancel_order_event;
 pub(crate) mod r#commission_swap_args;
 pub(crate) mod r#dex;
@@ -24,6 +25,7 @@ pub(crate) mod r#swap_event;
 pub(crate) mod r#update_order_event;
 
 pub use self::r#add_resolver_event::*;
+pub use self::r#aggregation_event::*;
 pub use self::r#cancel_order_event::*;
 pub use self::r#commission_swap_args::*;
 pub use self::r#dex::*;
