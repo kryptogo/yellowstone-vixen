@@ -11,7 +11,7 @@ repository = "https://github.com/rpcpool/yellowstone-vixen"
 
 [dependencies]
 prost = "0.13.1"
-yellowstone-vixen-core = { git = "https://github.com/rpcpool/yellowstone-vixen", branch = "main",features = ["proto"] }
+yellowstone-vixen-core = { workspace = true, features = ["proto"] }
 tonic = { version = "0.12.1", features = ["gzip", "zstd"] }
 solana-account-info = "2.2.1"
 solana-cpi = "2.2.1"
