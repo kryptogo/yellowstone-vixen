@@ -18,6 +18,7 @@ borsh = "^0.10"
 num-derive = "0.4"
 thiserror = "1.0.64"
 num-traits = "^0.2"
+hex = "0.4"
 tracing = "0.1.40"
 
 

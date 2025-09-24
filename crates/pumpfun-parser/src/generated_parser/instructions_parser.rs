@@ -15,6 +15,7 @@ use crate::{
         SetParams as SetParamsIxAccounts, SetParamsInstructionArgs as SetParamsIxData,
         Withdraw as WithdrawIxAccounts,
     },
+    types::TradeEvent,
     ID,
 };
 
@@ -24,8 +25,8 @@ pub enum PumpProgramIx {
     Initialize(InitializeIxAccounts),
     SetParams(SetParamsIxAccounts, SetParamsIxData),
     Create(CreateIxAccounts, CreateIxData),
-    Buy(BuyIxAccounts, BuyIxData),
-    Sell(SellIxAccounts, SellIxData),
+    Buy(BuyIxAccounts, BuyIxData, Option<TradeEvent>),
+    Sell(SellIxAccounts, SellIxData, Option<TradeEvent>),
     Withdraw(WithdrawIxAccounts),
 }
 
@@ -135,7 +136,14 @@ impl InstructionParser {
                     program: ix.accounts[11].0.into(),
                 };
                 let de_ix_data: BuyIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(PumpProgramIx::Buy(ix_accounts, de_ix_data))
+
+                // Parse TradeEvent from inner instructions
+                let trade_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| TradeEvent::from_inner_instruction_data(&inner_ix.data));
+
+                Ok(PumpProgramIx::Buy(ix_accounts, de_ix_data, trade_event))
             },
             [51, 230, 133, 164, 1, 127, 131, 173] => {
                 check_min_accounts_req(accounts_len, 12)?;
@@ -154,7 +162,14 @@ impl InstructionParser {
                     program: ix.accounts[11].0.into(),
                 };
                 let de_ix_data: SellIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(PumpProgramIx::Sell(ix_accounts, de_ix_data))
+
+                // Parse TradeEvent from inner instructions
+                let trade_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| TradeEvent::from_inner_instruction_data(&inner_ix.data));
+
+                Ok(PumpProgramIx::Sell(ix_accounts, de_ix_data, trade_event))
             },
             [183, 18, 70, 156, 148, 109, 161, 34] => {
                 check_min_accounts_req(accounts_len, 12)?;
@@ -368,13 +383,13 @@ mod proto_parser {
                         },
                     )),
                 },
-                PumpProgramIx::Buy(acc, data) => proto_def::ProgramIxs {
+                PumpProgramIx::Buy(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Buy(proto_def::BuyIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
                     })),
                 },
-                PumpProgramIx::Sell(acc, data) => proto_def::ProgramIxs {
+                PumpProgramIx::Sell(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Sell(proto_def::SellIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
