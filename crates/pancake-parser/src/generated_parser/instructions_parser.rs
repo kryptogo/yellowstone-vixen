@@ -58,7 +58,7 @@ use crate::instructions::{
     UpdatePoolStatusInstructionArgs as UpdatePoolStatusIxData,
     UpdateRewardInfos as UpdateRewardInfosIxAccounts,
 };
-use crate::ID;
+use crate::{types::SwapEvent, ID};
 
 /// AmmV3 Instructions
 #[derive(Debug)]
@@ -88,9 +88,9 @@ pub enum AmmV3ProgramIx {
         OpenPositionWithToken22NftIxData,
     ),
     SetRewardParams(SetRewardParamsIxAccounts, SetRewardParamsIxData),
-    Swap(SwapIxAccounts, SwapIxData),
+    Swap(SwapIxAccounts, SwapIxData, Option<SwapEvent>),
     SwapRouterBaseIn(SwapRouterBaseInIxAccounts, SwapRouterBaseInIxData),
-    SwapV2(SwapV2IxAccounts, SwapV2IxData),
+    SwapV2(SwapV2IxAccounts, SwapV2IxData, Option<SwapEvent>),
     TogglePermissionlessFarmSwitch(
         TogglePermissionlessFarmSwitchIxAccounts,
         TogglePermissionlessFarmSwitchIxData,
@@ -546,7 +546,8 @@ impl InstructionParser {
                     tick_array: next_account(accounts)?,
                 };
                 let de_ix_data: SwapIxData = deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(AmmV3ProgramIx::Swap(ix_accounts, de_ix_data))
+                let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
+                Ok(AmmV3ProgramIx::Swap(ix_accounts, de_ix_data, swap_event))
             },
             [69, 125, 115, 218, 245, 186, 242, 196] => {
                 let expected_accounts_len = 6;
@@ -582,7 +583,8 @@ impl InstructionParser {
                     output_vault_mint: next_account(accounts)?,
                 };
                 let de_ix_data: SwapV2IxData = deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(AmmV3ProgramIx::SwapV2(ix_accounts, de_ix_data))
+                let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
+                Ok(AmmV3ProgramIx::SwapV2(ix_accounts, de_ix_data, swap_event))
             },
             [150, 112, 54, 233, 238, 161, 7, 86] => {
                 let expected_accounts_len = 3;
@@ -1565,7 +1567,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                AmmV3ProgramIx::Swap(acc, data) => proto_def::ProgramIxs {
+                AmmV3ProgramIx::Swap(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap(proto_def::SwapIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
@@ -1579,7 +1581,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                AmmV3ProgramIx::SwapV2(acc, data) => proto_def::ProgramIxs {
+                AmmV3ProgramIx::SwapV2(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapV2(
                         proto_def::SwapV2Ix {
                             accounts: Some(acc.into_proto()),
