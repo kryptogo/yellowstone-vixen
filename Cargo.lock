@@ -2402,6 +2402,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "kryptogo-vixen-okx-dex-parser"
+version = "0.1.0"
+dependencies = [
+ "borsh 0.10.4",
+ "num-derive",
+ "num-traits",
+ "prost",
+ "prost-build",
+ "solana-account-info",
+ "solana-cpi",
+ "solana-decode-error",
+ "solana-instruction",
+ "solana-msg",
+ "solana-program-entrypoint",
+ "solana-program-error",
+ "solana-pubkey",
+ "strum",
+ "strum_macros",
+ "thiserror 1.0.69",
+ "tonic",
+ "tracing",
+ "yellowstone-vixen-core",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8126,6 +8151,22 @@ dependencies = [
  "yellowstone-grpc-proto",
  "yellowstone-vixen-mock",
  "yellowstone-vixen-proto",
+]
+
+[[package]]
+name = "yellowstone-vixen-integration-tests"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "kryptogo-vixen-okx-dex-parser",
+ "parking_lot 0.12.3",
+ "serde",
+ "tokio",
+ "toml 0.8.20",
+ "tracing",
+ "tracing-subscriber",
+ "yellowstone-vixen",
+ "yellowstone-vixen-jupiter-swap-parser",
 ]
 
 [[package]]
