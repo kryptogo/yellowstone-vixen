@@ -31,6 +31,7 @@ yellowstone-vixen-raydium-launchpad-parser = { path = "crates/raydium-launchpad-
 yellowstone-vixen-virtuals-parser = { path = "crates/virtuals-parser", version = "0.3.0" }
 kryptogo-vixen-okx-dex-parser = { path = "crates/kryptogo-vixen-okx-dex-parser", version = "0.1.0" }
 
+yellowstone-vixen-pancake-parser = { path = "crates/pancake-parser", version = "0.3.0" }
 
 # helps resolving zeroize dependency conflicts betweeen solana creates depending on curve25519-dalek and yellowstone-grpc 
 # https://github.com/solana-labs/solana/issues/26688
