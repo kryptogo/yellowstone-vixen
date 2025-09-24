@@ -6,6 +6,7 @@
 //!
 
 use borsh::BorshDeserialize;
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 use crate::{
     generated::types::SwapEvent,
@@ -275,6 +276,10 @@ impl InstructionParser {
                     observation_state: ix.accounts[12].0.into(),
                 };
                 let de_ix_data: SwapBaseInputIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
                 let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
                 Ok(RaydiumCpSwapProgramIx::SwapBaseInput(
                     ix_accounts,
@@ -300,6 +305,10 @@ impl InstructionParser {
                     observation_state: ix.accounts[12].0.into(),
                 };
                 let de_ix_data: SwapBaseOutputIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
                 let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
                 Ok(RaydiumCpSwapProgramIx::SwapBaseOutput(
                     ix_accounts,

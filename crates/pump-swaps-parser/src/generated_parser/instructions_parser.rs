@@ -6,6 +6,7 @@
 //!
 
 use borsh::BorshDeserialize;
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 use crate::{
     instructions::{
@@ -112,6 +113,11 @@ impl InstructionParser {
                     program: ix.accounts[16].0.into(),
                 };
                 let de_ix_data: BuyIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
 
                 // Parse BuyEvent from inner instructions
                 let buy_event = ix
@@ -224,6 +230,11 @@ impl InstructionParser {
                     program: ix.accounts[16].0.into(),
                 };
                 let de_ix_data: SellIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
 
                 // Parse SellEvent from inner instructions
                 let sell_event = ix

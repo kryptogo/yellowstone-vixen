@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 #[cfg(feature = "shared-data")]
 use yellowstone_vixen_core::InstructionUpdateOutput;
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 use crate::deserialize_checked;
 
@@ -546,6 +547,10 @@ impl InstructionParser {
                     tick_array: next_account(accounts)?,
                 };
                 let de_ix_data: SwapIxData = deserialize_checked(ix_data, &ix_discriminator)?;
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
                 let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
                 Ok(AmmV3ProgramIx::Swap(ix_accounts, de_ix_data, swap_event))
             },
@@ -583,6 +588,10 @@ impl InstructionParser {
                     output_vault_mint: next_account(accounts)?,
                 };
                 let de_ix_data: SwapV2IxData = deserialize_checked(ix_data, &ix_discriminator)?;
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
                 let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
                 Ok(AmmV3ProgramIx::SwapV2(ix_accounts, de_ix_data, swap_event))
             },

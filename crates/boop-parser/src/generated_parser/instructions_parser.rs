@@ -6,6 +6,7 @@
 //!
 
 use borsh::BorshDeserialize;
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 use crate::{
     generated_sdk::types::{TokenBoughtEvent, TokenSoldEvent},
@@ -163,6 +164,12 @@ impl InstructionParser {
                     associated_token_program: ix.accounts[12].0.into(),
                 };
                 let de_ix_data: BuyTokenIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
                 let token_bought_event = TokenBoughtEvent::from_logs(&ix.parsed_logs);
                 Ok(BoopProgramIx::BuyToken(ix_accounts, de_ix_data, token_bought_event))
             },
@@ -488,6 +495,12 @@ impl InstructionParser {
                     associated_token_program: ix.accounts[11].0.into(),
                 };
                 let de_ix_data: SellTokenIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
                 let token_sold_event = TokenSoldEvent::from_logs(&ix.parsed_logs);
                 Ok(BoopProgramIx::SellToken(ix_accounts, de_ix_data, token_sold_event))
             },

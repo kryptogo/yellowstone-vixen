@@ -6,6 +6,7 @@
 //!
 
 use borsh::BorshDeserialize;
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 use crate::{
     generated::types::EvtSwap,
@@ -542,6 +543,11 @@ impl InstructionParser {
                     program: ix.accounts[13].0.into(),
                 };
                 let de_ix_data: SwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
 
                 // Search for EvtSwap in inner instructions
                 let evt_swap = ix

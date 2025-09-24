@@ -6,6 +6,7 @@
 //!
 
 use borsh::BorshDeserialize;
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 use crate::{
     instructions::{
@@ -694,6 +695,11 @@ impl InstructionParser {
                 };
                 let de_ix_data: SwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
 
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
                 // Search for SwapEvent in inner instructions
                 let swap_event = ix.inner.iter().find_map(|inner_ix| {
                     SwapEvent::from_inner_instruction_data(&inner_ix.data)
@@ -733,6 +739,11 @@ impl InstructionParser {
                     program: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: SwapExactOutIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
 
                 // Search for SwapEvent in inner instructions
                 let swap_event = ix.inner.iter().find_map(|inner_ix| {
@@ -774,6 +785,11 @@ impl InstructionParser {
                 };
                 let de_ix_data: SwapWithPriceImpactIxData =
                     BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
 
                 // Search for SwapEvent in inner instructions
                 let swap_event = ix.inner.iter().find_map(|inner_ix| {
@@ -1566,6 +1582,11 @@ impl InstructionParser {
                 };
                 let de_ix_data: Swap2IxData = BorshDeserialize::deserialize(&mut ix_data)?;
 
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
                 // Search for SwapEvent in inner instructions
                 let swap_event = ix.inner.iter().find_map(|inner_ix| {
                     SwapEvent::from_inner_instruction_data(&inner_ix.data)
@@ -1606,6 +1627,11 @@ impl InstructionParser {
                     program: ix.accounts[15].0.into(),
                 };
                 let de_ix_data: SwapExactOut2IxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
 
                 // Search for SwapEvent in inner instructions
                 let swap_event = ix.inner.iter().find_map(|inner_ix| {
@@ -1648,6 +1674,11 @@ impl InstructionParser {
                 };
                 let de_ix_data: SwapWithPriceImpact2IxData =
                     BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
 
                 // Search for SwapEvent in inner instructions
                 let swap_event = ix.inner.iter().find_map(|inner_ix| {

@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 #[cfg(feature = "shared-data")]
 use yellowstone_vixen_core::InstructionUpdateOutput;
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 use crate::deserialize_checked;
 use crate::generated::types::{EvtSwap, EvtSwap2};
@@ -622,6 +623,11 @@ impl InstructionParser {
                 };
                 let de_ix_data: SwapIxData = deserialize_checked(ix_data, &ix_discriminator)?;
 
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
                 let evt_swap = ix
                     .inner
                     .iter()
@@ -654,6 +660,11 @@ impl InstructionParser {
                     program: next_account(accounts)?,
                 };
                 let de_ix_data: Swap2IxData = deserialize_checked(ix_data, &ix_discriminator)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
 
                 // Search for EvtSwap2 in inner instructions
                 let evt_swap2 = ix

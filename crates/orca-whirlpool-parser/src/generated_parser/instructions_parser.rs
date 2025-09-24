@@ -87,6 +87,7 @@ use crate::{
     types::TradedEvent,
     ID,
 };
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 /// Whirlpool Instructions
 #[derive(Debug, strum_macros::Display)]
@@ -161,7 +162,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     type Input = yellowstone_vixen_core::instruction::InstructionUpdate;
     type Output = WhirlpoolProgramIx;
 
-    fn id(&self) -> std::borrow::Cow<str> { "Whirlpool::InstructionParser".into() }
+    fn id(&self) -> std::borrow::Cow<str> {
+        "Whirlpool::InstructionParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -184,7 +187,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
@@ -451,8 +456,18 @@ impl InstructionParser {
                     oracle: ix.accounts[10].0.into(),
                 };
                 let de_ix_data: SwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
                 let traded_event = TradedEvent::from_logs(&ix.parsed_logs);
-                Ok(WhirlpoolProgramIx::Swap(ix_accounts, de_ix_data, traded_event))
+                Ok(WhirlpoolProgramIx::Swap(
+                    ix_accounts,
+                    de_ix_data,
+                    traded_event,
+                ))
             },
             [123, 134, 81, 0, 49, 68, 98, 98] => {
                 check_min_accounts_req(accounts_len, 6)?;
@@ -602,8 +617,18 @@ impl InstructionParser {
                     oracle_two: ix.accounts[19].0.into(),
                 };
                 let de_ix_data: TwoHopSwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
                 let traded_events = TradedEvent::from_logs_all(&ix.parsed_logs);
-                Ok(WhirlpoolProgramIx::TwoHopSwap(ix_accounts, de_ix_data, traded_events))
+                Ok(WhirlpoolProgramIx::TwoHopSwap(
+                    ix_accounts,
+                    de_ix_data,
+                    traded_events,
+                ))
             },
             [117, 45, 241, 149, 24, 18, 194, 65] => {
                 check_min_accounts_req(accounts_len, 9)?;
@@ -929,8 +954,18 @@ impl InstructionParser {
                     oracle: ix.accounts[14].0.into(),
                 };
                 let de_ix_data: SwapV2IxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
                 let traded_event = TradedEvent::from_logs(&ix.parsed_logs);
-                Ok(WhirlpoolProgramIx::SwapV2(ix_accounts, de_ix_data, traded_event))
+                Ok(WhirlpoolProgramIx::SwapV2(
+                    ix_accounts,
+                    de_ix_data,
+                    traded_event,
+                ))
             },
             [186, 143, 209, 29, 254, 2, 194, 117] => {
                 check_min_accounts_req(accounts_len, 24)?;
@@ -961,8 +996,18 @@ impl InstructionParser {
                     memo_program: ix.accounts[23].0.into(),
                 };
                 let de_ix_data: TwoHopSwapV2IxData = BorshDeserialize::deserialize(&mut ix_data)?;
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
                 let traded_events = TradedEvent::from_logs_all(&ix.parsed_logs);
-                Ok(WhirlpoolProgramIx::TwoHopSwapV2(ix_accounts, de_ix_data, traded_events))
+                Ok(WhirlpoolProgramIx::TwoHopSwapV2(
+                    ix_accounts,
+                    de_ix_data,
+                    traded_events,
+                ))
             },
             [55, 9, 53, 9, 114, 57, 209, 52] => {
                 check_min_accounts_req(accounts_len, 5)?;
@@ -1039,7 +1084,6 @@ pub fn check_min_accounts_req(
         Ok(())
     }
 }
-
 
 // #[cfg(feature = "proto")]
 mod proto_parser {
@@ -2534,6 +2578,8 @@ mod proto_parser {
     impl ParseProto for InstructionParser {
         type Message = proto_def::ProgramIxs;
 
-        fn output_into_message(value: Self::Output) -> Self::Message { value.into_proto() }
+        fn output_into_message(value: Self::Output) -> Self::Message {
+            value.into_proto()
+        }
     }
 }
