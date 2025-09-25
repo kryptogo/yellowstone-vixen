@@ -5,10 +5,12 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::pubkey::Pubkey;
-
-use crate::generated::types::{LiquidityDistributionConfig, LockedVestingConfig, PoolFeesConfig};
+use crate::generated::types::LiquidityDistributionConfig;
+use crate::generated::types::LockedVestingConfig;
+use crate::generated::types::PoolFeesConfig;
+use borsh::BorshDeserialize;
+use borsh::BorshSerialize;
+use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -62,10 +64,14 @@ pub struct PoolConfig {
     pub fixed_token_supply_flag: u8,
     /// creator trading fee percentage
     pub creator_trading_fee_percentage: u8,
+    /// token update authority
+    pub token_update_authority: u8,
+    /// migration fee percentage
+    pub migration_fee_percentage: u8,
+    /// creator migration fee percentage
+    pub creator_migration_fee_percentage: u8,
     /// padding 0
-    pub padding0: [u8; 2],
-    /// padding 1
-    pub padding1: [u8; 8],
+    pub padding0: [u8; 7],
     /// swap base amount
     pub swap_base_amount: u64,
     /// migration quote threshold (in quote token)
@@ -80,13 +86,23 @@ pub struct PoolConfig {
     pub pre_migration_token_supply: u64,
     /// post migration token supply
     pub post_migration_token_supply: u64,
+    /// migrated pool collect fee mode
+    pub migrated_collect_fee_mode: u8,
+    /// migrated dynamic fee option.
+    pub migrated_dynamic_fee: u8,
+    /// migrated pool fee in bps
+    pub migrated_pool_fee_bps: u16,
+    /// padding 1
+    pub padding1: [u8; 12],
     /// padding 2
-    pub padding2: [u128; 2],
+    pub padding2: u128,
     /// minimum price
     pub sqrt_start_price: u128,
     /// curve, only use 20 point firstly, we can extend that latter
     pub curve: [LiquidityDistributionConfig; 20],
 }
+
+pub const POOL_CONFIG_DISCRIMINATOR: [u8; 8] = [26, 108, 14, 123, 116, 230, 129, 43];
 
 impl PoolConfig {
     pub const LEN: usize = 1048;
@@ -98,12 +114,10 @@ impl PoolConfig {
     }
 }
 
-impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for PoolConfig {
+impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for PoolConfig {
     type Error = std::io::Error;
 
-    fn try_from(
-        account_info: &solana_program::account_info::AccountInfo<'a>,
-    ) -> Result<Self, Self::Error> {
+    fn try_from(account_info: &solana_account_info::AccountInfo<'a>) -> Result<Self, Self::Error> {
         let mut data: &[u8] = &(*account_info.data).borrow();
         Self::deserialize(&mut data)
     }
@@ -112,7 +126,7 @@ impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for PoolConfig 
 #[cfg(feature = "fetch")]
 pub fn fetch_pool_config(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::DecodedAccount<PoolConfig>, std::io::Error> {
     let accounts = fetch_all_pool_config(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -121,7 +135,7 @@ pub fn fetch_pool_config(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_pool_config(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::DecodedAccount<PoolConfig>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -146,7 +160,7 @@ pub fn fetch_all_pool_config(
 #[cfg(feature = "fetch")]
 pub fn fetch_maybe_pool_config(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::MaybeAccount<PoolConfig>, std::io::Error> {
     let accounts = fetch_all_maybe_pool_config(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -155,7 +169,7 @@ pub fn fetch_maybe_pool_config(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_maybe_pool_config(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::MaybeAccount<PoolConfig>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -191,7 +205,9 @@ impl anchor_lang::AccountSerialize for PoolConfig {}
 
 #[cfg(feature = "anchor")]
 impl anchor_lang::Owner for PoolConfig {
-    fn owner() -> Pubkey { crate::DYNAMIC_BONDING_CURVE_ID }
+    fn owner() -> Pubkey {
+        crate::DYNAMIC_BONDING_CURVE_ID
+    }
 }
 
 #[cfg(feature = "anchor-idl-build")]
@@ -199,5 +215,5 @@ impl anchor_lang::IdlBuild for PoolConfig {}
 
 #[cfg(feature = "anchor-idl-build")]
 impl anchor_lang::Discriminator for PoolConfig {
-    const DISCRIMINATOR: [u8; 8] = [0; 8];
+    const DISCRIMINATOR: &[u8] = &[0; 8];
 }

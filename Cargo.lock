@@ -1841,6 +1841,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024"
 
 [[package]]
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
 name = "histogram"
 version = "0.6.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8126,6 +8132,7 @@ dependencies = [
 name = "yellowstone-vixen-boop-parser"
 version = "0.3.0"
 dependencies = [
+ "base64 0.22.1",
  "borsh 0.10.4",
  "num-derive",
  "num-traits",
@@ -8167,6 +8174,42 @@ dependencies = [
  "tracing-subscriber",
  "yellowstone-vixen",
  "yellowstone-vixen-jupiter-swap-parser",
+]
+
+[[package]]
+name = "yellowstone-vixen-jupiter-dca-parser"
+version = "0.3.0"
+dependencies = [
+ "borsh 0.10.4",
+ "num-derive",
+ "num-traits",
+ "prost",
+ "prost-build",
+ "solana-program",
+ "strum",
+ "strum_macros",
+ "thiserror 1.0.69",
+ "tonic",
+ "tracing",
+ "yellowstone-vixen-core",
+]
+
+[[package]]
+name = "yellowstone-vixen-jupiter-limit-order-parser"
+version = "0.3.0"
+dependencies = [
+ "borsh 0.10.4",
+ "num-derive",
+ "num-traits",
+ "prost",
+ "prost-build",
+ "solana-program",
+ "strum",
+ "strum_macros",
+ "thiserror 1.0.69",
+ "tonic",
+ "tracing",
+ "yellowstone-vixen-core",
 ]
 
 [[package]]
@@ -8231,7 +8274,14 @@ dependencies = [
  "num-traits",
  "prost",
  "prost-build",
- "solana-program",
+ "solana-account-info",
+ "solana-cpi",
+ "solana-decode-error",
+ "solana-instruction",
+ "solana-msg",
+ "solana-program-entrypoint",
+ "solana-program-error",
+ "solana-pubkey",
  "strum",
  "strum_macros",
  "thiserror 1.0.69",
@@ -8259,6 +8309,7 @@ dependencies = [
 name = "yellowstone-vixen-meteora-pools-parser"
 version = "0.3.0"
 dependencies = [
+ "base64 0.22.1",
  "borsh 0.10.4",
  "num-derive",
  "num-traits",
@@ -8311,6 +8362,7 @@ dependencies = [
 name = "yellowstone-vixen-moonshot-parser"
 version = "0.3.0"
 dependencies = [
+ "base64 0.22.1",
  "borsh 0.10.4",
  "num-derive",
  "num-traits",
@@ -8329,12 +8381,39 @@ dependencies = [
 name = "yellowstone-vixen-orca-whirlpool-parser"
 version = "0.3.0"
 dependencies = [
+ "base64 0.22.1",
  "borsh 0.10.4",
  "num-derive",
  "num-traits",
  "prost",
  "prost-build",
  "solana-program",
+ "strum",
+ "strum_macros",
+ "thiserror 1.0.69",
+ "tonic",
+ "tracing",
+ "yellowstone-vixen-core",
+]
+
+[[package]]
+name = "yellowstone-vixen-pancake-parser"
+version = "0.3.0"
+dependencies = [
+ "base64 0.22.1",
+ "borsh 0.10.4",
+ "num-derive",
+ "num-traits",
+ "prost",
+ "prost-build",
+ "solana-account-info",
+ "solana-cpi",
+ "solana-decode-error",
+ "solana-instruction",
+ "solana-msg",
+ "solana-program-entrypoint",
+ "solana-program-error",
+ "solana-pubkey",
  "strum",
  "strum_macros",
  "thiserror 1.0.69",
@@ -8380,6 +8459,7 @@ name = "yellowstone-vixen-pump-swaps-parser"
 version = "0.3.0"
 dependencies = [
  "borsh 0.10.4",
+ "hex",
  "num-derive",
  "num-traits",
  "prost",
@@ -8398,6 +8478,7 @@ name = "yellowstone-vixen-pumpfun-parser"
 version = "0.3.0"
 dependencies = [
  "borsh 0.10.4",
+ "hex",
  "num-derive",
  "num-traits",
  "prost",
@@ -8413,6 +8494,7 @@ dependencies = [
 name = "yellowstone-vixen-raydium-amm-v4-parser"
 version = "0.3.0"
 dependencies = [
+ "base64 0.22.1",
  "borsh 0.10.4",
  "num-derive",
  "num-traits",
@@ -8431,6 +8513,7 @@ dependencies = [
 name = "yellowstone-vixen-raydium-clmm-parser"
 version = "0.3.0"
 dependencies = [
+ "base64 0.22.1",
  "borsh 0.10.4",
  "num-derive",
  "num-traits",
@@ -8449,6 +8532,7 @@ dependencies = [
 name = "yellowstone-vixen-raydium-cpmm-parser"
 version = "0.3.0"
 dependencies = [
+ "base64 0.22.1",
  "borsh 0.10.4",
  "num-derive",
  "num-traits",
@@ -8468,6 +8552,7 @@ name = "yellowstone-vixen-raydium-launchpad-parser"
 version = "0.3.0"
 dependencies = [
  "borsh 0.10.4",
+ "hex",
  "num-derive",
  "num-traits",
  "prost",

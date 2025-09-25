@@ -9,9 +9,10 @@ pub(crate) mod r#observation;
 pub(crate) mod r#pool_status_bit_flag;
 pub(crate) mod r#pool_status_bit_index;
 pub(crate) mod r#round_direction;
+pub(crate) mod r#swap_event;
 pub(crate) mod r#trade_direction;
 
 pub use self::{
     r#observation::*, r#pool_status_bit_flag::*, r#pool_status_bit_index::*, r#round_direction::*,
-    r#trade_direction::*,
+    r#swap_event::*, r#trade_direction::*,
 };

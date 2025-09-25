@@ -13,6 +13,7 @@ yellowstone-vixen-core = { workspace = true, features = ["proto"] }
 num-derive = "0.4"
 thiserror = "1.0.64"
 num-traits = "^0.2"
+hex = "0.4"
 tracing = { version = "0.1.40", optional = true }
 strum = { version = "0.24", optional = true }
 strum_macros = { version = "0.24", optional = true }

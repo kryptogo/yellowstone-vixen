@@ -6,8 +6,10 @@
 //!
 
 use borsh::BorshDeserialize;
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 use crate::{
+    generated::types::SwapEvent,
     instructions::{
         ClosePosition as ClosePositionIxAccounts, CollectFundFee as CollectFundFeeIxAccounts,
         CollectFundFeeInstructionArgs as CollectFundFeeIxData,
@@ -86,8 +88,8 @@ pub enum AmmV3ProgramIx {
     IncreaseLiquidityV2(IncreaseLiquidityV2IxAccounts, IncreaseLiquidityV2IxData),
     DecreaseLiquidity(DecreaseLiquidityIxAccounts, DecreaseLiquidityIxData),
     DecreaseLiquidityV2(DecreaseLiquidityV2IxAccounts, DecreaseLiquidityV2IxData),
-    Swap(SwapIxAccounts, SwapIxData),
-    SwapV2(SwapV2IxAccounts, SwapV2IxData),
+    Swap(SwapIxAccounts, SwapIxData, Option<SwapEvent>),
+    SwapV2(SwapV2IxAccounts, SwapV2IxData, Option<SwapEvent>),
     SwapRouterBaseIn(SwapRouterBaseInIxAccounts, SwapRouterBaseInIxData),
 }
 
@@ -98,7 +100,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     type Input = yellowstone_vixen_core::instruction::InstructionUpdate;
     type Output = AmmV3ProgramIx;
 
-    fn id(&self) -> std::borrow::Cow<str> { "AmmV3::InstructionParser".into() }
+    fn id(&self) -> std::borrow::Cow<str> {
+        "AmmV3::InstructionParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -121,7 +125,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
@@ -517,7 +523,16 @@ impl InstructionParser {
                     tick_array: ix.accounts[9].0.into(),
                 };
                 let de_ix_data: SwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(AmmV3ProgramIx::Swap(ix_accounts, de_ix_data))
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
+                // Parse SwapEvent from logs
+                let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
+
+                Ok(AmmV3ProgramIx::Swap(ix_accounts, de_ix_data, swap_event))
             },
             [43, 4, 237, 11, 26, 201, 30, 98] => {
                 check_min_accounts_req(accounts_len, 13)?;
@@ -537,7 +552,16 @@ impl InstructionParser {
                     output_vault_mint: ix.accounts[12].0.into(),
                 };
                 let de_ix_data: SwapV2IxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(AmmV3ProgramIx::SwapV2(ix_accounts, de_ix_data))
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
+                // Parse SwapEvent from logs
+                let swap_event = SwapEvent::from_logs(&ix.parsed_logs);
+
+                Ok(AmmV3ProgramIx::SwapV2(ix_accounts, de_ix_data, swap_event))
             },
             [69, 125, 115, 218, 245, 186, 242, 196] => {
                 check_min_accounts_req(accounts_len, 6)?;
@@ -1385,13 +1409,13 @@ mod proto_parser {
                         },
                     )),
                 },
-                AmmV3ProgramIx::Swap(acc, data) => proto_def::ProgramIxs {
+                AmmV3ProgramIx::Swap(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap(proto_def::SwapIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
                     })),
                 },
-                AmmV3ProgramIx::SwapV2(acc, data) => proto_def::ProgramIxs {
+                AmmV3ProgramIx::SwapV2(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapV2(
                         proto_def::SwapV2Ix {
                             accounts: Some(acc.into_proto()),
@@ -1414,6 +1438,8 @@ mod proto_parser {
     impl ParseProto for InstructionParser {
         type Message = proto_def::ProgramIxs;
 
-        fn output_into_message(value: Self::Output) -> Self::Message { value.into_proto() }
+        fn output_into_message(value: Self::Output) -> Self::Message {
+            value.into_proto()
+        }
     }
 }

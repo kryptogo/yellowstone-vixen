@@ -5,8 +5,9 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::pubkey::Pubkey;
+use borsh::BorshDeserialize;
+use borsh::BorshSerialize;
+use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -23,6 +24,8 @@ pub struct ClaimFeeOperator {
     pub padding: [u8; 128],
 }
 
+pub const CLAIM_FEE_OPERATOR_DISCRIMINATOR: [u8; 8] = [166, 48, 134, 86, 34, 200, 188, 150];
+
 impl ClaimFeeOperator {
     pub const LEN: usize = 168;
 
@@ -33,12 +36,10 @@ impl ClaimFeeOperator {
     }
 }
 
-impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for ClaimFeeOperator {
+impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for ClaimFeeOperator {
     type Error = std::io::Error;
 
-    fn try_from(
-        account_info: &solana_program::account_info::AccountInfo<'a>,
-    ) -> Result<Self, Self::Error> {
+    fn try_from(account_info: &solana_account_info::AccountInfo<'a>) -> Result<Self, Self::Error> {
         let mut data: &[u8] = &(*account_info.data).borrow();
         Self::deserialize(&mut data)
     }
@@ -47,7 +48,7 @@ impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for ClaimFeeOpe
 #[cfg(feature = "fetch")]
 pub fn fetch_claim_fee_operator(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::DecodedAccount<ClaimFeeOperator>, std::io::Error> {
     let accounts = fetch_all_claim_fee_operator(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -56,7 +57,7 @@ pub fn fetch_claim_fee_operator(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_claim_fee_operator(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::DecodedAccount<ClaimFeeOperator>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -81,7 +82,7 @@ pub fn fetch_all_claim_fee_operator(
 #[cfg(feature = "fetch")]
 pub fn fetch_maybe_claim_fee_operator(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::MaybeAccount<ClaimFeeOperator>, std::io::Error> {
     let accounts = fetch_all_maybe_claim_fee_operator(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -90,7 +91,7 @@ pub fn fetch_maybe_claim_fee_operator(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_maybe_claim_fee_operator(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::MaybeAccount<ClaimFeeOperator>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -126,7 +127,9 @@ impl anchor_lang::AccountSerialize for ClaimFeeOperator {}
 
 #[cfg(feature = "anchor")]
 impl anchor_lang::Owner for ClaimFeeOperator {
-    fn owner() -> Pubkey { crate::DYNAMIC_BONDING_CURVE_ID }
+    fn owner() -> Pubkey {
+        crate::DYNAMIC_BONDING_CURVE_ID
+    }
 }
 
 #[cfg(feature = "anchor-idl-build")]
@@ -134,5 +137,5 @@ impl anchor_lang::IdlBuild for ClaimFeeOperator {}
 
 #[cfg(feature = "anchor-idl-build")]
 impl anchor_lang::Discriminator for ClaimFeeOperator {
-    const DISCRIMINATOR: [u8; 8] = [0; 8];
+    const DISCRIMINATOR: &[u8] = &[0; 8];
 }

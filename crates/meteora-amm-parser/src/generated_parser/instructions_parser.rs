@@ -6,8 +6,10 @@
 //!
 
 use borsh::BorshDeserialize;
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 use crate::{
+    generated::types::EvtSwap,
     instructions::{
         AddLiquidity as AddLiquidityIxAccounts, AddLiquidityInstructionArgs as AddLiquidityIxData,
         ClaimPartnerFee as ClaimPartnerFeeIxAccounts,
@@ -75,7 +77,7 @@ pub enum CpAmmProgramIx {
     RemoveAllLiquidity(RemoveAllLiquidityIxAccounts, RemoveAllLiquidityIxData),
     RemoveLiquidity(RemoveLiquidityIxAccounts, RemoveLiquidityIxData),
     SetPoolStatus(SetPoolStatusIxAccounts, SetPoolStatusIxData),
-    Swap(SwapIxAccounts, SwapIxData),
+    Swap(SwapIxAccounts, SwapIxData, Option<EvtSwap>),
     UpdateRewardDuration(UpdateRewardDurationIxAccounts, UpdateRewardDurationIxData),
     UpdateRewardFunder(UpdateRewardFunderIxAccounts, UpdateRewardFunderIxData),
     WithdrawIneligibleReward(
@@ -91,7 +93,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     type Input = yellowstone_vixen_core::instruction::InstructionUpdate;
     type Output = CpAmmProgramIx;
 
-    fn id(&self) -> std::borrow::Cow<str> { "CpAmm::InstructionParser".into() }
+    fn id(&self) -> std::borrow::Cow<str> {
+        "CpAmm::InstructionParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -114,7 +118,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
@@ -537,7 +543,19 @@ impl InstructionParser {
                     program: ix.accounts[13].0.into(),
                 };
                 let de_ix_data: SwapIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(CpAmmProgramIx::Swap(ix_accounts, de_ix_data))
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
+                // Search for EvtSwap in inner instructions
+                let evt_swap = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| EvtSwap::from_inner_instruction_data(&inner_ix.data));
+
+                Ok(CpAmmProgramIx::Swap(ix_accounts, de_ix_data, evt_swap))
             },
             [138, 174, 196, 169, 213, 235, 254, 107] => {
                 check_min_accounts_req(accounts_len, 4)?;
@@ -1388,7 +1406,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                CpAmmProgramIx::Swap(acc, data) => proto_def::ProgramIxs {
+                CpAmmProgramIx::Swap(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap(proto_def::SwapIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
@@ -1425,6 +1443,8 @@ mod proto_parser {
     impl ParseProto for InstructionParser {
         type Message = proto_def::ProgramIxs;
 
-        fn output_into_message(value: Self::Output) -> Self::Message { value.into_proto() }
+        fn output_into_message(value: Self::Output) -> Self::Message {
+            value.into_proto()
+        }
     }
 }

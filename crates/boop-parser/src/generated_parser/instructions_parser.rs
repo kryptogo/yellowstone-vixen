@@ -6,8 +6,10 @@
 //!
 
 use borsh::BorshDeserialize;
+use yellowstone_vixen_core::constants::is_known_aggregator;
 
 use crate::{
+    generated_sdk::types::{TokenBoughtEvent, TokenSoldEvent},
     instructions::{
         AddOperators as AddOperatorsIxAccounts, AddOperatorsInstructionArgs as AddOperatorsIxData,
         BuyToken as BuyTokenIxAccounts, BuyTokenInstructionArgs as BuyTokenIxData,
@@ -50,7 +52,7 @@ use crate::{
 #[cfg_attr(feature = "tracing", derive(strum_macros::Display))]
 pub enum BoopProgramIx {
     AddOperators(AddOperatorsIxAccounts, AddOperatorsIxData),
-    BuyToken(BuyTokenIxAccounts, BuyTokenIxData),
+    BuyToken(BuyTokenIxAccounts, BuyTokenIxData, Option<TokenBoughtEvent>),
     CancelAuthorityTransfer(CancelAuthorityTransferIxAccounts),
     CloseBondingCurveVault(CloseBondingCurveVaultIxAccounts),
     CollectTradingFees(CollectTradingFeesIxAccounts),
@@ -73,7 +75,7 @@ pub enum BoopProgramIx {
     ),
     LockRaydiumLiquidity(LockRaydiumLiquidityIxAccounts),
     RemoveOperators(RemoveOperatorsIxAccounts, RemoveOperatorsIxData),
-    SellToken(SellTokenIxAccounts, SellTokenIxData),
+    SellToken(SellTokenIxAccounts, SellTokenIxData, Option<TokenSoldEvent>),
     SplitTradingFees(SplitTradingFeesIxAccounts),
     SwapSolForTokensOnRaydium(
         SwapSolForTokensOnRaydiumIxAccounts,
@@ -162,7 +164,14 @@ impl InstructionParser {
                     associated_token_program: ix.accounts[12].0.into(),
                 };
                 let de_ix_data: BuyTokenIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(BoopProgramIx::BuyToken(ix_accounts, de_ix_data))
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
+                let token_bought_event = TokenBoughtEvent::from_logs(&ix.parsed_logs);
+                Ok(BoopProgramIx::BuyToken(ix_accounts, de_ix_data, token_bought_event))
             },
             [94, 131, 125, 184, 183, 24, 125, 229] => {
                 check_min_accounts_req(accounts_len, 3)?;
@@ -486,7 +495,14 @@ impl InstructionParser {
                     associated_token_program: ix.accounts[11].0.into(),
                 };
                 let de_ix_data: SellTokenIxData = BorshDeserialize::deserialize(&mut ix_data)?;
-                Ok(BoopProgramIx::SellToken(ix_accounts, de_ix_data))
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
+                let token_sold_event = TokenSoldEvent::from_logs(&ix.parsed_logs);
+                Ok(BoopProgramIx::SellToken(ix_accounts, de_ix_data, token_sold_event))
             },
             [96, 126, 225, 47, 185, 213, 50, 58] => {
                 check_min_accounts_req(accounts_len, 24)?;
@@ -1256,7 +1272,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                BoopProgramIx::BuyToken(acc, data) => proto_def::ProgramIxs {
+                BoopProgramIx::BuyToken(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::BuyToken(
                         proto_def::BuyTokenIx {
                             accounts: Some(acc.into_proto()),
@@ -1384,7 +1400,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                BoopProgramIx::SellToken(acc, data) => proto_def::ProgramIxs {
+                BoopProgramIx::SellToken(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SellToken(
                         proto_def::SellTokenIx {
                             accounts: Some(acc.into_proto()),

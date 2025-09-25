@@ -17,6 +17,7 @@ borsh = "^0.10"
 num-derive = "0.4"
 thiserror = "1.0.64"
 num-traits = "^0.2"
+base64 = "0.22"
 
 tracing = "0.1.40"
 strum = { version = "0.24" }

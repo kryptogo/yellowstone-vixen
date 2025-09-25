@@ -5,10 +5,10 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::pubkey::Pubkey;
-
 use crate::generated::types::PoolFees;
+use borsh::BorshDeserialize;
+use borsh::BorshSerialize;
+use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -32,6 +32,8 @@ pub struct Config {
     pub padding: [u8; 219],
 }
 
+pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
+
 impl Config {
     pub const LEN: usize = 340;
 
@@ -42,12 +44,10 @@ impl Config {
     }
 }
 
-impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for Config {
+impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for Config {
     type Error = std::io::Error;
 
-    fn try_from(
-        account_info: &solana_program::account_info::AccountInfo<'a>,
-    ) -> Result<Self, Self::Error> {
+    fn try_from(account_info: &solana_account_info::AccountInfo<'a>) -> Result<Self, Self::Error> {
         let mut data: &[u8] = &(*account_info.data).borrow();
         Self::deserialize(&mut data)
     }
@@ -56,7 +56,7 @@ impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for Config {
 #[cfg(feature = "fetch")]
 pub fn fetch_config(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::DecodedAccount<Config>, std::io::Error> {
     let accounts = fetch_all_config(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -65,7 +65,7 @@ pub fn fetch_config(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_config(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::DecodedAccount<Config>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -90,7 +90,7 @@ pub fn fetch_all_config(
 #[cfg(feature = "fetch")]
 pub fn fetch_maybe_config(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::MaybeAccount<Config>, std::io::Error> {
     let accounts = fetch_all_maybe_config(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -99,7 +99,7 @@ pub fn fetch_maybe_config(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_maybe_config(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::MaybeAccount<Config>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -135,7 +135,9 @@ impl anchor_lang::AccountSerialize for Config {}
 
 #[cfg(feature = "anchor")]
 impl anchor_lang::Owner for Config {
-    fn owner() -> Pubkey { crate::DYNAMIC_BONDING_CURVE_ID }
+    fn owner() -> Pubkey {
+        crate::DYNAMIC_BONDING_CURVE_ID
+    }
 }
 
 #[cfg(feature = "anchor-idl-build")]
@@ -143,5 +145,5 @@ impl anchor_lang::IdlBuild for Config {}
 
 #[cfg(feature = "anchor-idl-build")]
 impl anchor_lang::Discriminator for Config {
-    const DISCRIMINATOR: [u8; 8] = [0; 8];
+    const DISCRIMINATOR: &[u8] = &[0; 8];
 }

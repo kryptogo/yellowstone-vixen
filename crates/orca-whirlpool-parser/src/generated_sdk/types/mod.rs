@@ -12,10 +12,11 @@ pub(crate) mod r#position_reward_info;
 pub(crate) mod r#remaining_accounts_info;
 pub(crate) mod r#remaining_accounts_slice;
 pub(crate) mod r#tick;
+pub(crate) mod r#traded_event;
 pub(crate) mod r#whirlpool_reward_info;
 
 pub use self::{
     r#accounts_type::*, r#lock_type::*, r#lock_type_label::*, r#position_reward_info::*,
-    r#remaining_accounts_info::*, r#remaining_accounts_slice::*, r#tick::*,
+    r#remaining_accounts_info::*, r#remaining_accounts_slice::*, r#tick::*, r#traded_event::*,
     r#whirlpool_reward_info::*,
 };

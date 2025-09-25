@@ -5,13 +5,18 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use crate::{
-    accounts::{
-        ClaimFeeOperator, Config, LockEscrow, MeteoraDammMigrationMetadata, MeteoraDammV2Metadata,
-        PartnerMetadata, PoolConfig, VirtualPool, VirtualPoolMetadata,
-    },
-    ID,
-};
+use crate::accounts::ClaimFeeOperator;
+use crate::accounts::Config;
+use crate::accounts::LockEscrow;
+use crate::accounts::MeteoraDammMigrationMetadata;
+use crate::accounts::MeteoraDammV2Metadata;
+use crate::accounts::PartnerMetadata;
+use crate::accounts::PoolConfig;
+use crate::accounts::VirtualPool;
+use crate::accounts::VirtualPoolMetadata;
+use crate::ID;
+
+use crate::deserialize_checked;
 
 /// DynamicBondingCurve Program State
 #[allow(clippy::large_enum_variant)]
@@ -35,39 +40,46 @@ impl DynamicBondingCurveProgramState {
         let acc = match acc_discriminator {
             [166, 48, 134, 86, 34, 200, 188, 150] => {
                 Ok(DynamicBondingCurveProgramState::ClaimFeeOperator(
-                    ClaimFeeOperator::from_bytes(data_bytes)?,
+                    deserialize_checked(data_bytes, &acc_discriminator)?,
                 ))
             },
             [155, 12, 170, 224, 30, 250, 204, 130] => Ok(DynamicBondingCurveProgramState::Config(
-                Config::from_bytes(data_bytes)?,
+                deserialize_checked(data_bytes, &acc_discriminator)?,
             )),
-            [190, 106, 121, 6, 200, 182, 21, 75] => Ok(
-                DynamicBondingCurveProgramState::LockEscrow(LockEscrow::from_bytes(data_bytes)?),
-            ),
+            [190, 106, 121, 6, 200, 182, 21, 75] => {
+                Ok(DynamicBondingCurveProgramState::LockEscrow(
+                    deserialize_checked(data_bytes, &acc_discriminator)?,
+                ))
+            },
             [17, 155, 141, 215, 207, 4, 133, 156] => Ok(
-                DynamicBondingCurveProgramState::MeteoraDammMigrationMetadata(
-                    MeteoraDammMigrationMetadata::from_bytes(data_bytes)?,
-                ),
+                DynamicBondingCurveProgramState::MeteoraDammMigrationMetadata(deserialize_checked(
+                    data_bytes,
+                    &acc_discriminator,
+                )?),
             ),
             [104, 221, 219, 203, 10, 142, 250, 163] => {
                 Ok(DynamicBondingCurveProgramState::MeteoraDammV2Metadata(
-                    MeteoraDammV2Metadata::from_bytes(data_bytes)?,
+                    deserialize_checked(data_bytes, &acc_discriminator)?,
                 ))
             },
             [68, 68, 130, 19, 16, 209, 98, 156] => {
                 Ok(DynamicBondingCurveProgramState::PartnerMetadata(
-                    PartnerMetadata::from_bytes(data_bytes)?,
+                    deserialize_checked(data_bytes, &acc_discriminator)?,
                 ))
             },
-            [26, 108, 14, 123, 116, 230, 129, 43] => Ok(
-                DynamicBondingCurveProgramState::PoolConfig(PoolConfig::from_bytes(data_bytes)?),
-            ),
-            [213, 224, 5, 209, 98, 69, 119, 92] => Ok(
-                DynamicBondingCurveProgramState::VirtualPool(VirtualPool::from_bytes(data_bytes)?),
-            ),
+            [26, 108, 14, 123, 116, 230, 129, 43] => {
+                Ok(DynamicBondingCurveProgramState::PoolConfig(
+                    deserialize_checked(data_bytes, &acc_discriminator)?,
+                ))
+            },
+            [213, 224, 5, 209, 98, 69, 119, 92] => {
+                Ok(DynamicBondingCurveProgramState::VirtualPool(
+                    deserialize_checked(data_bytes, &acc_discriminator)?,
+                ))
+            },
             [217, 37, 82, 250, 43, 47, 228, 254] => {
                 Ok(DynamicBondingCurveProgramState::VirtualPoolMetadata(
-                    VirtualPoolMetadata::from_bytes(data_bytes)?,
+                    deserialize_checked(data_bytes, &acc_discriminator)?,
                 ))
             },
             _ => Err(yellowstone_vixen_core::ParseError::from(
@@ -108,7 +120,9 @@ impl yellowstone_vixen_core::Parser for AccountParser {
     type Input = yellowstone_vixen_core::AccountUpdate;
     type Output = DynamicBondingCurveProgramState;
 
-    fn id(&self) -> std::borrow::Cow<str> { "dynamic_bonding_curve::AccountParser".into() }
+    fn id(&self) -> std::borrow::Cow<str> {
+        "dynamic_bonding_curve::AccountParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -124,22 +138,40 @@ impl yellowstone_vixen_core::Parser for AccountParser {
         let inner = acct
             .account
             .as_ref()
-            .ok_or(solana_program::program_error::ProgramError::InvalidArgument)?;
-        DynamicBondingCurveProgramState::try_unpack(&inner.data)
+            .ok_or(solana_program_error::ProgramError::InvalidArgument)?;
+        let res = DynamicBondingCurveProgramState::try_unpack(&inner.data);
+
+        #[cfg(feature = "tracing")]
+        if let Err(e) = &res {
+            let acc_discriminator: [u8; 8] = inner.data[0..8].try_into()?;
+            tracing::info!(
+                name: "incorrectly_parsed_account",
+                name = "account_update",
+                program = ID.to_string(),
+                account = "deserialization_error",
+                discriminator = ?acc_discriminator,
+                error = ?e
+            );
+        }
+
+        res
     }
 }
 
 impl yellowstone_vixen_core::ProgramParser for AccountParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 // #[cfg(feature = "proto")]
 mod proto_parser {
+    use super::{AccountParser, DynamicBondingCurveProgramState};
+    use crate::{proto_def, proto_helpers::proto_types_parsers::IntoProto};
     use yellowstone_vixen_core::proto::ParseProto;
 
-    use super::{AccountParser, ClaimFeeOperator, DynamicBondingCurveProgramState};
-    use crate::{proto_def, proto_helpers::proto_types_parsers::IntoProto};
+    use super::ClaimFeeOperator;
     impl IntoProto<proto_def::ClaimFeeOperator> for ClaimFeeOperator {
         fn into_proto(self) -> proto_def::ClaimFeeOperator {
             proto_def::ClaimFeeOperator {
@@ -183,14 +215,14 @@ mod proto_parser {
         fn into_proto(self) -> proto_def::MeteoraDammMigrationMetadata {
             proto_def::MeteoraDammMigrationMetadata {
                 virtual_pool: self.virtual_pool.to_string(),
-                pool_creator: self.pool_creator.to_string(),
+                padding0: self.padding0.into_iter().map(|x| x.into()).collect(),
                 partner: self.partner.to_string(),
                 lp_mint: self.lp_mint.to_string(),
                 partner_locked_lp: self.partner_locked_lp,
                 partner_lp: self.partner_lp,
                 creator_locked_lp: self.creator_locked_lp,
                 creator_lp: self.creator_lp,
-                padding0: self.padding0.into(),
+                padding0_hidden: self.padding0_hidden.into(),
                 creator_locked_status: self.creator_locked_status.into(),
                 partner_locked_status: self.partner_locked_status.into(),
                 creator_claim_status: self.creator_claim_status.into(),
@@ -204,7 +236,7 @@ mod proto_parser {
         fn into_proto(self) -> proto_def::MeteoraDammV2Metadata {
             proto_def::MeteoraDammV2Metadata {
                 virtual_pool: self.virtual_pool.to_string(),
-                pool_creator: self.pool_creator.to_string(),
+                padding0: self.padding0.into_iter().map(|x| x.into()).collect(),
                 partner: self.partner.to_string(),
                 padding: self.padding.into_iter().map(|x| x.into()).collect(),
             }
@@ -244,8 +276,10 @@ mod proto_parser {
                 migration_fee_option: self.migration_fee_option.into(),
                 fixed_token_supply_flag: self.fixed_token_supply_flag.into(),
                 creator_trading_fee_percentage: self.creator_trading_fee_percentage.into(),
+                token_update_authority: self.token_update_authority.into(),
+                migration_fee_percentage: self.migration_fee_percentage.into(),
+                creator_migration_fee_percentage: self.creator_migration_fee_percentage.into(),
                 padding0: self.padding0.into_iter().map(|x| x.into()).collect(),
-                padding1: self.padding1.into_iter().map(|x| x.into()).collect(),
                 swap_base_amount: self.swap_base_amount,
                 migration_quote_threshold: self.migration_quote_threshold,
                 migration_base_threshold: self.migration_base_threshold,
@@ -253,7 +287,11 @@ mod proto_parser {
                 locked_vesting_config: Some(self.locked_vesting_config.into_proto()),
                 pre_migration_token_supply: self.pre_migration_token_supply,
                 post_migration_token_supply: self.post_migration_token_supply,
-                padding2: self.padding2.into_iter().map(|x| x.to_string()).collect(),
+                migrated_collect_fee_mode: self.migrated_collect_fee_mode.into(),
+                migrated_dynamic_fee: self.migrated_dynamic_fee.into(),
+                migrated_pool_fee_bps: self.migrated_pool_fee_bps.into(),
+                padding1: self.padding1.into_iter().map(|x| x.into()).collect(),
+                padding2: self.padding2.to_string(),
                 sqrt_start_price: self.sqrt_start_price.to_string(),
                 curve: self.curve.into_iter().map(|x| x.into_proto()).collect(),
             }
@@ -284,7 +322,7 @@ mod proto_parser {
                 migration_progress: self.migration_progress.into(),
                 is_withdraw_leftover: self.is_withdraw_leftover.into(),
                 is_creator_withdraw_surplus: self.is_creator_withdraw_surplus.into(),
-                padding0: self.padding0.into_iter().map(|x| x.into()).collect(),
+                migration_fee_withdraw_status: self.migration_fee_withdraw_status.into(),
                 metrics: Some(self.metrics.into_proto()),
                 finish_curve_timestamp: self.finish_curve_timestamp,
                 creator_base_fee: self.creator_base_fee,
@@ -349,6 +387,8 @@ mod proto_parser {
     impl ParseProto for AccountParser {
         type Message = proto_def::ProgramState;
 
-        fn output_into_message(value: Self::Output) -> Self::Message { value.into_proto() }
+        fn output_into_message(value: Self::Output) -> Self::Message {
+            value.into_proto()
+        }
     }
 }

@@ -5,8 +5,9 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use borsh::{BorshDeserialize, BorshSerialize};
-use solana_program::pubkey::Pubkey;
+use borsh::BorshDeserialize;
+use borsh::BorshSerialize;
+use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -28,6 +29,8 @@ pub struct VirtualPoolMetadata {
     pub logo: String,
 }
 
+pub const VIRTUAL_POOL_METADATA_DISCRIMINATOR: [u8; 8] = [217, 37, 82, 250, 43, 47, 228, 254];
+
 impl VirtualPoolMetadata {
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
@@ -36,12 +39,10 @@ impl VirtualPoolMetadata {
     }
 }
 
-impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for VirtualPoolMetadata {
+impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for VirtualPoolMetadata {
     type Error = std::io::Error;
 
-    fn try_from(
-        account_info: &solana_program::account_info::AccountInfo<'a>,
-    ) -> Result<Self, Self::Error> {
+    fn try_from(account_info: &solana_account_info::AccountInfo<'a>) -> Result<Self, Self::Error> {
         let mut data: &[u8] = &(*account_info.data).borrow();
         Self::deserialize(&mut data)
     }
@@ -50,7 +51,7 @@ impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for VirtualPool
 #[cfg(feature = "fetch")]
 pub fn fetch_virtual_pool_metadata(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::DecodedAccount<VirtualPoolMetadata>, std::io::Error> {
     let accounts = fetch_all_virtual_pool_metadata(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -59,7 +60,7 @@ pub fn fetch_virtual_pool_metadata(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_virtual_pool_metadata(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::DecodedAccount<VirtualPoolMetadata>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -84,7 +85,7 @@ pub fn fetch_all_virtual_pool_metadata(
 #[cfg(feature = "fetch")]
 pub fn fetch_maybe_virtual_pool_metadata(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::MaybeAccount<VirtualPoolMetadata>, std::io::Error> {
     let accounts = fetch_all_maybe_virtual_pool_metadata(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -93,7 +94,7 @@ pub fn fetch_maybe_virtual_pool_metadata(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_maybe_virtual_pool_metadata(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::MaybeAccount<VirtualPoolMetadata>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -129,7 +130,9 @@ impl anchor_lang::AccountSerialize for VirtualPoolMetadata {}
 
 #[cfg(feature = "anchor")]
 impl anchor_lang::Owner for VirtualPoolMetadata {
-    fn owner() -> Pubkey { crate::DYNAMIC_BONDING_CURVE_ID }
+    fn owner() -> Pubkey {
+        crate::DYNAMIC_BONDING_CURVE_ID
+    }
 }
 
 #[cfg(feature = "anchor-idl-build")]
@@ -137,5 +140,5 @@ impl anchor_lang::IdlBuild for VirtualPoolMetadata {}
 
 #[cfg(feature = "anchor-idl-build")]
 impl anchor_lang::Discriminator for VirtualPoolMetadata {
-    const DISCRIMINATOR: [u8; 8] = [0; 8];
+    const DISCRIMINATOR: &[u8] = &[0; 8];
 }
