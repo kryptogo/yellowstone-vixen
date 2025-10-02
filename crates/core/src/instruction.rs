@@ -257,7 +257,7 @@ impl InstructionUpdate {
         Self::parse_inner(&shared, inner_instructions, &mut outer, &mut next_idx)?;
 
         // Assign logs to instructions based on invoke/success patterns
-        Self::assign_logs_to_instructions(&mut outer, &shared.log_messages)?;
+        // Self::assign_logs_to_instructions(&mut outer, &shared.log_messages)?;
 
         Ok(outer)
     }
