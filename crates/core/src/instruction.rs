@@ -16,17 +16,14 @@ use yellowstone_grpc_proto::{
 use crate::{Pubkey, TransactionUpdate};
 
 // Static regex patterns for log parsing
-static INVOKE_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) invoke \[(\d+)\]").unwrap()
-});
+static INVOKE_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) invoke \[(\d+)\]").unwrap());
 
-static SUCCESS_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) success").unwrap()
-});
+static SUCCESS_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) success").unwrap());
 
-static FAILED_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) failed:").unwrap()
-});
+static FAILED_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) failed:").unwrap());
 
 static CONSUMED_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) consumed \d+ of \d+ compute units").unwrap()
@@ -477,7 +474,7 @@ impl InstructionUpdate {
                             // No inner instructions but found deeper invoke - skip
                             *log_idx += 1;
                         }
-                    }
+                    },
 
                     // Success/failed at current depth for this program → done with this instruction
                     ParsedLog::Success {
@@ -491,19 +488,19 @@ impl InstructionUpdate {
                         instruction.parsed_logs.push(*original_idx);
                         *log_idx += 1;
                         break;
-                    }
+                    },
 
                     // Other logs or consumed → assign to current instruction
                     ParsedLog::Other { original_idx }
                     | ParsedLog::Consumed { original_idx, .. } => {
                         instruction.parsed_logs.push(*original_idx);
                         *log_idx += 1;
-                    }
+                    },
 
                     // Invoke at same or shallower depth → we're done with this instruction
                     ParsedLog::Invoke { depth, .. } if *depth <= current_depth => {
                         break;
-                    }
+                    },
 
                     // Success/failed for different program → assign and continue
                     _ => {
@@ -950,14 +947,12 @@ mod tests {
         );
 
         assert_eq!(
-            total_instructions,
-            13,
+            total_instructions, 13,
             "Should have 13 total instructions (4 top-level + 9 inner)"
         );
 
         assert_eq!(
-            inner_instructions_count,
-            9,
+            inner_instructions_count, 9,
             "Should have 9 inner instructions"
         );
 
@@ -1007,8 +1002,7 @@ mod tests {
             "Second inner instruction should have JUP6 as parent"
         );
         assert_eq!(
-            second_inner.program,
-            jup_instruction.program,
+            second_inner.program, jup_instruction.program,
             "Second inner instruction is a recursive call to JUP6"
         );
 
@@ -1045,10 +1039,7 @@ mod tests {
 
         // Verify indices are sequential from 0
         for i in 0..total_instructions {
-            assert!(
-                seen_indices.contains(&(i as u16)),
-                "Missing ix_index: {i}"
-            );
+            assert!(seen_indices.contains(&(i as u16)), "Missing ix_index: {i}");
         }
 
         // Verify parent programs exist in the transaction (recursively collect all programs)
