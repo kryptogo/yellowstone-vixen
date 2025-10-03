@@ -512,7 +512,7 @@ impl InstructionUpdate {
                             instruction.parsed_logs.push(idx);
                         }
                         *log_idx += 1;
-                    }
+                    },
                 }
             }
         }
@@ -706,7 +706,8 @@ mod tests {
             for (j, &log_idx) in ix.parsed_logs.iter().enumerate() {
                 assert!(
                     log_idx < ix.shared.log_messages.len(),
-                    "Instruction {i}: log index {log_idx} at position {j} is out of bounds (total logs: {})",
+                    "Instruction {i}: log index {log_idx} at position {j} is out of bounds (total \
+                     logs: {})",
                     ix.shared.log_messages.len()
                 );
 
@@ -726,7 +727,8 @@ mod tests {
                 for (j, &log_idx) in inner_ix.parsed_logs.iter().enumerate() {
                     assert!(
                         log_idx < inner_ix.shared.log_messages.len(),
-                        "Instruction {i}.{inner_i}: log index {log_idx} at position {j} is out of bounds"
+                        "Instruction {i}.{inner_i}: log index {log_idx} at position {j} is out of \
+                         bounds"
                     );
 
                     // Verify logs are in ascending order
@@ -775,7 +777,8 @@ mod tests {
 
         assert!(
             inner_first_log > parent_first_log && inner_first_log < parent_last_log,
-            "Inner instruction logs should be within parent's log range: parent [{parent_first_log}..{parent_last_log}], inner starts at {inner_first_log}"
+            "Inner instruction logs should be within parent's log range: parent \
+             [{parent_first_log}..{parent_last_log}], inner starts at {inner_first_log}"
         );
 
         // Verify depth markers in logs
