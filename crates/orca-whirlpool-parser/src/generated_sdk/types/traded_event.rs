@@ -86,7 +86,8 @@ mod tests {
             "Another log message".to_string(),
         ];
 
-        let traded_event = TradedEvent::from_logs(&logs.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+        let traded_event =
+            TradedEvent::from_logs(&logs.iter().map(|s| s.as_str()).collect::<Vec<_>>());
 
         assert!(
             traded_event.is_some(),
@@ -128,7 +129,8 @@ mod tests {
             "Final log message".to_string(),
         ];
 
-        let traded_events = TradedEvent::from_logs_all(&logs.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+        let traded_events =
+            TradedEvent::from_logs_all(&logs.iter().map(|s| s.as_str()).collect::<Vec<_>>());
 
         assert_eq!(traded_events.len(), 4, "Should find 4 TradedEvents in logs");
 

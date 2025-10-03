@@ -116,7 +116,8 @@ mod tests {
             "Another log message".to_string(),
         ];
 
-        let aggregation_event = AggregationEvent::from_logs(&logs.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+        let aggregation_event =
+            AggregationEvent::from_logs(&logs.iter().map(|s| s.as_str()).collect::<Vec<_>>());
 
         assert!(
             aggregation_event.is_some(),
@@ -184,7 +185,8 @@ mod tests {
             "Final log message".to_string(),
         ];
 
-        let aggregation_events = AggregationEvent::from_logs_all(&logs.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+        let aggregation_events =
+            AggregationEvent::from_logs_all(&logs.iter().map(|s| s.as_str()).collect::<Vec<_>>());
 
         assert_eq!(
             aggregation_events.len(),

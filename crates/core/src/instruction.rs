@@ -1,6 +1,9 @@
 //! Helpers for parsing transaction updates into instructions.
 
-use std::{collections::VecDeque, sync::{Arc, LazyLock}};
+use std::{
+    collections::VecDeque,
+    sync::{Arc, LazyLock},
+};
 
 use regex::Regex;
 use yellowstone_grpc_proto::{
