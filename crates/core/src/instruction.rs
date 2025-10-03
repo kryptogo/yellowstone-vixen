@@ -1,8 +1,7 @@
 //! Helpers for parsing transaction updates into instructions.
 
-use std::{collections::VecDeque, sync::Arc};
+use std::{collections::VecDeque, sync::{Arc, LazyLock}};
 
-use once_cell::sync::Lazy;
 use regex::Regex;
 use yellowstone_grpc_proto::{
     geyser::SubscribeUpdateTransactionInfo,
@@ -16,16 +15,17 @@ use yellowstone_grpc_proto::{
 use crate::{Pubkey, TransactionUpdate};
 
 // Static regex patterns for log parsing
-static INVOKE_REGEX: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) invoke \[(\d+)\]").unwrap());
+static INVOKE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) invoke \[(\d+)\]").unwrap()
+});
 
-static SUCCESS_REGEX: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) success").unwrap());
+static SUCCESS_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) success").unwrap());
 
-static FAILED_REGEX: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) failed:").unwrap());
+static FAILED_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) failed:").unwrap());
 
-static CONSUMED_REGEX: Lazy<Regex> = Lazy::new(|| {
+static CONSUMED_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"Program ([1-9A-HJ-NP-Za-km-z]{32,44}) consumed \d+ of \d+ compute units").unwrap()
 });
 
@@ -156,7 +156,7 @@ pub struct InstructionUpdate {
     pub ix_index: u16,
     /// The program pubkey of the parent instruction (None for top-level instructions)
     pub parent_program: Option<Pubkey>,
-    /// Indices into shared.log_messages for logs generated during execution of this instruction.
+    /// Indices into `shared.log_messages` for logs generated during execution of this instruction.
     pub parsed_logs: Vec<usize>,
 }
 
@@ -298,7 +298,7 @@ impl InstructionUpdate {
         Self::parse_inner(&shared, inner_instructions, &mut outer, &mut next_idx)?;
 
         // Assign logs to instructions based on invoke/success patterns
-        Self::assign_logs_to_instructions(&mut outer, &shared.log_messages)?;
+        Self::assign_logs_to_instructions(&mut outer, &shared.log_messages);
 
         Ok(outer)
     }
@@ -359,18 +359,13 @@ impl InstructionUpdate {
         Ok(())
     }
 
-    fn assign_logs_to_instructions(
-        outer: &mut [Self],
-        log_messages: &[String],
-    ) -> Result<(), ParseError> {
+    fn assign_logs_to_instructions(outer: &mut [Self], log_messages: &[String]) {
         // Pre-parse all logs into structured representation
         let parsed_logs = Self::pre_parse_logs(log_messages);
 
         // Two-pointer algorithm: traverse instruction tree and logs simultaneously
         let mut log_idx = 0;
         Self::assign_logs_recursive(outer, &parsed_logs, &mut log_idx, 1);
-
-        Ok(())
     }
 
     /// Pre-parse log messages into structured representation
@@ -463,16 +458,16 @@ impl InstructionUpdate {
                 match &parsed_logs[*log_idx] {
                     // Child invoke at deeper depth → recurse
                     ParsedLog::Invoke { depth, .. } if *depth == current_depth + 1 => {
-                        if !instruction.inner.is_empty() {
+                        if instruction.inner.is_empty() {
+                            // No inner instructions but found deeper invoke - skip
+                            *log_idx += 1;
+                        } else {
                             Self::assign_logs_recursive(
                                 &mut instruction.inner,
                                 parsed_logs,
                                 log_idx,
                                 current_depth + 1,
                             );
-                        } else {
-                            // No inner instructions but found deeper invoke - skip
-                            *log_idx += 1;
                         }
                     },
 
@@ -626,6 +621,7 @@ impl<'a> Iterator for VisitAll<'a> {
 mod tests {
 
     #[tokio::test]
+    #[allow(clippy::too_many_lines)]
     async fn test_instruction_logs_assignment() {
         use yellowstone_vixen_mock::{
             create_mock_transaction_update, parse_instructions_from_txn_update,
@@ -766,7 +762,7 @@ mod tests {
             "JUP6 instruction should have inner instructions"
         );
         assert!(
-            instruction_updates[2].inner[0].parsed_logs.len() > 0,
+            !instruction_updates[2].inner[0].parsed_logs.is_empty(),
             "Inner instruction 0 should have logs assigned"
         );
 
@@ -880,6 +876,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[allow(clippy::too_many_lines, clippy::items_after_statements)]
     async fn test_inner_instruction_parent_relationships() {
         use yellowstone_vixen_mock::create_mock_transaction_update;
 
@@ -1041,6 +1038,7 @@ mod tests {
         );
 
         // Verify indices are sequential from 0
+        #[allow(clippy::cast_possible_truncation)]
         for i in 0..total_instructions {
             assert!(seen_indices.contains(&(i as u16)), "Missing ix_index: {i}");
         }
@@ -1063,8 +1061,7 @@ mod tests {
             if let Some(parent) = ix.parent_program {
                 assert!(
                     all_programs.contains(&parent),
-                    "Parent program {} not found in transaction",
-                    parent
+                    "Parent program {parent} not found in transaction"
                 );
             }
 

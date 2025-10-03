@@ -565,7 +565,7 @@ impl InstructionParser {
                     return Err(yellowstone_vixen_core::ParseError::Filtered);
                 }
 
-                let traded_event = TradedEvent::from_logs(&ix.parsed_logs);
+                let traded_event = TradedEvent::from_logs(&ix.parsed_logs.iter().filter_map(|&idx| ix.shared.log_messages.get(idx).map(|s| s.as_str())).collect::<Vec<_>>());
                 Ok(WhirlpoolProgramIx::Swap(
                     ix_accounts,
                     de_ix_data,
@@ -736,7 +736,7 @@ impl InstructionParser {
                     return Err(yellowstone_vixen_core::ParseError::Filtered);
                 }
 
-                let traded_events = TradedEvent::from_logs_all(&ix.parsed_logs);
+                let traded_events = TradedEvent::from_logs_all(&ix.parsed_logs.iter().filter_map(|&idx| ix.shared.log_messages.get(idx).map(|s| s.as_str())).collect::<Vec<_>>());
                 Ok(WhirlpoolProgramIx::TwoHopSwap(
                     ix_accounts,
                     de_ix_data,
@@ -1236,7 +1236,7 @@ impl InstructionParser {
                     return Err(yellowstone_vixen_core::ParseError::Filtered);
                 }
 
-                let traded_event = TradedEvent::from_logs(&ix.parsed_logs);
+                let traded_event = TradedEvent::from_logs(&ix.parsed_logs.iter().filter_map(|&idx| ix.shared.log_messages.get(idx).map(|s| s.as_str())).collect::<Vec<_>>());
                 Ok(WhirlpoolProgramIx::SwapV2(
                     ix_accounts,
                     de_ix_data,
@@ -1279,7 +1279,7 @@ impl InstructionParser {
                     return Err(yellowstone_vixen_core::ParseError::Filtered);
                 }
 
-                let traded_events = TradedEvent::from_logs_all(&ix.parsed_logs);
+                let traded_events = TradedEvent::from_logs_all(&ix.parsed_logs.iter().filter_map(|&idx| ix.shared.log_messages.get(idx).map(|s| s.as_str())).collect::<Vec<_>>());
                 Ok(WhirlpoolProgramIx::TwoHopSwapV2(
                     ix_accounts,
                     de_ix_data,
