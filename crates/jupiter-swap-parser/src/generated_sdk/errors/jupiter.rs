@@ -42,22 +42,22 @@ pub enum JupiterError {
     NonZeroMinimumOutAmountNotSupported = 0x1779,
     /// 6010 - Invalid route plan
     #[error("Invalid route plan")]
-    InvalidRoutePlan = 0x177a,
+    InvalidRoutePlan = 0x177A,
     /// 6011 - Invalid referral authority
     #[error("Invalid referral authority")]
-    InvalidReferralAuthority = 0x177b,
+    InvalidReferralAuthority = 0x177B,
     /// 6012 - Token account doesn't match the ledger
     #[error("Token account doesn't match the ledger")]
-    LedgerTokenAccountDoesNotMatch = 0x177c,
+    LedgerTokenAccountDoesNotMatch = 0x177C,
     /// 6013 - Invalid token ledger
     #[error("Invalid token ledger")]
-    InvalidTokenLedger = 0x177d,
+    InvalidTokenLedger = 0x177D,
     /// 6014 - Token program ID is invalid
     #[error("Token program ID is invalid")]
-    IncorrectTokenProgramID = 0x177e,
+    IncorrectTokenProgramID = 0x177E,
     /// 6015 - Token program not provided
     #[error("Token program not provided")]
-    TokenProgramNotProvided = 0x177f,
+    TokenProgramNotProvided = 0x177F,
     /// 6016 - Swap not supported
     #[error("Swap not supported")]
     SwapNotSupported = 0x1780,
@@ -67,16 +67,31 @@ pub enum JupiterError {
     /// 6018 - Source mint and destination mint cannot the same
     #[error("Source mint and destination mint cannot the same")]
     SourceAndDestinationMintCannotBeTheSame = 0x1782,
+    /// 6019 - Invalid mint
+    #[error("Invalid mint")]
+    InvalidMint = 0x1783,
+    /// 6020 - Invalid program authority
+    #[error("Invalid program authority")]
+    InvalidProgramAuthority = 0x1784,
+    /// 6021 - Invalid output token account
+    #[error("Invalid output token account")]
+    InvalidOutputTokenAccount = 0x1785,
+    /// 6022 - Invalid fee wallet
+    #[error("Invalid fee wallet")]
+    InvalidFeeWallet = 0x1786,
+    /// 6023 - Invalid authority
+    #[error("Invalid authority")]
+    InvalidAuthority = 0x1787,
+    /// 6024 - Insufficient funds
+    #[error("Insufficient funds")]
+    InsufficientFunds = 0x1788,
+    /// 6025 - Invalid token account
+    #[error("Invalid token account")]
+    InvalidTokenAccount = 0x1789,
 }
 
-#[allow(deprecated)]
-impl solana_program_error::PrintProgramError for JupiterError {
-    fn print<E>(&self) {
-        solana_msg::msg!(&self.to_string());
+impl From<JupiterError> for solana_program_error::ProgramError {
+    fn from(e: JupiterError) -> Self {
+        solana_program_error::ProgramError::Custom(e as u32)
     }
-}
-
-#[allow(deprecated)]
-impl<T> solana_decode_error::DecodeError<T> for JupiterError {
-    fn type_of() -> &'static str { "JupiterError" }
 }

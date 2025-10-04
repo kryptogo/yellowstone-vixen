@@ -5,7 +5,10 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use crate::{accounts::TokenLedger, deserialize_checked, ID};
+use crate::accounts::TokenLedger;
+use crate::ID;
+
+use crate::deserialize_checked;
 
 /// Jupiter Program State
 #[allow(clippy::large_enum_variant)]
@@ -103,10 +106,11 @@ impl yellowstone_vixen_core::ProgramParser for AccountParser {
 
 // #[cfg(feature = "proto")]
 mod proto_parser {
+    use super::{AccountParser, JupiterProgramState};
+    use crate::{proto_def, proto_helpers::proto_types_parsers::IntoProto};
     use yellowstone_vixen_core::proto::ParseProto;
 
-    use super::{AccountParser, JupiterProgramState, TokenLedger};
-    use crate::{proto_def, proto_helpers::proto_types_parsers::IntoProto};
+    use super::TokenLedger;
     impl IntoProto<proto_def::TokenLedger> for TokenLedger {
         fn into_proto(self) -> proto_def::TokenLedger {
             proto_def::TokenLedger {
@@ -133,6 +137,8 @@ mod proto_parser {
     impl ParseProto for AccountParser {
         type Message = proto_def::ProgramState;
 
-        fn output_into_message(value: Self::Output) -> Self::Message { value.into_proto() }
+        fn output_into_message(value: Self::Output) -> Self::Message {
+            value.into_proto()
+        }
     }
 }

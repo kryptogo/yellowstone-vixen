@@ -5,42 +5,44 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use crate::generated::types::RoutePlanStep;
+use crate::generated::types::RoutePlanStepV2;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
-pub const EXACT_OUT_ROUTE_DISCRIMINATOR: [u8; 8] = [208, 51, 239, 151, 123, 43, 237, 92];
+pub const SHARED_ACCOUNTS_ROUTE_V2_DISCRIMINATOR: [u8; 8] = [209, 152, 83, 147, 124, 254, 216, 233];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct ExactOutRoute {
-    pub token_program: solana_pubkey::Pubkey,
+pub struct SharedAccountsRouteV2 {
+    pub program_authority: solana_pubkey::Pubkey,
 
     pub user_transfer_authority: solana_pubkey::Pubkey,
 
-    pub user_source_token_account: solana_pubkey::Pubkey,
+    pub source_token_account: solana_pubkey::Pubkey,
 
-    pub user_destination_token_account: solana_pubkey::Pubkey,
+    pub program_source_token_account: solana_pubkey::Pubkey,
 
-    pub destination_token_account: Option<solana_pubkey::Pubkey>,
+    pub program_destination_token_account: solana_pubkey::Pubkey,
+
+    pub destination_token_account: solana_pubkey::Pubkey,
 
     pub source_mint: solana_pubkey::Pubkey,
 
     pub destination_mint: solana_pubkey::Pubkey,
 
-    pub platform_fee_account: Option<solana_pubkey::Pubkey>,
+    pub source_token_program: solana_pubkey::Pubkey,
 
-    pub token2022_program: Option<solana_pubkey::Pubkey>,
+    pub destination_token_program: solana_pubkey::Pubkey,
 
     pub event_authority: solana_pubkey::Pubkey,
 
     pub program: solana_pubkey::Pubkey,
 }
 
-impl ExactOutRoute {
+impl SharedAccountsRouteV2 {
     pub fn instruction(
         &self,
-        args: ExactOutRouteInstructionArgs,
+        args: SharedAccountsRouteV2InstructionArgs,
     ) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
@@ -48,12 +50,12 @@ impl ExactOutRoute {
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: ExactOutRouteInstructionArgs,
+        args: SharedAccountsRouteV2InstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.token_program,
+            self.program_authority,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -61,24 +63,21 @@ impl ExactOutRoute {
             true,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            self.user_source_token_account,
+            self.source_token_account,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            self.user_destination_token_account,
+            self.program_source_token_account,
             false,
         ));
-        if let Some(destination_token_account) = self.destination_token_account {
-            accounts.push(solana_instruction::AccountMeta::new(
-                destination_token_account,
-                false,
-            ));
-        } else {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::JUPITER_ID,
-                false,
-            ));
-        }
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.program_destination_token_account,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.destination_token_account,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.source_mint,
             false,
@@ -87,28 +86,14 @@ impl ExactOutRoute {
             self.destination_mint,
             false,
         ));
-        if let Some(platform_fee_account) = self.platform_fee_account {
-            accounts.push(solana_instruction::AccountMeta::new(
-                platform_fee_account,
-                false,
-            ));
-        } else {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::JUPITER_ID,
-                false,
-            ));
-        }
-        if let Some(token2022_program) = self.token2022_program {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                token2022_program,
-                false,
-            ));
-        } else {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::JUPITER_ID,
-                false,
-            ));
-        }
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.source_token_program,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.destination_token_program,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.event_authority,
             false,
@@ -118,7 +103,7 @@ impl ExactOutRoute {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = borsh::to_vec(&ExactOutRouteInstructionData::new()).unwrap();
+        let mut data = borsh::to_vec(&SharedAccountsRouteV2InstructionData::new()).unwrap();
         let mut args = borsh::to_vec(&args).unwrap();
         data.append(&mut args);
 
@@ -132,19 +117,19 @@ impl ExactOutRoute {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ExactOutRouteInstructionData {
+pub struct SharedAccountsRouteV2InstructionData {
     discriminator: [u8; 8],
 }
 
-impl ExactOutRouteInstructionData {
+impl SharedAccountsRouteV2InstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [208, 51, 239, 151, 123, 43, 237, 92],
+            discriminator: [209, 152, 83, 147, 124, 254, 216, 233],
         }
     }
 }
 
-impl Default for ExactOutRouteInstructionData {
+impl Default for SharedAccountsRouteV2InstructionData {
     fn default() -> Self {
         Self::new()
     }
@@ -152,58 +137,63 @@ impl Default for ExactOutRouteInstructionData {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ExactOutRouteInstructionArgs {
-    pub route_plan: Vec<RoutePlanStep>,
-    pub out_amount: u64,
-    pub quoted_in_amount: u64,
+pub struct SharedAccountsRouteV2InstructionArgs {
+    pub id: u8,
+    pub in_amount: u64,
+    pub quoted_out_amount: u64,
     pub slippage_bps: u16,
-    pub platform_fee_bps: u8,
+    pub platform_fee_bps: u16,
+    pub positive_slippage_bps: u16,
+    pub route_plan: Vec<RoutePlanStepV2>,
 }
 
-/// Instruction builder for `ExactOutRoute`.
+/// Instruction builder for `SharedAccountsRouteV2`.
 ///
 /// ### Accounts:
 ///
-///   0. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   0. `[]` program_authority
 ///   1. `[signer]` user_transfer_authority
-///   2. `[writable]` user_source_token_account
-///   3. `[writable]` user_destination_token_account
-///   4. `[writable, optional]` destination_token_account
-///   5. `[]` source_mint
-///   6. `[]` destination_mint
-///   7. `[writable, optional]` platform_fee_account
-///   8. `[optional]` token2022_program
-///   9. `[optional]` event_authority (default to `D8cy77BBepLMngZx6ZukaTff5hCt1HrWyKk3Hnd9oitf`)
-///   10. `[]` program
+///   2. `[writable]` source_token_account
+///   3. `[writable]` program_source_token_account
+///   4. `[writable]` program_destination_token_account
+///   5. `[writable]` destination_token_account
+///   6. `[]` source_mint
+///   7. `[]` destination_mint
+///   8. `[]` source_token_program
+///   9. `[]` destination_token_program
+///   10. `[optional]` event_authority (default to `D8cy77BBepLMngZx6ZukaTff5hCt1HrWyKk3Hnd9oitf`)
+///   11. `[]` program
 #[derive(Clone, Debug, Default)]
-pub struct ExactOutRouteBuilder {
-    token_program: Option<solana_pubkey::Pubkey>,
+pub struct SharedAccountsRouteV2Builder {
+    program_authority: Option<solana_pubkey::Pubkey>,
     user_transfer_authority: Option<solana_pubkey::Pubkey>,
-    user_source_token_account: Option<solana_pubkey::Pubkey>,
-    user_destination_token_account: Option<solana_pubkey::Pubkey>,
+    source_token_account: Option<solana_pubkey::Pubkey>,
+    program_source_token_account: Option<solana_pubkey::Pubkey>,
+    program_destination_token_account: Option<solana_pubkey::Pubkey>,
     destination_token_account: Option<solana_pubkey::Pubkey>,
     source_mint: Option<solana_pubkey::Pubkey>,
     destination_mint: Option<solana_pubkey::Pubkey>,
-    platform_fee_account: Option<solana_pubkey::Pubkey>,
-    token2022_program: Option<solana_pubkey::Pubkey>,
+    source_token_program: Option<solana_pubkey::Pubkey>,
+    destination_token_program: Option<solana_pubkey::Pubkey>,
     event_authority: Option<solana_pubkey::Pubkey>,
     program: Option<solana_pubkey::Pubkey>,
-    route_plan: Option<Vec<RoutePlanStep>>,
-    out_amount: Option<u64>,
-    quoted_in_amount: Option<u64>,
+    id: Option<u8>,
+    in_amount: Option<u64>,
+    quoted_out_amount: Option<u64>,
     slippage_bps: Option<u16>,
-    platform_fee_bps: Option<u8>,
+    platform_fee_bps: Option<u16>,
+    positive_slippage_bps: Option<u16>,
+    route_plan: Option<Vec<RoutePlanStepV2>>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl ExactOutRouteBuilder {
+impl SharedAccountsRouteV2Builder {
     pub fn new() -> Self {
         Self::default()
     }
-    /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     #[inline(always)]
-    pub fn token_program(&mut self, token_program: solana_pubkey::Pubkey) -> &mut Self {
-        self.token_program = Some(token_program);
+    pub fn program_authority(&mut self, program_authority: solana_pubkey::Pubkey) -> &mut Self {
+        self.program_authority = Some(program_authority);
         self
     }
     #[inline(always)]
@@ -215,28 +205,35 @@ impl ExactOutRouteBuilder {
         self
     }
     #[inline(always)]
-    pub fn user_source_token_account(
+    pub fn source_token_account(
         &mut self,
-        user_source_token_account: solana_pubkey::Pubkey,
+        source_token_account: solana_pubkey::Pubkey,
     ) -> &mut Self {
-        self.user_source_token_account = Some(user_source_token_account);
+        self.source_token_account = Some(source_token_account);
         self
     }
     #[inline(always)]
-    pub fn user_destination_token_account(
+    pub fn program_source_token_account(
         &mut self,
-        user_destination_token_account: solana_pubkey::Pubkey,
+        program_source_token_account: solana_pubkey::Pubkey,
     ) -> &mut Self {
-        self.user_destination_token_account = Some(user_destination_token_account);
+        self.program_source_token_account = Some(program_source_token_account);
         self
     }
-    /// `[optional account]`
+    #[inline(always)]
+    pub fn program_destination_token_account(
+        &mut self,
+        program_destination_token_account: solana_pubkey::Pubkey,
+    ) -> &mut Self {
+        self.program_destination_token_account = Some(program_destination_token_account);
+        self
+    }
     #[inline(always)]
     pub fn destination_token_account(
         &mut self,
-        destination_token_account: Option<solana_pubkey::Pubkey>,
+        destination_token_account: solana_pubkey::Pubkey,
     ) -> &mut Self {
-        self.destination_token_account = destination_token_account;
+        self.destination_token_account = Some(destination_token_account);
         self
     }
     #[inline(always)]
@@ -249,22 +246,20 @@ impl ExactOutRouteBuilder {
         self.destination_mint = Some(destination_mint);
         self
     }
-    /// `[optional account]`
     #[inline(always)]
-    pub fn platform_fee_account(
+    pub fn source_token_program(
         &mut self,
-        platform_fee_account: Option<solana_pubkey::Pubkey>,
+        source_token_program: solana_pubkey::Pubkey,
     ) -> &mut Self {
-        self.platform_fee_account = platform_fee_account;
+        self.source_token_program = Some(source_token_program);
         self
     }
-    /// `[optional account]`
     #[inline(always)]
-    pub fn token2022_program(
+    pub fn destination_token_program(
         &mut self,
-        token2022_program: Option<solana_pubkey::Pubkey>,
+        destination_token_program: solana_pubkey::Pubkey,
     ) -> &mut Self {
-        self.token2022_program = token2022_program;
+        self.destination_token_program = Some(destination_token_program);
         self
     }
     /// `[optional account, default to 'D8cy77BBepLMngZx6ZukaTff5hCt1HrWyKk3Hnd9oitf']`
@@ -279,18 +274,18 @@ impl ExactOutRouteBuilder {
         self
     }
     #[inline(always)]
-    pub fn route_plan(&mut self, route_plan: Vec<RoutePlanStep>) -> &mut Self {
-        self.route_plan = Some(route_plan);
+    pub fn id(&mut self, id: u8) -> &mut Self {
+        self.id = Some(id);
         self
     }
     #[inline(always)]
-    pub fn out_amount(&mut self, out_amount: u64) -> &mut Self {
-        self.out_amount = Some(out_amount);
+    pub fn in_amount(&mut self, in_amount: u64) -> &mut Self {
+        self.in_amount = Some(in_amount);
         self
     }
     #[inline(always)]
-    pub fn quoted_in_amount(&mut self, quoted_in_amount: u64) -> &mut Self {
-        self.quoted_in_amount = Some(quoted_in_amount);
+    pub fn quoted_out_amount(&mut self, quoted_out_amount: u64) -> &mut Self {
+        self.quoted_out_amount = Some(quoted_out_amount);
         self
     }
     #[inline(always)]
@@ -299,8 +294,18 @@ impl ExactOutRouteBuilder {
         self
     }
     #[inline(always)]
-    pub fn platform_fee_bps(&mut self, platform_fee_bps: u8) -> &mut Self {
+    pub fn platform_fee_bps(&mut self, platform_fee_bps: u16) -> &mut Self {
         self.platform_fee_bps = Some(platform_fee_bps);
+        self
+    }
+    #[inline(always)]
+    pub fn positive_slippage_bps(&mut self, positive_slippage_bps: u16) -> &mut Self {
+        self.positive_slippage_bps = Some(positive_slippage_bps);
+        self
+    }
+    #[inline(always)]
+    pub fn route_plan(&mut self, route_plan: Vec<RoutePlanStepV2>) -> &mut Self {
+        self.route_plan = Some(route_plan);
         self
     }
     /// Add an additional account to the instruction.
@@ -320,119 +325,138 @@ impl ExactOutRouteBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = ExactOutRoute {
-            token_program: self.token_program.unwrap_or(solana_pubkey::pubkey!(
-                "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-            )),
+        let accounts = SharedAccountsRouteV2 {
+            program_authority: self
+                .program_authority
+                .expect("program_authority is not set"),
             user_transfer_authority: self
                 .user_transfer_authority
                 .expect("user_transfer_authority is not set"),
-            user_source_token_account: self
-                .user_source_token_account
-                .expect("user_source_token_account is not set"),
-            user_destination_token_account: self
-                .user_destination_token_account
-                .expect("user_destination_token_account is not set"),
-            destination_token_account: self.destination_token_account,
+            source_token_account: self
+                .source_token_account
+                .expect("source_token_account is not set"),
+            program_source_token_account: self
+                .program_source_token_account
+                .expect("program_source_token_account is not set"),
+            program_destination_token_account: self
+                .program_destination_token_account
+                .expect("program_destination_token_account is not set"),
+            destination_token_account: self
+                .destination_token_account
+                .expect("destination_token_account is not set"),
             source_mint: self.source_mint.expect("source_mint is not set"),
             destination_mint: self.destination_mint.expect("destination_mint is not set"),
-            platform_fee_account: self.platform_fee_account,
-            token2022_program: self.token2022_program,
+            source_token_program: self
+                .source_token_program
+                .expect("source_token_program is not set"),
+            destination_token_program: self
+                .destination_token_program
+                .expect("destination_token_program is not set"),
             event_authority: self.event_authority.unwrap_or(solana_pubkey::pubkey!(
                 "D8cy77BBepLMngZx6ZukaTff5hCt1HrWyKk3Hnd9oitf"
             )),
             program: self.program.expect("program is not set"),
         };
-        let args = ExactOutRouteInstructionArgs {
-            route_plan: self.route_plan.clone().expect("route_plan is not set"),
-            out_amount: self.out_amount.clone().expect("out_amount is not set"),
-            quoted_in_amount: self
-                .quoted_in_amount
+        let args = SharedAccountsRouteV2InstructionArgs {
+            id: self.id.clone().expect("id is not set"),
+            in_amount: self.in_amount.clone().expect("in_amount is not set"),
+            quoted_out_amount: self
+                .quoted_out_amount
                 .clone()
-                .expect("quoted_in_amount is not set"),
+                .expect("quoted_out_amount is not set"),
             slippage_bps: self.slippage_bps.clone().expect("slippage_bps is not set"),
             platform_fee_bps: self
                 .platform_fee_bps
                 .clone()
                 .expect("platform_fee_bps is not set"),
+            positive_slippage_bps: self
+                .positive_slippage_bps
+                .clone()
+                .expect("positive_slippage_bps is not set"),
+            route_plan: self.route_plan.clone().expect("route_plan is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `exact_out_route` CPI accounts.
-pub struct ExactOutRouteCpiAccounts<'a, 'b> {
-    pub token_program: &'b solana_account_info::AccountInfo<'a>,
+/// `shared_accounts_route_v2` CPI accounts.
+pub struct SharedAccountsRouteV2CpiAccounts<'a, 'b> {
+    pub program_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub user_transfer_authority: &'b solana_account_info::AccountInfo<'a>,
 
-    pub user_source_token_account: &'b solana_account_info::AccountInfo<'a>,
+    pub source_token_account: &'b solana_account_info::AccountInfo<'a>,
 
-    pub user_destination_token_account: &'b solana_account_info::AccountInfo<'a>,
+    pub program_source_token_account: &'b solana_account_info::AccountInfo<'a>,
 
-    pub destination_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    pub program_destination_token_account: &'b solana_account_info::AccountInfo<'a>,
+
+    pub destination_token_account: &'b solana_account_info::AccountInfo<'a>,
 
     pub source_mint: &'b solana_account_info::AccountInfo<'a>,
 
     pub destination_mint: &'b solana_account_info::AccountInfo<'a>,
 
-    pub platform_fee_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    pub source_token_program: &'b solana_account_info::AccountInfo<'a>,
 
-    pub token2022_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    pub destination_token_program: &'b solana_account_info::AccountInfo<'a>,
 
     pub event_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `exact_out_route` CPI instruction.
-pub struct ExactOutRouteCpi<'a, 'b> {
+/// `shared_accounts_route_v2` CPI instruction.
+pub struct SharedAccountsRouteV2Cpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
 
-    pub token_program: &'b solana_account_info::AccountInfo<'a>,
+    pub program_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub user_transfer_authority: &'b solana_account_info::AccountInfo<'a>,
 
-    pub user_source_token_account: &'b solana_account_info::AccountInfo<'a>,
+    pub source_token_account: &'b solana_account_info::AccountInfo<'a>,
 
-    pub user_destination_token_account: &'b solana_account_info::AccountInfo<'a>,
+    pub program_source_token_account: &'b solana_account_info::AccountInfo<'a>,
 
-    pub destination_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    pub program_destination_token_account: &'b solana_account_info::AccountInfo<'a>,
+
+    pub destination_token_account: &'b solana_account_info::AccountInfo<'a>,
 
     pub source_mint: &'b solana_account_info::AccountInfo<'a>,
 
     pub destination_mint: &'b solana_account_info::AccountInfo<'a>,
 
-    pub platform_fee_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    pub source_token_program: &'b solana_account_info::AccountInfo<'a>,
 
-    pub token2022_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    pub destination_token_program: &'b solana_account_info::AccountInfo<'a>,
 
     pub event_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub program: &'b solana_account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
-    pub __args: ExactOutRouteInstructionArgs,
+    pub __args: SharedAccountsRouteV2InstructionArgs,
 }
 
-impl<'a, 'b> ExactOutRouteCpi<'a, 'b> {
+impl<'a, 'b> SharedAccountsRouteV2Cpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: ExactOutRouteCpiAccounts<'a, 'b>,
-        args: ExactOutRouteInstructionArgs,
+        accounts: SharedAccountsRouteV2CpiAccounts<'a, 'b>,
+        args: SharedAccountsRouteV2InstructionArgs,
     ) -> Self {
         Self {
             __program: program,
-            token_program: accounts.token_program,
+            program_authority: accounts.program_authority,
             user_transfer_authority: accounts.user_transfer_authority,
-            user_source_token_account: accounts.user_source_token_account,
-            user_destination_token_account: accounts.user_destination_token_account,
+            source_token_account: accounts.source_token_account,
+            program_source_token_account: accounts.program_source_token_account,
+            program_destination_token_account: accounts.program_destination_token_account,
             destination_token_account: accounts.destination_token_account,
             source_mint: accounts.source_mint,
             destination_mint: accounts.destination_mint,
-            platform_fee_account: accounts.platform_fee_account,
-            token2022_program: accounts.token2022_program,
+            source_token_program: accounts.source_token_program,
+            destination_token_program: accounts.destination_token_program,
             event_authority: accounts.event_authority,
             program: accounts.program,
             __args: args,
@@ -461,9 +485,9 @@ impl<'a, 'b> ExactOutRouteCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.token_program.key,
+            *self.program_authority.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -471,24 +495,21 @@ impl<'a, 'b> ExactOutRouteCpi<'a, 'b> {
             true,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.user_source_token_account.key,
+            *self.source_token_account.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.user_destination_token_account.key,
+            *self.program_source_token_account.key,
             false,
         ));
-        if let Some(destination_token_account) = self.destination_token_account {
-            accounts.push(solana_instruction::AccountMeta::new(
-                *destination_token_account.key,
-                false,
-            ));
-        } else {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::JUPITER_ID,
-                false,
-            ));
-        }
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.program_destination_token_account.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.destination_token_account.key,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.source_mint.key,
             false,
@@ -497,28 +518,14 @@ impl<'a, 'b> ExactOutRouteCpi<'a, 'b> {
             *self.destination_mint.key,
             false,
         ));
-        if let Some(platform_fee_account) = self.platform_fee_account {
-            accounts.push(solana_instruction::AccountMeta::new(
-                *platform_fee_account.key,
-                false,
-            ));
-        } else {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::JUPITER_ID,
-                false,
-            ));
-        }
-        if let Some(token2022_program) = self.token2022_program {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                *token2022_program.key,
-                false,
-            ));
-        } else {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::JUPITER_ID,
-                false,
-            ));
-        }
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.source_token_program.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.destination_token_program.key,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.event_authority.key,
             false,
@@ -534,7 +541,7 @@ impl<'a, 'b> ExactOutRouteCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = borsh::to_vec(&ExactOutRouteInstructionData::new()).unwrap();
+        let mut data = borsh::to_vec(&SharedAccountsRouteV2InstructionData::new()).unwrap();
         let mut args = borsh::to_vec(&self.__args).unwrap();
         data.append(&mut args);
 
@@ -543,23 +550,18 @@ impl<'a, 'b> ExactOutRouteCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(12 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(13 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
-        account_infos.push(self.token_program.clone());
+        account_infos.push(self.program_authority.clone());
         account_infos.push(self.user_transfer_authority.clone());
-        account_infos.push(self.user_source_token_account.clone());
-        account_infos.push(self.user_destination_token_account.clone());
-        if let Some(destination_token_account) = self.destination_token_account {
-            account_infos.push(destination_token_account.clone());
-        }
+        account_infos.push(self.source_token_account.clone());
+        account_infos.push(self.program_source_token_account.clone());
+        account_infos.push(self.program_destination_token_account.clone());
+        account_infos.push(self.destination_token_account.clone());
         account_infos.push(self.source_mint.clone());
         account_infos.push(self.destination_mint.clone());
-        if let Some(platform_fee_account) = self.platform_fee_account {
-            account_infos.push(platform_fee_account.clone());
-        }
-        if let Some(token2022_program) = self.token2022_program {
-            account_infos.push(token2022_program.clone());
-        }
+        account_infos.push(self.source_token_program.clone());
+        account_infos.push(self.destination_token_program.clone());
         account_infos.push(self.event_authority.clone());
         account_infos.push(self.program.clone());
         remaining_accounts
@@ -574,56 +576,60 @@ impl<'a, 'b> ExactOutRouteCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `ExactOutRoute` via CPI.
+/// Instruction builder for `SharedAccountsRouteV2` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` token_program
+///   0. `[]` program_authority
 ///   1. `[signer]` user_transfer_authority
-///   2. `[writable]` user_source_token_account
-///   3. `[writable]` user_destination_token_account
-///   4. `[writable, optional]` destination_token_account
-///   5. `[]` source_mint
-///   6. `[]` destination_mint
-///   7. `[writable, optional]` platform_fee_account
-///   8. `[optional]` token2022_program
-///   9. `[]` event_authority
-///   10. `[]` program
+///   2. `[writable]` source_token_account
+///   3. `[writable]` program_source_token_account
+///   4. `[writable]` program_destination_token_account
+///   5. `[writable]` destination_token_account
+///   6. `[]` source_mint
+///   7. `[]` destination_mint
+///   8. `[]` source_token_program
+///   9. `[]` destination_token_program
+///   10. `[]` event_authority
+///   11. `[]` program
 #[derive(Clone, Debug)]
-pub struct ExactOutRouteCpiBuilder<'a, 'b> {
-    instruction: Box<ExactOutRouteCpiBuilderInstruction<'a, 'b>>,
+pub struct SharedAccountsRouteV2CpiBuilder<'a, 'b> {
+    instruction: Box<SharedAccountsRouteV2CpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> ExactOutRouteCpiBuilder<'a, 'b> {
+impl<'a, 'b> SharedAccountsRouteV2CpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(ExactOutRouteCpiBuilderInstruction {
+        let instruction = Box::new(SharedAccountsRouteV2CpiBuilderInstruction {
             __program: program,
-            token_program: None,
+            program_authority: None,
             user_transfer_authority: None,
-            user_source_token_account: None,
-            user_destination_token_account: None,
+            source_token_account: None,
+            program_source_token_account: None,
+            program_destination_token_account: None,
             destination_token_account: None,
             source_mint: None,
             destination_mint: None,
-            platform_fee_account: None,
-            token2022_program: None,
+            source_token_program: None,
+            destination_token_program: None,
             event_authority: None,
             program: None,
-            route_plan: None,
-            out_amount: None,
-            quoted_in_amount: None,
+            id: None,
+            in_amount: None,
+            quoted_out_amount: None,
             slippage_bps: None,
             platform_fee_bps: None,
+            positive_slippage_bps: None,
+            route_plan: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
     }
     #[inline(always)]
-    pub fn token_program(
+    pub fn program_authority(
         &mut self,
-        token_program: &'b solana_account_info::AccountInfo<'a>,
+        program_authority: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.token_program = Some(token_program);
+        self.instruction.program_authority = Some(program_authority);
         self
     }
     #[inline(always)]
@@ -635,28 +641,36 @@ impl<'a, 'b> ExactOutRouteCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn user_source_token_account(
+    pub fn source_token_account(
         &mut self,
-        user_source_token_account: &'b solana_account_info::AccountInfo<'a>,
+        source_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.user_source_token_account = Some(user_source_token_account);
+        self.instruction.source_token_account = Some(source_token_account);
         self
     }
     #[inline(always)]
-    pub fn user_destination_token_account(
+    pub fn program_source_token_account(
         &mut self,
-        user_destination_token_account: &'b solana_account_info::AccountInfo<'a>,
+        program_source_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.user_destination_token_account = Some(user_destination_token_account);
+        self.instruction.program_source_token_account = Some(program_source_token_account);
         self
     }
-    /// `[optional account]`
+    #[inline(always)]
+    pub fn program_destination_token_account(
+        &mut self,
+        program_destination_token_account: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.program_destination_token_account =
+            Some(program_destination_token_account);
+        self
+    }
     #[inline(always)]
     pub fn destination_token_account(
         &mut self,
-        destination_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+        destination_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.destination_token_account = destination_token_account;
+        self.instruction.destination_token_account = Some(destination_token_account);
         self
     }
     #[inline(always)]
@@ -675,22 +689,20 @@ impl<'a, 'b> ExactOutRouteCpiBuilder<'a, 'b> {
         self.instruction.destination_mint = Some(destination_mint);
         self
     }
-    /// `[optional account]`
     #[inline(always)]
-    pub fn platform_fee_account(
+    pub fn source_token_program(
         &mut self,
-        platform_fee_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+        source_token_program: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.platform_fee_account = platform_fee_account;
+        self.instruction.source_token_program = Some(source_token_program);
         self
     }
-    /// `[optional account]`
     #[inline(always)]
-    pub fn token2022_program(
+    pub fn destination_token_program(
         &mut self,
-        token2022_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+        destination_token_program: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.token2022_program = token2022_program;
+        self.instruction.destination_token_program = Some(destination_token_program);
         self
     }
     #[inline(always)]
@@ -707,18 +719,18 @@ impl<'a, 'b> ExactOutRouteCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn route_plan(&mut self, route_plan: Vec<RoutePlanStep>) -> &mut Self {
-        self.instruction.route_plan = Some(route_plan);
+    pub fn id(&mut self, id: u8) -> &mut Self {
+        self.instruction.id = Some(id);
         self
     }
     #[inline(always)]
-    pub fn out_amount(&mut self, out_amount: u64) -> &mut Self {
-        self.instruction.out_amount = Some(out_amount);
+    pub fn in_amount(&mut self, in_amount: u64) -> &mut Self {
+        self.instruction.in_amount = Some(in_amount);
         self
     }
     #[inline(always)]
-    pub fn quoted_in_amount(&mut self, quoted_in_amount: u64) -> &mut Self {
-        self.instruction.quoted_in_amount = Some(quoted_in_amount);
+    pub fn quoted_out_amount(&mut self, quoted_out_amount: u64) -> &mut Self {
+        self.instruction.quoted_out_amount = Some(quoted_out_amount);
         self
     }
     #[inline(always)]
@@ -727,8 +739,18 @@ impl<'a, 'b> ExactOutRouteCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn platform_fee_bps(&mut self, platform_fee_bps: u8) -> &mut Self {
+    pub fn platform_fee_bps(&mut self, platform_fee_bps: u16) -> &mut Self {
         self.instruction.platform_fee_bps = Some(platform_fee_bps);
+        self
+    }
+    #[inline(always)]
+    pub fn positive_slippage_bps(&mut self, positive_slippage_bps: u16) -> &mut Self {
+        self.instruction.positive_slippage_bps = Some(positive_slippage_bps);
+        self
+    }
+    #[inline(always)]
+    pub fn route_plan(&mut self, route_plan: Vec<RoutePlanStepV2>) -> &mut Self {
+        self.instruction.route_plan = Some(route_plan);
         self
     }
     /// Add an additional account to the instruction.
@@ -765,22 +787,18 @@ impl<'a, 'b> ExactOutRouteCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let args = ExactOutRouteInstructionArgs {
-            route_plan: self
+        let args = SharedAccountsRouteV2InstructionArgs {
+            id: self.instruction.id.clone().expect("id is not set"),
+            in_amount: self
                 .instruction
-                .route_plan
+                .in_amount
                 .clone()
-                .expect("route_plan is not set"),
-            out_amount: self
+                .expect("in_amount is not set"),
+            quoted_out_amount: self
                 .instruction
-                .out_amount
+                .quoted_out_amount
                 .clone()
-                .expect("out_amount is not set"),
-            quoted_in_amount: self
-                .instruction
-                .quoted_in_amount
-                .clone()
-                .expect("quoted_in_amount is not set"),
+                .expect("quoted_out_amount is not set"),
             slippage_bps: self
                 .instruction
                 .slippage_bps
@@ -791,31 +809,49 @@ impl<'a, 'b> ExactOutRouteCpiBuilder<'a, 'b> {
                 .platform_fee_bps
                 .clone()
                 .expect("platform_fee_bps is not set"),
+            positive_slippage_bps: self
+                .instruction
+                .positive_slippage_bps
+                .clone()
+                .expect("positive_slippage_bps is not set"),
+            route_plan: self
+                .instruction
+                .route_plan
+                .clone()
+                .expect("route_plan is not set"),
         };
-        let instruction = ExactOutRouteCpi {
+        let instruction = SharedAccountsRouteV2Cpi {
             __program: self.instruction.__program,
 
-            token_program: self
+            program_authority: self
                 .instruction
-                .token_program
-                .expect("token_program is not set"),
+                .program_authority
+                .expect("program_authority is not set"),
 
             user_transfer_authority: self
                 .instruction
                 .user_transfer_authority
                 .expect("user_transfer_authority is not set"),
 
-            user_source_token_account: self
+            source_token_account: self
                 .instruction
-                .user_source_token_account
-                .expect("user_source_token_account is not set"),
+                .source_token_account
+                .expect("source_token_account is not set"),
 
-            user_destination_token_account: self
+            program_source_token_account: self
                 .instruction
-                .user_destination_token_account
-                .expect("user_destination_token_account is not set"),
+                .program_source_token_account
+                .expect("program_source_token_account is not set"),
 
-            destination_token_account: self.instruction.destination_token_account,
+            program_destination_token_account: self
+                .instruction
+                .program_destination_token_account
+                .expect("program_destination_token_account is not set"),
+
+            destination_token_account: self
+                .instruction
+                .destination_token_account
+                .expect("destination_token_account is not set"),
 
             source_mint: self
                 .instruction
@@ -827,9 +863,15 @@ impl<'a, 'b> ExactOutRouteCpiBuilder<'a, 'b> {
                 .destination_mint
                 .expect("destination_mint is not set"),
 
-            platform_fee_account: self.instruction.platform_fee_account,
+            source_token_program: self
+                .instruction
+                .source_token_program
+                .expect("source_token_program is not set"),
 
-            token2022_program: self.instruction.token2022_program,
+            destination_token_program: self
+                .instruction
+                .destination_token_program
+                .expect("destination_token_program is not set"),
 
             event_authority: self
                 .instruction
@@ -847,24 +889,27 @@ impl<'a, 'b> ExactOutRouteCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct ExactOutRouteCpiBuilderInstruction<'a, 'b> {
+struct SharedAccountsRouteV2CpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
-    token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    program_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     user_transfer_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
-    user_source_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    user_destination_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    source_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    program_source_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    program_destination_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     destination_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     source_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
     destination_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
-    platform_fee_account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    token2022_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    source_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    destination_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     event_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     program: Option<&'b solana_account_info::AccountInfo<'a>>,
-    route_plan: Option<Vec<RoutePlanStep>>,
-    out_amount: Option<u64>,
-    quoted_in_amount: Option<u64>,
+    id: Option<u8>,
+    in_amount: Option<u64>,
+    quoted_out_amount: Option<u64>,
     slippage_bps: Option<u16>,
-    platform_fee_bps: Option<u8>,
+    platform_fee_bps: Option<u16>,
+    positive_slippage_bps: Option<u16>,
+    route_plan: Option<Vec<RoutePlanStepV2>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

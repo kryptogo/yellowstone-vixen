@@ -22,10 +22,9 @@ use num_derive::FromPrimitive;
     FromPrimitive,
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum AccountsType {
+pub enum DefiTunaAccountsType {
     TransferHookA,
     TransferHookB,
-    TransferHookReward,
     TransferHookInput,
     TransferHookIntermediate,
     TransferHookOutput,
