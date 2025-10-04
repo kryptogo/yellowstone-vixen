@@ -5,8 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
@@ -124,9 +123,7 @@ impl anchor_lang::AccountSerialize for TokenLedger {}
 
 #[cfg(feature = "anchor")]
 impl anchor_lang::Owner for TokenLedger {
-    fn owner() -> Pubkey {
-        crate::JUPITER_ID
-    }
+    fn owner() -> Pubkey { crate::JUPITER_ID }
 }
 
 #[cfg(feature = "anchor-idl-build")]

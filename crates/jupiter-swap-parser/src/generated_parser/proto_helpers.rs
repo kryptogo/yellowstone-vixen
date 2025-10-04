@@ -9,9 +9,7 @@
 pub mod proto_types_parsers {
     use yellowstone_vixen_core::proto_helper_traits;
     proto_helper_traits!();
-    use crate::proto_def;
-
-    use crate::types::FeeEvent;
+    use crate::{proto_def, types::FeeEvent};
     impl IntoProto<proto_def::FeeEvent> for FeeEvent {
         fn into_proto(self) -> proto_def::FeeEvent {
             proto_def::FeeEvent {
@@ -96,8 +94,9 @@ pub mod proto_types_parsers {
         }
     }
 
-    use crate::types::Swap;
     use proto_def::swap;
+
+    use crate::types::Swap;
     impl IntoProto<proto_def::Swap> for Swap {
         fn into_proto(self) -> proto_def::Swap {
             let variant = match self {

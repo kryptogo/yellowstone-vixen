@@ -5,9 +5,9 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+use borsh::{BorshDeserialize, BorshSerialize};
+
 use crate::generated::types::RoutePlanStep;
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
 
 pub const ROUTE_DISCRIMINATOR: [u8; 8] = [229, 23, 203, 151, 122, 227, 173, 42];
 
@@ -37,6 +37,7 @@ impl Route {
     pub fn instruction(&self, args: RouteInstructionArgs) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
+
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
@@ -123,9 +124,7 @@ impl RouteInstructionData {
 }
 
 impl Default for RouteInstructionData {
-    fn default() -> Self {
-        Self::new()
-    }
+    fn default() -> Self { Self::new() }
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
@@ -171,15 +170,15 @@ pub struct RouteBuilder {
 }
 
 impl RouteBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
+    pub fn new() -> Self { Self::default() }
+
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_pubkey::Pubkey) -> &mut Self {
         self.token_program = Some(token_program);
         self
     }
+
     #[inline(always)]
     pub fn user_transfer_authority(
         &mut self,
@@ -188,6 +187,7 @@ impl RouteBuilder {
         self.user_transfer_authority = Some(user_transfer_authority);
         self
     }
+
     #[inline(always)]
     pub fn user_source_token_account(
         &mut self,
@@ -196,6 +196,7 @@ impl RouteBuilder {
         self.user_source_token_account = Some(user_source_token_account);
         self
     }
+
     #[inline(always)]
     pub fn user_destination_token_account(
         &mut self,
@@ -204,6 +205,7 @@ impl RouteBuilder {
         self.user_destination_token_account = Some(user_destination_token_account);
         self
     }
+
     /// `[optional account]`
     #[inline(always)]
     pub fn destination_token_account(
@@ -213,11 +215,13 @@ impl RouteBuilder {
         self.destination_token_account = destination_token_account;
         self
     }
+
     #[inline(always)]
     pub fn destination_mint(&mut self, destination_mint: solana_pubkey::Pubkey) -> &mut Self {
         self.destination_mint = Some(destination_mint);
         self
     }
+
     /// `[optional account]`
     #[inline(always)]
     pub fn platform_fee_account(
@@ -227,48 +231,57 @@ impl RouteBuilder {
         self.platform_fee_account = platform_fee_account;
         self
     }
+
     /// `[optional account, default to 'D8cy77BBepLMngZx6ZukaTff5hCt1HrWyKk3Hnd9oitf']`
     #[inline(always)]
     pub fn event_authority(&mut self, event_authority: solana_pubkey::Pubkey) -> &mut Self {
         self.event_authority = Some(event_authority);
         self
     }
+
     #[inline(always)]
     pub fn program(&mut self, program: solana_pubkey::Pubkey) -> &mut Self {
         self.program = Some(program);
         self
     }
+
     #[inline(always)]
     pub fn route_plan(&mut self, route_plan: Vec<RoutePlanStep>) -> &mut Self {
         self.route_plan = Some(route_plan);
         self
     }
+
     #[inline(always)]
     pub fn in_amount(&mut self, in_amount: u64) -> &mut Self {
         self.in_amount = Some(in_amount);
         self
     }
+
     #[inline(always)]
     pub fn quoted_out_amount(&mut self, quoted_out_amount: u64) -> &mut Self {
         self.quoted_out_amount = Some(quoted_out_amount);
         self
     }
+
     #[inline(always)]
     pub fn slippage_bps(&mut self, slippage_bps: u16) -> &mut Self {
         self.slippage_bps = Some(slippage_bps);
         self
     }
+
     #[inline(always)]
     pub fn platform_fee_bps(&mut self, platform_fee_bps: u8) -> &mut Self {
         self.platform_fee_bps = Some(platform_fee_bps);
         self
     }
+
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
         self.__remaining_accounts.push(account);
         self
     }
+
     /// Add additional accounts to the instruction.
     #[inline(always)]
     pub fn add_remaining_accounts(
@@ -278,6 +291,7 @@ impl RouteBuilder {
         self.__remaining_accounts.extend_from_slice(accounts);
         self
     }
+
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
         let accounts = Route {
@@ -386,10 +400,12 @@ impl<'a, 'b> RouteCpi<'a, 'b> {
             __args: args,
         }
     }
+
     #[inline(always)]
     pub fn invoke(&self) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], &[])
     }
+
     #[inline(always)]
     pub fn invoke_with_remaining_accounts(
         &self,
@@ -397,10 +413,12 @@ impl<'a, 'b> RouteCpi<'a, 'b> {
     ) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], remaining_accounts)
     }
+
     #[inline(always)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(signers_seeds, &[])
     }
+
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
@@ -543,6 +561,7 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
         });
         Self { instruction }
     }
+
     #[inline(always)]
     pub fn token_program(
         &mut self,
@@ -551,6 +570,7 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
         self.instruction.token_program = Some(token_program);
         self
     }
+
     #[inline(always)]
     pub fn user_transfer_authority(
         &mut self,
@@ -559,6 +579,7 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
         self.instruction.user_transfer_authority = Some(user_transfer_authority);
         self
     }
+
     #[inline(always)]
     pub fn user_source_token_account(
         &mut self,
@@ -567,6 +588,7 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
         self.instruction.user_source_token_account = Some(user_source_token_account);
         self
     }
+
     #[inline(always)]
     pub fn user_destination_token_account(
         &mut self,
@@ -575,6 +597,7 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
         self.instruction.user_destination_token_account = Some(user_destination_token_account);
         self
     }
+
     /// `[optional account]`
     #[inline(always)]
     pub fn destination_token_account(
@@ -584,6 +607,7 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
         self.instruction.destination_token_account = destination_token_account;
         self
     }
+
     #[inline(always)]
     pub fn destination_mint(
         &mut self,
@@ -592,6 +616,7 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
         self.instruction.destination_mint = Some(destination_mint);
         self
     }
+
     /// `[optional account]`
     #[inline(always)]
     pub fn platform_fee_account(
@@ -601,6 +626,7 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
         self.instruction.platform_fee_account = platform_fee_account;
         self
     }
+
     #[inline(always)]
     pub fn event_authority(
         &mut self,
@@ -609,36 +635,43 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
         self.instruction.event_authority = Some(event_authority);
         self
     }
+
     #[inline(always)]
     pub fn program(&mut self, program: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.program = Some(program);
         self
     }
+
     #[inline(always)]
     pub fn route_plan(&mut self, route_plan: Vec<RoutePlanStep>) -> &mut Self {
         self.instruction.route_plan = Some(route_plan);
         self
     }
+
     #[inline(always)]
     pub fn in_amount(&mut self, in_amount: u64) -> &mut Self {
         self.instruction.in_amount = Some(in_amount);
         self
     }
+
     #[inline(always)]
     pub fn quoted_out_amount(&mut self, quoted_out_amount: u64) -> &mut Self {
         self.instruction.quoted_out_amount = Some(quoted_out_amount);
         self
     }
+
     #[inline(always)]
     pub fn slippage_bps(&mut self, slippage_bps: u16) -> &mut Self {
         self.instruction.slippage_bps = Some(slippage_bps);
         self
     }
+
     #[inline(always)]
     pub fn platform_fee_bps(&mut self, platform_fee_bps: u8) -> &mut Self {
         self.instruction.platform_fee_bps = Some(platform_fee_bps);
         self
     }
+
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -652,6 +685,7 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
             .push((account, is_writable, is_signer));
         self
     }
+
     /// Add additional accounts to the instruction.
     ///
     /// Each account is represented by a tuple of the `AccountInfo`, a `bool` indicating whether the account is writable or not,
@@ -666,10 +700,10 @@ impl<'a, 'b> RouteCpiBuilder<'a, 'b> {
             .extend_from_slice(accounts);
         self
     }
+
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program_error::ProgramResult {
-        self.invoke_signed(&[])
-    }
+    pub fn invoke(&self) -> solana_program_error::ProgramResult { self.invoke_signed(&[]) }
+
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {

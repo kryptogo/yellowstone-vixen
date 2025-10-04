@@ -11,36 +11,37 @@ use std::sync::Arc;
 #[cfg(feature = "shared-data")]
 use yellowstone_vixen_core::InstructionUpdateOutput;
 
-use crate::deserialize_checked;
-
-use crate::instructions::{
-    Claim as ClaimIxAccounts, ClaimInstructionArgs as ClaimIxData,
-    ClaimToken as ClaimTokenIxAccounts, ClaimTokenInstructionArgs as ClaimTokenIxData,
-    CloseToken as CloseTokenIxAccounts, CloseTokenInstructionArgs as CloseTokenIxData,
-    CreateTokenAccount as CreateTokenAccountIxAccounts,
-    CreateTokenAccountInstructionArgs as CreateTokenAccountIxData,
-    CreateTokenLedger as CreateTokenLedgerIxAccounts, ExactOutRoute as ExactOutRouteIxAccounts,
-    ExactOutRouteInstructionArgs as ExactOutRouteIxData,
-    ExactOutRouteV2 as ExactOutRouteV2IxAccounts,
-    ExactOutRouteV2InstructionArgs as ExactOutRouteV2IxData, Route as RouteIxAccounts,
-    RouteInstructionArgs as RouteIxData, RouteV2 as RouteV2IxAccounts,
-    RouteV2InstructionArgs as RouteV2IxData,
-    RouteWithTokenLedger as RouteWithTokenLedgerIxAccounts,
-    RouteWithTokenLedgerInstructionArgs as RouteWithTokenLedgerIxData,
-    SetTokenLedger as SetTokenLedgerIxAccounts,
-    SharedAccountsExactOutRoute as SharedAccountsExactOutRouteIxAccounts,
-    SharedAccountsExactOutRouteInstructionArgs as SharedAccountsExactOutRouteIxData,
-    SharedAccountsExactOutRouteV2 as SharedAccountsExactOutRouteV2IxAccounts,
-    SharedAccountsExactOutRouteV2InstructionArgs as SharedAccountsExactOutRouteV2IxData,
-    SharedAccountsRoute as SharedAccountsRouteIxAccounts,
-    SharedAccountsRouteInstructionArgs as SharedAccountsRouteIxData,
-    SharedAccountsRouteV2 as SharedAccountsRouteV2IxAccounts,
-    SharedAccountsRouteV2InstructionArgs as SharedAccountsRouteV2IxData,
-    SharedAccountsRouteWithTokenLedger as SharedAccountsRouteWithTokenLedgerIxAccounts,
-    SharedAccountsRouteWithTokenLedgerInstructionArgs as SharedAccountsRouteWithTokenLedgerIxData,
+use crate::{
+    deserialize_checked,
+    instructions::{
+        Claim as ClaimIxAccounts, ClaimInstructionArgs as ClaimIxData,
+        ClaimToken as ClaimTokenIxAccounts, ClaimTokenInstructionArgs as ClaimTokenIxData,
+        CloseToken as CloseTokenIxAccounts, CloseTokenInstructionArgs as CloseTokenIxData,
+        CreateTokenAccount as CreateTokenAccountIxAccounts,
+        CreateTokenAccountInstructionArgs as CreateTokenAccountIxData,
+        CreateTokenLedger as CreateTokenLedgerIxAccounts, ExactOutRoute as ExactOutRouteIxAccounts,
+        ExactOutRouteInstructionArgs as ExactOutRouteIxData,
+        ExactOutRouteV2 as ExactOutRouteV2IxAccounts,
+        ExactOutRouteV2InstructionArgs as ExactOutRouteV2IxData, Route as RouteIxAccounts,
+        RouteInstructionArgs as RouteIxData, RouteV2 as RouteV2IxAccounts,
+        RouteV2InstructionArgs as RouteV2IxData,
+        RouteWithTokenLedger as RouteWithTokenLedgerIxAccounts,
+        RouteWithTokenLedgerInstructionArgs as RouteWithTokenLedgerIxData,
+        SetTokenLedger as SetTokenLedgerIxAccounts,
+        SharedAccountsExactOutRoute as SharedAccountsExactOutRouteIxAccounts,
+        SharedAccountsExactOutRouteInstructionArgs as SharedAccountsExactOutRouteIxData,
+        SharedAccountsExactOutRouteV2 as SharedAccountsExactOutRouteV2IxAccounts,
+        SharedAccountsExactOutRouteV2InstructionArgs as SharedAccountsExactOutRouteV2IxData,
+        SharedAccountsRoute as SharedAccountsRouteIxAccounts,
+        SharedAccountsRouteInstructionArgs as SharedAccountsRouteIxData,
+        SharedAccountsRouteV2 as SharedAccountsRouteV2IxAccounts,
+        SharedAccountsRouteV2InstructionArgs as SharedAccountsRouteV2IxData,
+        SharedAccountsRouteWithTokenLedger as SharedAccountsRouteWithTokenLedgerIxAccounts,
+        SharedAccountsRouteWithTokenLedgerInstructionArgs as SharedAccountsRouteWithTokenLedgerIxData,
+    },
+    types::{SwapEvent, SwapsEvent},
+    ID,
 };
-use crate::types::{SwapEvent, SwapsEvent};
-use crate::ID;
 
 /// Jupiter Instructions
 #[derive(Debug)]
@@ -53,7 +54,11 @@ pub enum JupiterProgramIx {
     CreateTokenAccount(CreateTokenAccountIxAccounts, CreateTokenAccountIxData),
     ExactOutRoute(ExactOutRouteIxAccounts, ExactOutRouteIxData, Vec<SwapEvent>),
     Route(RouteIxAccounts, RouteIxData, Vec<SwapEvent>),
-    RouteWithTokenLedger(RouteWithTokenLedgerIxAccounts, RouteWithTokenLedgerIxData, Vec<SwapEvent>),
+    RouteWithTokenLedger(
+        RouteWithTokenLedgerIxAccounts,
+        RouteWithTokenLedgerIxData,
+        Vec<SwapEvent>,
+    ),
     SetTokenLedger(SetTokenLedgerIxAccounts),
     SharedAccountsExactOutRoute(
         SharedAccountsExactOutRouteIxAccounts,
@@ -70,14 +75,22 @@ pub enum JupiterProgramIx {
         SharedAccountsRouteWithTokenLedgerIxData,
         Vec<SwapEvent>,
     ),
-    ExactOutRouteV2(ExactOutRouteV2IxAccounts, ExactOutRouteV2IxData, Option<SwapsEvent>),
+    ExactOutRouteV2(
+        ExactOutRouteV2IxAccounts,
+        ExactOutRouteV2IxData,
+        Option<SwapsEvent>,
+    ),
     RouteV2(RouteV2IxAccounts, RouteV2IxData, Option<SwapsEvent>),
     SharedAccountsExactOutRouteV2(
         SharedAccountsExactOutRouteV2IxAccounts,
         SharedAccountsExactOutRouteV2IxData,
         Option<SwapsEvent>,
     ),
-    SharedAccountsRouteV2(SharedAccountsRouteV2IxAccounts, SharedAccountsRouteV2IxData, Option<SwapsEvent>),
+    SharedAccountsRouteV2(
+        SharedAccountsRouteV2IxAccounts,
+        SharedAccountsRouteV2IxData,
+        Option<SwapsEvent>,
+    ),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -85,10 +98,8 @@ pub struct InstructionParser;
 
 impl yellowstone_vixen_core::Parser for InstructionParser {
     type Input = yellowstone_vixen_core::instruction::InstructionUpdate;
-
     #[cfg(not(feature = "shared-data"))]
     type Output = JupiterProgramIx;
-
     #[cfg(feature = "shared-data")]
     type Output = InstructionUpdateOutput<JupiterProgramIx>;
 
@@ -131,9 +142,7 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
-        ID.to_bytes().into()
-    }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
 }
 
 impl InstructionParser {
@@ -640,11 +649,10 @@ pub fn next_program_id_optional_account<
 
 // #[cfg(feature = "proto")]
 mod proto_parser {
-    use super::{InstructionParser, JupiterProgramIx};
-    use crate::{proto_def, proto_helpers::proto_types_parsers::IntoProto};
     use yellowstone_vixen_core::proto::ParseProto;
 
-    use super::ClaimIxAccounts;
+    use super::{ClaimIxAccounts, InstructionParser, JupiterProgramIx};
+    use crate::{proto_def, proto_helpers::proto_types_parsers::IntoProto};
     impl IntoProto<proto_def::ClaimIxAccounts> for ClaimIxAccounts {
         fn into_proto(self) -> proto_def::ClaimIxAccounts {
             proto_def::ClaimIxAccounts {
@@ -1169,13 +1177,15 @@ mod proto_parser {
                         data: Some(data.into_proto()),
                     })),
                 },
-                JupiterProgramIx::RouteWithTokenLedger(acc, data, _swap_events) => proto_def::ProgramIxs {
-                    ix_oneof: Some(proto_def::program_ixs::IxOneof::RouteWithTokenLedger(
-                        proto_def::RouteWithTokenLedgerIx {
-                            accounts: Some(acc.into_proto()),
-                            data: Some(data.into_proto()),
-                        },
-                    )),
+                JupiterProgramIx::RouteWithTokenLedger(acc, data, _swap_events) => {
+                    proto_def::ProgramIxs {
+                        ix_oneof: Some(proto_def::program_ixs::IxOneof::RouteWithTokenLedger(
+                            proto_def::RouteWithTokenLedgerIx {
+                                accounts: Some(acc.into_proto()),
+                                data: Some(data.into_proto()),
+                            },
+                        )),
+                    }
                 },
                 JupiterProgramIx::SetTokenLedger(acc) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SetTokenLedger(
@@ -1184,15 +1194,17 @@ mod proto_parser {
                         },
                     )),
                 },
-                JupiterProgramIx::SharedAccountsExactOutRoute(acc, data, _swap_events) => proto_def::ProgramIxs {
-                    ix_oneof: Some(
-                        proto_def::program_ixs::IxOneof::SharedAccountsExactOutRoute(
-                            proto_def::SharedAccountsExactOutRouteIx {
-                                accounts: Some(acc.into_proto()),
-                                data: Some(data.into_proto()),
-                            },
+                JupiterProgramIx::SharedAccountsExactOutRoute(acc, data, _swap_events) => {
+                    proto_def::ProgramIxs {
+                        ix_oneof: Some(
+                            proto_def::program_ixs::IxOneof::SharedAccountsExactOutRoute(
+                                proto_def::SharedAccountsExactOutRouteIx {
+                                    accounts: Some(acc.into_proto()),
+                                    data: Some(data.into_proto()),
+                                },
+                            ),
                         ),
-                    ),
+                    }
                 },
                 JupiterProgramIx::SharedAccountsRoute(acc, data, _swap_events) => {
                     proto_def::ProgramIxs {
@@ -1216,13 +1228,15 @@ mod proto_parser {
                         ),
                     }
                 },
-                JupiterProgramIx::ExactOutRouteV2(acc, data, _swaps_events) => proto_def::ProgramIxs {
-                    ix_oneof: Some(proto_def::program_ixs::IxOneof::ExactOutRouteV2(
-                        proto_def::ExactOutRouteV2Ix {
-                            accounts: Some(acc.into_proto()),
-                            data: Some(data.into_proto()),
-                        },
-                    )),
+                JupiterProgramIx::ExactOutRouteV2(acc, data, _swaps_events) => {
+                    proto_def::ProgramIxs {
+                        ix_oneof: Some(proto_def::program_ixs::IxOneof::ExactOutRouteV2(
+                            proto_def::ExactOutRouteV2Ix {
+                                accounts: Some(acc.into_proto()),
+                                data: Some(data.into_proto()),
+                            },
+                        )),
+                    }
                 },
                 JupiterProgramIx::RouteV2(acc, data, _swaps_events) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::RouteV2(
@@ -1244,13 +1258,15 @@ mod proto_parser {
                         ),
                     }
                 },
-                JupiterProgramIx::SharedAccountsRouteV2(acc, data, _swaps_events) => proto_def::ProgramIxs {
-                    ix_oneof: Some(proto_def::program_ixs::IxOneof::SharedAccountsRouteV2(
-                        proto_def::SharedAccountsRouteV2Ix {
-                            accounts: Some(acc.into_proto()),
-                            data: Some(data.into_proto()),
-                        },
-                    )),
+                JupiterProgramIx::SharedAccountsRouteV2(acc, data, _swaps_events) => {
+                    proto_def::ProgramIxs {
+                        ix_oneof: Some(proto_def::program_ixs::IxOneof::SharedAccountsRouteV2(
+                            proto_def::SharedAccountsRouteV2Ix {
+                                accounts: Some(acc.into_proto()),
+                                data: Some(data.into_proto()),
+                            },
+                        )),
+                    }
                 },
             }
         }

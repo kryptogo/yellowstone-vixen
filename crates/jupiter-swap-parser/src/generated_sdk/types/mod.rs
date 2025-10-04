@@ -18,15 +18,8 @@ pub(crate) mod r#swap_event;
 pub(crate) mod r#swap_event_v2;
 pub(crate) mod r#swaps_event;
 
-pub use self::r#accounts_type::*;
-pub use self::r#defi_tuna_accounts_type::*;
-pub use self::r#fee_event::*;
-pub use self::r#remaining_accounts_info::*;
-pub use self::r#remaining_accounts_slice::*;
-pub use self::r#route_plan_step::*;
-pub use self::r#route_plan_step_v2::*;
-pub use self::r#side::*;
-pub use self::r#swap::*;
-pub use self::r#swap_event::*;
-pub use self::r#swap_event_v2::*;
-pub use self::r#swaps_event::*;
+pub use self::{
+    r#accounts_type::*, r#defi_tuna_accounts_type::*, r#fee_event::*, r#remaining_accounts_info::*,
+    r#remaining_accounts_slice::*, r#route_plan_step::*, r#route_plan_step_v2::*, r#side::*,
+    r#swap::*, r#swap_event::*, r#swap_event_v2::*, r#swaps_event::*,
+};

@@ -42,22 +42,22 @@ pub enum JupiterError {
     NonZeroMinimumOutAmountNotSupported = 0x1779,
     /// 6010 - Invalid route plan
     #[error("Invalid route plan")]
-    InvalidRoutePlan = 0x177A,
+    InvalidRoutePlan = 0x177a,
     /// 6011 - Invalid referral authority
     #[error("Invalid referral authority")]
-    InvalidReferralAuthority = 0x177B,
+    InvalidReferralAuthority = 0x177b,
     /// 6012 - Token account doesn't match the ledger
     #[error("Token account doesn't match the ledger")]
-    LedgerTokenAccountDoesNotMatch = 0x177C,
+    LedgerTokenAccountDoesNotMatch = 0x177c,
     /// 6013 - Invalid token ledger
     #[error("Invalid token ledger")]
-    InvalidTokenLedger = 0x177D,
+    InvalidTokenLedger = 0x177d,
     /// 6014 - Token program ID is invalid
     #[error("Token program ID is invalid")]
-    IncorrectTokenProgramID = 0x177E,
+    IncorrectTokenProgramID = 0x177e,
     /// 6015 - Token program not provided
     #[error("Token program not provided")]
-    TokenProgramNotProvided = 0x177F,
+    TokenProgramNotProvided = 0x177f,
     /// 6016 - Swap not supported
     #[error("Swap not supported")]
     SwapNotSupported = 0x1780,
@@ -91,7 +91,5 @@ pub enum JupiterError {
 }
 
 impl From<JupiterError> for solana_program_error::ProgramError {
-    fn from(e: JupiterError) -> Self {
-        solana_program_error::ProgramError::Custom(e as u32)
-    }
+    fn from(e: JupiterError) -> Self { solana_program_error::ProgramError::Custom(e as u32) }
 }

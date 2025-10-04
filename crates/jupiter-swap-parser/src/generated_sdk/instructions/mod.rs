@@ -22,19 +22,11 @@ pub(crate) mod r#shared_accounts_route;
 pub(crate) mod r#shared_accounts_route_v2;
 pub(crate) mod r#shared_accounts_route_with_token_ledger;
 
-pub use self::r#claim::*;
-pub use self::r#claim_token::*;
-pub use self::r#close_token::*;
-pub use self::r#create_token_account::*;
-pub use self::r#create_token_ledger::*;
-pub use self::r#exact_out_route::*;
-pub use self::r#exact_out_route_v2::*;
-pub use self::r#route::*;
-pub use self::r#route_v2::*;
-pub use self::r#route_with_token_ledger::*;
-pub use self::r#set_token_ledger::*;
-pub use self::r#shared_accounts_exact_out_route::*;
-pub use self::r#shared_accounts_exact_out_route_v2::*;
-pub use self::r#shared_accounts_route::*;
-pub use self::r#shared_accounts_route_v2::*;
-pub use self::r#shared_accounts_route_with_token_ledger::*;
+pub use self::{
+    r#claim::*, r#claim_token::*, r#close_token::*, r#create_token_account::*,
+    r#create_token_ledger::*, r#exact_out_route::*, r#exact_out_route_v2::*, r#route::*,
+    r#route_v2::*, r#route_with_token_ledger::*, r#set_token_ledger::*,
+    r#shared_accounts_exact_out_route::*, r#shared_accounts_exact_out_route_v2::*,
+    r#shared_accounts_route::*, r#shared_accounts_route_v2::*,
+    r#shared_accounts_route_with_token_ledger::*,
+};
