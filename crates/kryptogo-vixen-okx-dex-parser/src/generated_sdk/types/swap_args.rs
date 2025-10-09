@@ -39,7 +39,7 @@ impl BorshDeserialize for SwapArgs {
                     amounts: Vec::new(),
                     routes: Vec::new(),
                 });
-            }
+            },
         };
 
         // Try to deserialize routes vec
@@ -50,7 +50,7 @@ impl BorshDeserialize for SwapArgs {
                 // Forward compatibility: if we can't parse routes (e.g., unknown Dex types),
                 // just return an empty vec so we can still access the amount fields
                 Vec::new()
-            }
+            },
         };
 
         Ok(Self {

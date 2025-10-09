@@ -184,12 +184,10 @@ impl BorshDeserialize for SharedAccountsRouteInstructionArgs {
         let end_offset = data.len();
         let platform_fee_bps = data[end_offset - 1];
         let slippage_bps = u16::from_le_bytes([data[end_offset - 3], data[end_offset - 2]]);
-        let quoted_out_amount = u64::from_le_bytes(
-            data[end_offset - 11..end_offset - 3].try_into().unwrap()
-        );
-        let in_amount = u64::from_le_bytes(
-            data[end_offset - 19..end_offset - 11].try_into().unwrap()
-        );
+        let quoted_out_amount =
+            u64::from_le_bytes(data[end_offset - 11..end_offset - 3].try_into().unwrap());
+        let in_amount =
+            u64::from_le_bytes(data[end_offset - 19..end_offset - 11].try_into().unwrap());
 
         // Parse id from the beginning
         let id = data[0];
@@ -204,7 +202,7 @@ impl BorshDeserialize for SharedAccountsRouteInstructionArgs {
                 // Forward compatibility: if we can't parse route_plan (e.g., unknown swap types),
                 // just return an empty vec so we can still access the other fields
                 Vec::new()
-            }
+            },
         };
 
         Ok(Self {

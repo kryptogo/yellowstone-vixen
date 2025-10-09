@@ -226,7 +226,10 @@ mod tests {
             Ok(ix_data) => {
                 println!("\n=== Successfully deserialized with forward compatibility! ===");
                 println!("ID: {}", ix_data.id);
-                println!("Route plan steps: {} (empty due to unknown swap types)", ix_data.route_plan.len());
+                println!(
+                    "Route plan steps: {} (empty due to unknown swap types)",
+                    ix_data.route_plan.len()
+                );
 
                 println!("\n=== Transaction Details (parsed from end) ===");
                 println!("In amount: {}", ix_data.in_amount);
@@ -242,13 +245,20 @@ mod tests {
                 assert_eq!(ix_data.platform_fee_bps, 0);
 
                 // Route plan should be empty because it contains unknown swap type
-                assert_eq!(ix_data.route_plan.len(), 0, "Route plan should be empty when unknown swaps are encountered");
+                assert_eq!(
+                    ix_data.route_plan.len(),
+                    0,
+                    "Route plan should be empty when unknown swaps are encountered"
+                );
 
-                println!("\n✓ Forward compatibility working! We can still parse amounts and fees even with unknown swap types.");
-            }
+                println!(
+                    "\n✓ Forward compatibility working! We can still parse amounts and fees even \
+                     with unknown swap types."
+                );
+            },
             Err(e) => {
                 panic!("Failed to deserialize: {:?}", e);
-            }
+            },
         }
     }
 
@@ -267,7 +277,10 @@ mod tests {
             Ok(ix_data) => {
                 println!("\n=== Case 2: Successfully deserialized with forward compatibility! ===");
                 println!("ID: {}", ix_data.id);
-                println!("Route plan steps: {} (empty due to unknown swap types)", ix_data.route_plan.len());
+                println!(
+                    "Route plan steps: {} (empty due to unknown swap types)",
+                    ix_data.route_plan.len()
+                );
 
                 println!("\n=== Transaction Details (parsed from end) ===");
                 println!("In amount: {}", ix_data.in_amount);
@@ -283,14 +296,17 @@ mod tests {
                 assert_eq!(ix_data.platform_fee_bps, 0);
 
                 // Route plan should be empty due to unknown swap types
-                assert_eq!(ix_data.route_plan.len(), 0, "Route plan should be empty when unknown swaps are encountered");
+                assert_eq!(
+                    ix_data.route_plan.len(),
+                    0,
+                    "Route plan should be empty when unknown swaps are encountered"
+                );
 
                 println!("\n✓ Forward compatibility confirmed for case 2!");
-            }
+            },
             Err(e) => {
                 panic!("Failed to deserialize case 2: {:?}", e);
-            }
+            },
         }
     }
-
 }

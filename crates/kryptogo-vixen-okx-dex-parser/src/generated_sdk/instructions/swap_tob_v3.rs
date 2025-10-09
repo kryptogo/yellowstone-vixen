@@ -1102,7 +1102,6 @@ struct SwapTobV3CpiBuilderInstruction<'a, 'b> {
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1120,18 +1119,23 @@ mod tests {
         // Try to deserialize as SwapArgs
         match SwapTobV3InstructionArgs::try_from_slice(args_data) {
             Ok(ix) => {
-                println!("\n=== Successfully deserialized SwapArgs with forward compatibility! ===");
+                println!(
+                    "\n=== Successfully deserialized SwapArgs with forward compatibility! ==="
+                );
                 println!("Amount in: {}", ix.args.amount_in);
                 println!("Expected amount out: {}", ix.args.expect_amount_out);
                 println!("Min return: {}", ix.args.min_return);
                 println!("Amounts vec length: {}", ix.args.amounts.len());
-                println!("Routes vec length: {} (may be empty if unknown Dex types)", ix.args.routes.len());
+                println!(
+                    "Routes vec length: {} (may be empty if unknown Dex types)",
+                    ix.args.routes.len()
+                );
 
                 println!("\n✓ Forward compatibility working for OKX DEX SwapArgs!");
-            }
+            },
             Err(e) => {
                 panic!("Failed to deserialize SwapArgs: {:?}", e);
-            }
+            },
         }
     }
 }
