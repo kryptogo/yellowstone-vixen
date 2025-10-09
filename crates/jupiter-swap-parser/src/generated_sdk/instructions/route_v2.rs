@@ -147,10 +147,7 @@ impl BorshDeserialize for RouteV2InstructionArgs {
         let positive_slippage_bps = u16::deserialize_reader(reader)?;
 
         // route_plan vec at the end - try to deserialize, if fails use empty vec
-        let route_plan = match Vec::<RoutePlanStepV2>::deserialize_reader(reader) {
-            Ok(plan) => plan,
-            Err(_) => Vec::new(),
-        };
+        let route_plan: Vec<RoutePlanStepV2> = Vec::<RoutePlanStepV2>::deserialize_reader(reader).unwrap_or_default();
 
         Ok(Self {
             in_amount,

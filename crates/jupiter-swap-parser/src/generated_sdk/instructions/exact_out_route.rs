@@ -182,10 +182,7 @@ impl BorshDeserialize for ExactOutRouteInstructionArgs {
 
         // route_plan before the fixed fields
         let route_plan_data = &data[0..end_offset - 19];
-        let route_plan = match Vec::<RoutePlanStep>::try_from_slice(route_plan_data) {
-            Ok(plan) => plan,
-            Err(_) => Vec::new(),
-        };
+        let route_plan: Vec<RoutePlanStep> = Vec::<RoutePlanStep>::try_from_slice(route_plan_data).unwrap_or_default();
 
         Ok(Self {
             route_plan,
