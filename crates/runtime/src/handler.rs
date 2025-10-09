@@ -45,7 +45,9 @@ mod pipeline_error {
 
     impl Handled {
         #[inline]
-        pub fn as_unit(self) { let Self(()) = self; }
+        pub fn as_unit(self) {
+            let Self(()) = self;
+        }
     }
 
     #[derive(Debug)]
@@ -64,16 +66,30 @@ mod pipeline_error {
 
         #[allow(clippy::unused_self)]
         #[allow(clippy::extra_unused_type_parameters)]
-        pub fn handle<T>(self, _handler: &str) -> Handled {
-            // TODO: uncomment when we find it useful
-            // for e in self {
-            //     tracing::error!(
-            //         err = %crate::Chain(&e),
-            //         handler,
-            //         r#type = std::any::type_name::<T>(),
-            //         "Handler failed",
-            //     );
-            // }
+        pub fn handle<T>(self, handler: &str) -> Handled {
+            // Only log actual errors, not AlreadyHandled to avoid duplicate logs
+            match &self {
+                Errors::Parse(_) | Errors::Handlers(_) => {
+                    for e in self {
+                        tracing::error!(
+                            err = %crate::Chain(&e),
+                            handler,
+                            r#type = std::any::type_name::<T>(),
+                            "Handler failed",
+                        );
+                    }
+                },
+                Errors::AlreadyHandled(_) => {
+                    // Don't log - error was already logged when first handled
+                    // uncomment if you want to see the error already handled
+                    /*
+                    tracing::debug!(
+                        handler,
+                        r#type = std::any::type_name::<T>(),
+                        "Error already handled by previous pipeline",
+                    ); */
+                },
+            }
 
             Handled(())
         }
@@ -128,17 +144,23 @@ impl<P, H> Pipeline<P, H> {
     /// Create a new pipeline from a parser and a list of handlers.
     #[inline]
     #[must_use]
-    pub fn new(parser: P, handlers: H) -> Self { Self(parser, handlers) }
+    pub fn new(parser: P, handlers: H) -> Self {
+        Self(parser, handlers)
+    }
 }
 
 impl<P: ParserId, H> ParserId for Pipeline<P, H> {
     #[inline]
-    fn id(&self) -> Cow<'static, str> { self.0.id() }
+    fn id(&self) -> Cow<'static, str> {
+        self.0.id()
+    }
 }
 
 impl<P: GetPrefilter, H> GetPrefilter for Pipeline<P, H> {
     #[inline]
-    fn prefilter(&self) -> Prefilter { self.0.prefilter() }
+    fn prefilter(&self) -> Prefilter {
+        self.0.prefilter()
+    }
 }
 
 /// A boxed pipeline.
@@ -214,12 +236,16 @@ where
 }
 
 impl<T> ParserId for BoxPipeline<'_, T> {
-    fn id(&self) -> Cow<'static, str> { <dyn DynPipeline<T>>::id(&**self) }
+    fn id(&self) -> Cow<'static, str> {
+        <dyn DynPipeline<T>>::id(&**self)
+    }
 }
 
 impl<T> GetPrefilter for BoxPipeline<'_, T> {
     #[inline]
-    fn prefilter(&self) -> Prefilter { <dyn DynPipeline<T>>::prefilter(&**self) }
+    fn prefilter(&self) -> Prefilter {
+        <dyn DynPipeline<T>>::prefilter(&**self)
+    }
 }
 
 impl<T> DynPipeline<T> for BoxPipeline<'_, T> {
@@ -264,14 +290,20 @@ pub(crate) struct PipelineSet<P>(HashMap<String, P>);
 impl<P> PipelineSet<P> {
     #[inline]
     #[must_use]
-    pub fn len(&self) -> usize { self.0.len() }
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
 
     #[inline]
     #[must_use]
-    pub fn new() -> Self { Self(HashMap::new()) }
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
 
     #[inline]
-    pub fn insert(&mut self, key: String, value: P) -> Option<P> { self.0.insert(key, value) }
+    pub fn insert(&mut self, key: String, value: P) -> Option<P> {
+        self.0.insert(key, value)
+    }
 }
 
 impl<P: GetPrefilter> PipelineSet<P> {
@@ -287,7 +319,9 @@ impl<P: GetPrefilter> PipelineSet<P> {
 }
 
 impl<P> PipelineSet<P> {
-    pub(crate) fn get_handlers<I>(&'_ self, it: I) -> Pipelines<'_, P, I> { Pipelines(self, it) }
+    pub(crate) fn get_handlers<I>(&'_ self, it: I) -> Pipelines<'_, P, I> {
+        Pipelines(self, it)
+    }
 }
 
 impl<P: ParserId> FromIterator<P> for PipelineSet<P> {
@@ -300,7 +334,8 @@ impl<P: ParserId> FromIterator<P> for PipelineSet<P> {
 pub(crate) struct Pipelines<'m, H, I>(&'m PipelineSet<H>, I);
 
 impl<'m, H, I: IntoIterator> Pipelines<'m, H, I>
-where I::Item: AsRef<str> + Send + 'm
+where
+    I::Item: AsRef<str> + Send + 'm,
 {
     fn get_pipelines(self) -> impl Iterator<Item = (I::Item, &'m H)> {
         let Self(pipelines, it) = self;
