@@ -259,6 +259,7 @@ pub struct SerializableTransactionUpdate {
 }
 
 impl From<&SubscribeUpdateTransaction> for SerializableTransactionUpdate {
+    #[allow(clippy::too_many_lines)]
     fn from(value: &SubscribeUpdateTransaction) -> Self {
         Self {
             slot: value.slot,
@@ -484,6 +485,7 @@ impl From<&SubscribeUpdateTransaction> for SerializableTransactionUpdate {
 impl TryFrom<&SerializableTransactionUpdate> for SubscribeUpdateTransaction {
     type Error = String;
 
+    #[allow(clippy::too_many_lines)]
     fn try_from(value: &SerializableTransactionUpdate) -> Result<Self, Self::Error> {
         use solana_transaction_error::TransactionError;
 
@@ -741,7 +743,7 @@ pub fn read_transaction_update_fixture(
     let serializable: SerializableTransactionUpdate = serde_json::from_str(json_str)?;
     let tx_update = SubscribeUpdateTransaction::try_from(&serializable)
         .map_err(|e| format!("Failed to convert: {e}"))?;
-    Ok(FixtureData::TransactionUpdate(tx_update))
+    Ok(FixtureData::TransactionUpdate(Box::new(tx_update)))
 }
 
 /*

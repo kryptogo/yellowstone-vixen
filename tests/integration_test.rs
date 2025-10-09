@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use tracing::{error, info, warn};
-use yellowstone_vixen::{
-    vixen_core::{Parser, ProgramParser},
-    Pipeline, Runtime,
-};
+use yellowstone_vixen::{vixen_core::Parser, Pipeline, Runtime};
 use yellowstone_vixen_mock::{
     create_mock_transaction_update_with_cache, parse_instructions_from_txn_update,
 };
@@ -114,10 +111,11 @@ where
                                     Err(e) => {
                                         // CPI event logs will produce "Invalid Instruction discriminator" errors
                                         // This is expected behavior as they are not actual instructions
-                                        let error_msg = format!("{:?}", e);
+                                        let error_msg = format!("{e:?}");
                                         if error_msg.contains("Invalid Instruction discriminator") {
                                             info!(
-                                                "ℹ {} instruction {} is likely a CPI event log (filtered)",
+                                                "ℹ {} instruction {} is likely a CPI event log \
+                                                 (filtered)",
                                                 ix_type, ix.ix_index
                                             );
                                             filtered_count += 1;
@@ -145,8 +143,7 @@ where
                         error!("Failed to parse instructions from transaction: {:?}", e);
                         error_count += 1;
                         error_details.push(format!(
-                            "Signature: {}: Failed to parse instructions: {:?}",
-                            signature, e
+                            "Signature: {signature}: Failed to parse instructions: {e:?}"
                         ));
                     },
                 }
@@ -154,10 +151,7 @@ where
             Err(e) => {
                 error!("Failed to fetch transaction {}: {:?}", signature, e);
                 error_count += 1;
-                error_details.push(format!(
-                    "Signature: {}: Failed to fetch: {:?}",
-                    signature, e
-                ));
+                error_details.push(format!("Signature: {signature}: Failed to fetch: {e:?}"));
             },
         }
     }
@@ -179,16 +173,16 @@ where
     // Allow the case where all instructions are filtered (e.g., aggregator-invoked swaps)
     assert!(
         success_count > 0 || filtered_count > 0,
-        "Expected at least one instruction to be successfully parsed or filtered, but got 0 of each"
+        "Expected at least one instruction to be successfully parsed or filtered, but got 0 of \
+         each"
     );
     assert_eq!(
         error_count, 0,
-        "Expected no parsing errors, but got {} errors",
-        error_count
+        "Expected no parsing errors, but got {error_count} errors"
     );
 
     if error_count > 0 {
-        Err(format!("Failed to parse {} instructions", error_count).into())
+        Err(format!("Failed to parse {error_count} instructions").into())
     } else {
         Ok(())
     }

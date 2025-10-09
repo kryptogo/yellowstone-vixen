@@ -113,9 +113,7 @@ impl TryFrom<SubscribeUpdateAccount> for AccountInfo {
 pub struct SerializablePubkey(pub [u8; 32]);
 
 impl Debug for SerializablePubkey {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(self, f)
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Display::fmt(self, f) }
 }
 
 impl Display for SerializablePubkey {
@@ -125,15 +123,11 @@ impl Display for SerializablePubkey {
 }
 
 impl From<VixenPubkey> for SerializablePubkey {
-    fn from(value: VixenPubkey) -> Self {
-        Self(value.into_bytes())
-    }
+    fn from(value: VixenPubkey) -> Self { Self(value.into_bytes()) }
 }
 
 impl From<SerializablePubkey> for VixenPubkey {
-    fn from(value: SerializablePubkey) -> Self {
-        Self::new(value.0)
-    }
+    fn from(value: SerializablePubkey) -> Self { Self::new(value.0) }
 }
 
 pub type IxIndex = [usize; 2]; // [outer_ix_index, inner_ix_index]
@@ -415,15 +409,13 @@ fn convert_account_info(pubkey: Pubkey) -> impl Fn(Account) -> ClientResult<Acco
 }
 
 #[must_use]
-pub fn get_rpc_client() -> RpcClient {
-    RpcClient::new(RPC_ENDPOINT.to_string())
-}
+pub fn get_rpc_client() -> RpcClient { RpcClient::new(RPC_ENDPOINT.to_string()) }
 
 #[derive(Debug, Clone)]
 pub enum FixtureData {
     Account(SubscribeUpdateAccount),
     Instructions(Vec<SerializableInstructionUpdate>),
-    TransactionUpdate(SubscribeUpdateTransaction),
+    TransactionUpdate(Box<SubscribeUpdateTransaction>),
 }
 
 async fn fetch_fixture<P: ProgramParser>(
@@ -484,7 +476,7 @@ fn write_fixture(
                 fs::write(&path, data)?;
             },
             FixtureData::TransactionUpdate(tx_update) => {
-                let serializable = SerializableTransactionUpdate::from(&tx_update);
+                let serializable = SerializableTransactionUpdate::from(tx_update.as_ref());
                 let json_str = serde_json::to_string_pretty(&serializable)?;
                 fs::write(&path, json_str)?;
             },
