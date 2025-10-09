@@ -107,7 +107,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     #[cfg(feature = "shared-data")]
     type Output = InstructionUpdateOutput<JupiterProgramIx>;
 
-    fn id(&self) -> std::borrow::Cow<'static, str> { "Jupiter::InstructionParser".into() }
+    fn id(&self) -> std::borrow::Cow<'static, str> {
+        "Jupiter::InstructionParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -146,7 +148,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
@@ -573,6 +577,10 @@ impl InstructionParser {
                     de_ix_data,
                     swaps_event,
                 ))
+            },
+            // self cpi log
+            [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d] => {
+                Err(yellowstone_vixen_core::ParseError::Filtered)
             },
             _ => Err(yellowstone_vixen_core::ParseError::from(
                 "Invalid Instruction discriminator".to_owned(),

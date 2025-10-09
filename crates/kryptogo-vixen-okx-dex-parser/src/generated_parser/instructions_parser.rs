@@ -162,7 +162,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
@@ -623,6 +625,10 @@ impl InstructionParser {
                 let de_ix_data: WrapUnwrapV3IxData =
                     deserialize_checked(ix_data, &ix_discriminator)?;
                 Ok(DexSolanaProgramIx::WrapUnwrapV3(ix_accounts, de_ix_data))
+            },
+            // self cpi log
+            [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d] => {
+                Err(yellowstone_vixen_core::ParseError::Filtered)
             },
             _ => Err(yellowstone_vixen_core::ParseError::from(
                 "Invalid Instruction discriminator".to_owned(),
