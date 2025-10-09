@@ -165,7 +165,8 @@ impl BorshDeserialize for RouteInstructionArgs {
         // Try to deserialize route_plan, if it fails use empty vec
         // Forward compatibility: if we can't parse route_plan (e.g., unknown Swap types),
         // just return an empty vec so we can still access the other fields
-        let route_plan: Vec<RoutePlanStep> = Vec::<RoutePlanStep>::try_from_slice(route_plan_data).unwrap_or_default();
+        let route_plan: Vec<RoutePlanStep> =
+            Vec::<RoutePlanStep>::try_from_slice(route_plan_data).unwrap_or_default();
 
         Ok(Self {
             route_plan,

@@ -192,7 +192,8 @@ impl BorshDeserialize for SharedAccountsExactOutRouteInstructionArgs {
 
         // route_plan in the middle
         let route_plan_data = &data[1..end_offset - 19];
-        let route_plan: Vec<RoutePlanStep> = Vec::<RoutePlanStep>::try_from_slice(route_plan_data).unwrap_or_default();
+        let route_plan: Vec<RoutePlanStep> =
+            Vec::<RoutePlanStep>::try_from_slice(route_plan_data).unwrap_or_default();
 
         Ok(Self {
             id,

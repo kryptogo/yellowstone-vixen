@@ -46,7 +46,8 @@ impl BorshDeserialize for SwapArgs {
         // If this fails (e.g., unknown Dex variants), return empty routes
         // Forward compatibility: if we can't parse routes (e.g., unknown Dex types),
         // just return an empty vec so we can still access the amount fields
-        let routes: Vec<Vec<Route>> = Vec::<Vec<Route>>::deserialize_reader(reader).unwrap_or_default();
+        let routes: Vec<Vec<Route>> =
+            Vec::<Vec<Route>>::deserialize_reader(reader).unwrap_or_default();
 
         Ok(Self {
             amount_in,
