@@ -9689,6 +9689,7 @@ dependencies = [
 name = "yellowstone-vixen-mock"
 version = "0.5.0"
 dependencies = [
+ "bincode",
  "futures",
  "regex",
  "serde",
@@ -9696,6 +9697,7 @@ dependencies = [
  "solana-client",
  "solana-rpc-client-api",
  "solana-sdk",
+ "solana-transaction-error",
  "solana-transaction-status",
  "yellowstone-grpc-proto",
  "yellowstone-vixen-core",
