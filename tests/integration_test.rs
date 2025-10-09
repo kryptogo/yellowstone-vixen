@@ -133,6 +133,17 @@ where
         }
     }
 
+    // Assertions to ensure parsing was successful
+    assert!(
+        success_count > 0,
+        "Expected at least one instruction to be successfully parsed, but got 0"
+    );
+    assert_eq!(
+        error_count, 0,
+        "Expected no parsing errors, but got {} errors",
+        error_count
+    );
+
     if error_count > 0 {
         Err(format!("Failed to parse {} instructions", error_count).into())
     } else {
