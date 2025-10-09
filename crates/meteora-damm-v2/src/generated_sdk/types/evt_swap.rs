@@ -57,10 +57,9 @@ mod tests {
 
     #[test]
     fn test_discriminator_constant() {
-        assert_eq!(
-            EvtSwap::DISCRIMINATOR,
-            [0x1b, 0x3c, 0x15, 0xd5, 0x8a, 0xaa, 0xbb, 0x93]
-        );
+        assert_eq!(EvtSwap::DISCRIMINATOR, [
+            0x1b, 0x3c, 0x15, 0xd5, 0x8a, 0xaa, 0xbb, 0x93
+        ]);
     }
 
     #[test]
@@ -84,7 +83,7 @@ mod tests {
 
         // Verify the parsing worked by checking some fields
         assert_eq!(evt_swap.trade_direction, 0);
-        assert_eq!(evt_swap.has_referral, false);
+        assert!(!evt_swap.has_referral);
         assert_eq!(evt_swap.actual_amount_in, 3999500000000);
         assert_eq!(evt_swap.swap_result.output_amount, 77662);
     }
@@ -110,7 +109,7 @@ mod tests {
 
         // Verify the parsing worked by checking some fields
         assert_eq!(evt_swap.trade_direction, 0);
-        assert_eq!(evt_swap.has_referral, false);
+        assert!(!evt_swap.has_referral);
         assert_eq!(evt_swap.actual_amount_in, 123596607);
         assert_eq!(evt_swap.swap_result.output_amount, 4777989);
     }
