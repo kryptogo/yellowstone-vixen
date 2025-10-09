@@ -89,6 +89,7 @@ mod pipeline_error {
                         "Error already handled by previous pipeline",
                     ); */
                 },
+                // NOTE: Filter is already ignored in pub async fn handle(&self, value: &P::Input) -> Result<(), PipelineErrors> {
             }
 
             Handled(())

@@ -19,6 +19,8 @@ use std::{
     sync::Arc,
 };
 
+use yellowstone_grpc_proto::prost::Message;
+
 pub use futures;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -37,8 +39,8 @@ use yellowstone_grpc_proto::{
     },
     prelude::MessageHeader,
     solana::storage::confirmed_block::{
-        CompiledInstruction, InnerInstruction, InnerInstructions, Message, TokenBalance,
-        Transaction, TransactionStatusMeta,
+        CompiledInstruction, InnerInstruction, InnerInstructions,
+        Message as SolanaMessage, TokenBalance, Transaction, TransactionStatusMeta,
     },
 };
 use yellowstone_vixen_core::{
@@ -417,7 +419,7 @@ fn convert_to_transaction_update(
         is_vote: false,
         transaction: Some(Transaction {
             signatures,
-            message: Some(Message {
+            message: Some(SolanaMessage {
                 header: message_header,
                 account_keys,
                 recent_blockhash,
@@ -608,6 +610,60 @@ pub async fn create_mock_transaction_update(
     convert_to_transaction_update(tx).map_err(Into::into)
 }
 
+/// Create a mock `TransactionUpdate` with fixture caching support
+pub async fn create_mock_transaction_update_with_cache(
+    signature: &str,
+) -> Result<TransactionUpdate, Box<dyn std::error::Error>> {
+    maybe_create_fixture_dir()?;
+
+    // Create fixture path with _txupdate.json suffix (using base64-encoded JSON)
+    let mut file_name = signature.to_string();
+    file_name.push_str("_txupdate.json");
+    let path = Path::new(FIXTURES_PATH).join(file_name);
+
+    if path.is_file() {
+        // Read from fixture (base64-encoded JSON)
+        let json_str = fs::read_to_string(&path)?;
+        let wrapper: TransactionUpdateWrapper = serde_json::from_str(&json_str)?;
+        let bytes = bs58::decode(&wrapper.transaction_update_base58)
+            .into_vec()
+            .map_err(|e| format!("Failed to decode base58: {:?}", e))?;
+        let tx_update = SubscribeUpdateTransaction::decode(&bytes[..])?;
+        Ok(tx_update)
+    } else {
+        // Fetch from RPC and save to fixture
+        let tx_update = create_mock_transaction_update(signature).await?;
+        let mut buf = Vec::new();
+        tx_update.encode(&mut buf)?;
+
+        // Extract human-readable info
+        let sig = tx_update.transaction.as_ref().map(|t| {
+            bs58::encode(&t.signature).into_string()
+        });
+
+        let wrapper = TransactionUpdateWrapper {
+            signature: sig,
+            slot: Some(tx_update.slot),
+            transaction_update_base58: bs58::encode(&buf).into_string(),
+        };
+        let json_str = serde_json::to_string_pretty(&wrapper)?;
+        fs::write(&path, json_str)?;
+        Ok(tx_update)
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct TransactionUpdateWrapper {
+    /// Human-readable transaction signature
+    #[serde(skip_serializing_if = "Option::is_none")]
+    signature: Option<String>,
+    /// Slot number
+    #[serde(skip_serializing_if = "Option::is_none")]
+    slot: Option<u64>,
+    /// Base58-encoded protobuf binary (for machine reading)
+    transaction_update_base58: String,
+}
+
 /// Parse instructions from a `TransactionUpdate` using the core `parse_from_txn` logic
 pub fn parse_instructions_from_txn_update(
     txn_update: &TransactionUpdate,
@@ -653,6 +709,7 @@ pub fn get_rpc_client() -> RpcClient {
 pub enum FixtureData {
     Account(SubscribeUpdateAccount),
     Instructions(Vec<SerializableInstructionUpdate>),
+    TransactionUpdate(SubscribeUpdateTransaction),
 }
 
 async fn fetch_fixture<P: ProgramParser>(
@@ -711,6 +768,23 @@ fn write_fixture(
             FixtureData::Instructions(instructions) => {
                 let data = serde_json::to_string(&instructions)?;
                 fs::write(&path, data)?;
+            },
+            FixtureData::TransactionUpdate(tx_update) => {
+                let mut buf = Vec::new();
+                tx_update.encode(&mut buf)?;
+
+                // Extract human-readable info
+                let sig = tx_update.transaction.as_ref().map(|t| {
+                    bs58::encode(&t.signature).into_string()
+                });
+
+                let wrapper = TransactionUpdateWrapper {
+                    signature: sig,
+                    slot: Some(tx_update.slot),
+                    transaction_update_base58: bs58::encode(&buf).into_string(),
+                };
+                let json_str = serde_json::to_string_pretty(&wrapper)?;
+                fs::write(&path, json_str)?;
             },
         }
         Ok(data)
@@ -772,6 +846,18 @@ pub fn read_account_fixture(data: &[u8]) -> Result<FixtureData, Box<dyn std::err
 pub fn read_instructions_fixture(data: &[u8]) -> Result<FixtureData, Box<dyn std::error::Error>> {
     let instructions: Vec<SerializableInstructionUpdate> = serde_json::from_slice(data)?;
     Ok(FixtureData::Instructions(instructions))
+}
+
+pub fn read_transaction_update_fixture(
+    data: &[u8],
+) -> Result<FixtureData, Box<dyn std::error::Error>> {
+    let json_str = std::str::from_utf8(data)?;
+    let wrapper: TransactionUpdateWrapper = serde_json::from_str(json_str)?;
+    let bytes = bs58::decode(&wrapper.transaction_update_base58)
+        .into_vec()
+        .map_err(|e| format!("Failed to decode base58: {:?}", e))?;
+    let tx_update = SubscribeUpdateTransaction::decode(&bytes[..])?;
+    Ok(FixtureData::TransactionUpdate(tx_update))
 }
 
 pub fn read_fixture(path: &Path) -> Result<FixtureData, Box<dyn std::error::Error>> {
