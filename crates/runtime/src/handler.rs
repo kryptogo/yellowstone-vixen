@@ -75,9 +75,11 @@ mod pipeline_error {
             match &self {
                 Errors::Parse(_) | Errors::Handlers(_) => {
                     for e in self {
-                        // Skip logging for "Invalid Instruction discriminator" errors
+                        // Skip logging for common benign errors
                         let err_msg = format!("{}", crate::Chain(&e));
-                        if !err_msg.contains("Invalid Instruction discriminator") {
+                        if !err_msg.contains("Invalid Instruction discriminator")
+                            && !err_msg.contains("Instruction data too short")
+                        {
                             tracing::error!(
                                 err = %crate::Chain(&e),
                                 handler,
