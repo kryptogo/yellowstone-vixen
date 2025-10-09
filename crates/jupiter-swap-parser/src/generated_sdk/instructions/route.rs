@@ -154,12 +154,10 @@ impl BorshDeserialize for RouteInstructionArgs {
         let end_offset = data.len();
         let platform_fee_bps = data[end_offset - 1];
         let slippage_bps = u16::from_le_bytes([data[end_offset - 3], data[end_offset - 2]]);
-        let quoted_out_amount = u64::from_le_bytes(
-            data[end_offset - 11..end_offset - 3].try_into().unwrap()
-        );
-        let in_amount = u64::from_le_bytes(
-            data[end_offset - 19..end_offset - 11].try_into().unwrap()
-        );
+        let quoted_out_amount =
+            u64::from_le_bytes(data[end_offset - 11..end_offset - 3].try_into().unwrap());
+        let in_amount =
+            u64::from_le_bytes(data[end_offset - 19..end_offset - 11].try_into().unwrap());
 
         // Everything before the last 19 bytes is the route_plan vec
         let route_plan_data = &data[0..end_offset - 19];
@@ -171,7 +169,7 @@ impl BorshDeserialize for RouteInstructionArgs {
                 // Forward compatibility: if we can't parse route_plan (e.g., unknown Swap types),
                 // just return an empty vec so we can still access the other fields
                 Vec::new()
-            }
+            },
         };
 
         Ok(Self {

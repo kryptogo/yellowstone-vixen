@@ -161,9 +161,8 @@ impl BorshDeserialize for RouteWithTokenLedgerInstructionArgs {
         let end_offset = data.len();
         let platform_fee_bps = data[end_offset - 1];
         let slippage_bps = u16::from_le_bytes([data[end_offset - 3], data[end_offset - 2]]);
-        let quoted_out_amount = u64::from_le_bytes(
-            data[end_offset - 11..end_offset - 3].try_into().unwrap()
-        );
+        let quoted_out_amount =
+            u64::from_le_bytes(data[end_offset - 11..end_offset - 3].try_into().unwrap());
 
         // route_plan before the fixed fields
         let route_plan_data = &data[0..end_offset - 11];
