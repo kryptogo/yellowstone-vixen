@@ -11,7 +11,7 @@ const projectFolder = path.join(
   "..",
   "..",
   "crates",
-  "meteora-damm-v2"
+  "meteora-amm-parser"
 );
 
 const node = rootNodeFromAnchor(idl); // for Anchor
@@ -20,6 +20,6 @@ visit(
   node,
   renderVisitor({
     projectFolder,
-    projectName: "meteora-damm-v2",
+    projectName: "meteora-amm",
   })
 );

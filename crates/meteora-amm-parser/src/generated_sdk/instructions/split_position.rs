@@ -81,8 +81,8 @@ impl SplitPosition {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = SplitPositionInstructionData::new().try_to_vec().unwrap();
-        let mut args = args.try_to_vec().unwrap();
+        let mut data = borsh::to_vec(&SplitPositionInstructionData::new()).unwrap();
+        let mut args = borsh::to_vec(&args).unwrap();
         data.append(&mut args);
 
         solana_instruction::Instruction {
@@ -105,8 +105,6 @@ impl SplitPositionInstructionData {
             discriminator: [172, 241, 221, 138, 161, 29, 253, 42],
         }
     }
-
-    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
 impl Default for SplitPositionInstructionData {
@@ -123,10 +121,6 @@ pub struct SplitPositionInstructionArgs {
     pub reward0_percentage: u8,
     pub reward1_percentage: u8,
     pub padding: [u8; 16],
-}
-
-impl SplitPositionInstructionArgs {
-    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
 /// Instruction builder for `SplitPosition`.
@@ -481,8 +475,8 @@ impl<'a, 'b> SplitPositionCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = SplitPositionInstructionData::new().try_to_vec().unwrap();
-        let mut args = self.__args.try_to_vec().unwrap();
+        let mut data = borsh::to_vec(&SplitPositionInstructionData::new()).unwrap();
+        let mut args = borsh::to_vec(&self.__args).unwrap();
         data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
