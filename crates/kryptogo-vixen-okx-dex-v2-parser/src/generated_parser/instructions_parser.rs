@@ -118,6 +118,9 @@ impl InstructionParser {
         #[cfg(feature = "shared-data")]
         let shared_data = Arc::clone(&ix.shared);
 
+        #[cfg(feature = "shared-data")]
+        let ix_index = ix.ix_index;
+
         let ix_discriminator: [u8; 8] = ix.data[0..8].try_into()?;
         let ix_data = &ix.data[8..];
         let ix = match ix_discriminator {
@@ -192,13 +195,12 @@ impl InstructionParser {
                     event_authority: next_account(accounts)?,
                     program: next_account(accounts)?,
                 };
-                let de_ix_data: ProxySwapIxData =
-                    yellowstone_vixen_core::deserialize_checked_swap(
-                        ix_data,
-                        &ix_discriminator,
-                        "ProxySwap",
-                        deserialize_checked,
-                    )?;
+                let de_ix_data: ProxySwapIxData = yellowstone_vixen_core::deserialize_checked_swap(
+                    ix_data,
+                    &ix_discriminator,
+                    "ProxySwap",
+                    deserialize_checked,
+                )?;
                 let aggregation_event = AggregationEvent::from_logs(
                     &ix.shared
                         .log_messages
@@ -419,6 +421,7 @@ impl InstructionParser {
         ix.map(|ix| InstructionUpdateOutput {
             parsed_ix: ix,
             shared_data,
+            ix_index,
         })
     }
 }
