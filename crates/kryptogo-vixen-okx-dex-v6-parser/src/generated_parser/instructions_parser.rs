@@ -13,6 +13,7 @@ use yellowstone_vixen_core::InstructionUpdateOutput;
 
 use crate::{
     deserialize_checked,
+    generated::types::AggregationEvent,
     instructions::{
         Claim as ClaimIxAccounts, CreateTokenAccount as CreateTokenAccountIxAccounts,
         CreateTokenAccountInstructionArgs as CreateTokenAccountIxData,
@@ -39,11 +40,19 @@ pub enum DexSolanaV2ProgramIx {
         CreateTokenAccountWithSeedIxAccounts,
         CreateTokenAccountWithSeedIxData,
     ),
-    ProxySwap(ProxySwapIxAccounts, ProxySwapIxData),
-    Swap(SwapIxAccounts, SwapIxData),
-    SwapTob(SwapTobIxAccounts, SwapTobIxData),
-    SwapTobWithReceiver(SwapTobWithReceiverIxAccounts, SwapTobWithReceiverIxData),
-    SwapToc(SwapTocIxAccounts, SwapTocIxData),
+    ProxySwap(
+        ProxySwapIxAccounts,
+        ProxySwapIxData,
+        Option<AggregationEvent>,
+    ),
+    Swap(SwapIxAccounts, SwapIxData, Option<AggregationEvent>),
+    SwapTob(SwapTobIxAccounts, SwapTobIxData, Option<AggregationEvent>),
+    SwapTobWithReceiver(
+        SwapTobWithReceiverIxAccounts,
+        SwapTobWithReceiverIxData,
+        Option<AggregationEvent>,
+    ),
+    SwapToc(SwapTocIxAccounts, SwapTocIxData, Option<AggregationEvent>),
     WrapUnwrap(WrapUnwrapIxAccounts, WrapUnwrapIxData),
 }
 
@@ -184,7 +193,18 @@ impl InstructionParser {
                     program: next_account(accounts)?,
                 };
                 let de_ix_data: ProxySwapIxData = deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(DexSolanaV2ProgramIx::ProxySwap(ix_accounts, de_ix_data))
+                let aggregation_event = AggregationEvent::from_logs(
+                    &ix.shared
+                        .log_messages
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>(),
+                );
+                Ok(DexSolanaV2ProgramIx::ProxySwap(
+                    ix_accounts,
+                    de_ix_data,
+                    aggregation_event,
+                ))
             },
             [248, 198, 158, 145, 225, 117, 135, 200] => {
                 let expected_accounts_len = 7;
@@ -199,7 +219,18 @@ impl InstructionParser {
                     program: next_account(accounts)?,
                 };
                 let de_ix_data: SwapIxData = deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(DexSolanaV2ProgramIx::Swap(ix_accounts, de_ix_data))
+                let aggregation_event = AggregationEvent::from_logs(
+                    &ix.shared
+                        .log_messages
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>(),
+                );
+                Ok(DexSolanaV2ProgramIx::Swap(
+                    ix_accounts,
+                    de_ix_data,
+                    aggregation_event,
+                ))
             },
             [170, 41, 85, 177, 132, 80, 31, 53] => {
                 let expected_accounts_len = 16;
@@ -223,7 +254,18 @@ impl InstructionParser {
                     program: next_account(accounts)?,
                 };
                 let de_ix_data: SwapTobIxData = deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(DexSolanaV2ProgramIx::SwapTob(ix_accounts, de_ix_data))
+                let aggregation_event = AggregationEvent::from_logs(
+                    &ix.shared
+                        .log_messages
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>(),
+                );
+                Ok(DexSolanaV2ProgramIx::SwapTob(
+                    ix_accounts,
+                    de_ix_data,
+                    aggregation_event,
+                ))
             },
             [223, 170, 216, 234, 204, 6, 241, 25] => {
                 let expected_accounts_len = 17;
@@ -249,9 +291,17 @@ impl InstructionParser {
                 };
                 let de_ix_data: SwapTobWithReceiverIxData =
                     deserialize_checked(ix_data, &ix_discriminator)?;
+                let aggregation_event = AggregationEvent::from_logs(
+                    &ix.shared
+                        .log_messages
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>(),
+                );
                 Ok(DexSolanaV2ProgramIx::SwapTobWithReceiver(
                     ix_accounts,
                     de_ix_data,
+                    aggregation_event,
                 ))
             },
             [187, 201, 212, 51, 16, 155, 236, 60] => {
@@ -276,7 +326,18 @@ impl InstructionParser {
                     program: next_account(accounts)?,
                 };
                 let de_ix_data: SwapTocIxData = deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(DexSolanaV2ProgramIx::SwapToc(ix_accounts, de_ix_data))
+                let aggregation_event = AggregationEvent::from_logs(
+                    &ix.shared
+                        .log_messages
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>(),
+                );
+                Ok(DexSolanaV2ProgramIx::SwapToc(
+                    ix_accounts,
+                    de_ix_data,
+                    aggregation_event,
+                ))
             },
             [220, 101, 139, 249, 41, 190, 118, 199] => {
                 let expected_accounts_len = 12;
@@ -671,7 +732,7 @@ mod proto_parser {
                         ),
                     }
                 },
-                DexSolanaV2ProgramIx::ProxySwap(acc, data) => proto_def::ProgramIxs {
+                DexSolanaV2ProgramIx::ProxySwap(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::ProxySwap(
                         proto_def::ProxySwapIx {
                             accounts: Some(acc.into_proto()),
@@ -679,13 +740,13 @@ mod proto_parser {
                         },
                     )),
                 },
-                DexSolanaV2ProgramIx::Swap(acc, data) => proto_def::ProgramIxs {
+                DexSolanaV2ProgramIx::Swap(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Swap(proto_def::SwapIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
                     })),
                 },
-                DexSolanaV2ProgramIx::SwapTob(acc, data) => proto_def::ProgramIxs {
+                DexSolanaV2ProgramIx::SwapTob(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapTob(
                         proto_def::SwapTobIx {
                             accounts: Some(acc.into_proto()),
@@ -693,7 +754,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                DexSolanaV2ProgramIx::SwapTobWithReceiver(acc, data) => proto_def::ProgramIxs {
+                DexSolanaV2ProgramIx::SwapTobWithReceiver(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapTobWithReceiver(
                         proto_def::SwapTobWithReceiverIx {
                             accounts: Some(acc.into_proto()),
@@ -701,7 +762,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                DexSolanaV2ProgramIx::SwapToc(acc, data) => proto_def::ProgramIxs {
+                DexSolanaV2ProgramIx::SwapToc(acc, data, _) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::SwapToc(
                         proto_def::SwapTocIx {
                             accounts: Some(acc.into_proto()),

@@ -5,6 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+pub(crate) mod r#aggregation_event;
 pub(crate) mod r#dex;
 pub(crate) mod r#route;
 pub(crate) mod r#swap_args;
@@ -13,6 +14,6 @@ pub(crate) mod r#swap_event;
 pub(crate) mod r#swap_with_fees_cpi_event;
 
 pub use self::{
-    r#dex::*, r#route::*, r#swap_args::*, r#swap_cpi_event::*, r#swap_event::*,
-    r#swap_with_fees_cpi_event::*,
+    r#aggregation_event::*, r#dex::*, r#route::*, r#swap_args::*, r#swap_cpi_event::*,
+    r#swap_event::*, r#swap_with_fees_cpi_event::*,
 };
