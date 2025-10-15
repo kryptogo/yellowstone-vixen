@@ -6,7 +6,7 @@
 //!
 syntax = "proto3";
 
-package vixen.parser.okx_dex_v6;
+package vixen.parser.okx_dex_v2;
 
 message ClaimIx {
 	ClaimIxAccounts accounts = 1;

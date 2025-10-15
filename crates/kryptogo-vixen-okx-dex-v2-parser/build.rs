@@ -14,6 +14,6 @@ fn main() {
     prost_build::Config::new()
         .enable_type_names()
         .file_descriptor_set_path(out_dir.join("descriptor.bin"))
-        .compile_protos(&["proto/okx_dex_v6.proto"], &["proto"])
+        .compile_protos(&["proto/okx_dex_v2.proto"], &["proto"])
         .unwrap();
 }

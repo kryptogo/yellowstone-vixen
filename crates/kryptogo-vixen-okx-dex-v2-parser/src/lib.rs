@@ -11,7 +11,7 @@ pub const ID: Pubkey = DEX_SOLANA_V2_ID;
 pub mod proto_def {
     #![allow(clippy::large_enum_variant)]
 
-    tonic::include_proto!("vixen.parser.okx_dex_v6");
+    tonic::include_proto!("vixen.parser.okx_dex_v2");
 
     pub const DESCRIPTOR_SET: &[u8] = tonic::include_file_descriptor_set!("descriptor");
 }

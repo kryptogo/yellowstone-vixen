@@ -11,7 +11,7 @@ const projectFolder = path.join(
   "..",
   "..",
   "crates",
-  "kryptogo-vixen-okx-dex-v6-parser"
+  "kryptogo-vixen-okx-dex-v2-parser"
 );
 
 const node = rootNodeFromAnchor(idl); // for Anchor
@@ -20,6 +20,6 @@ visit(
   node,
   renderVisitor({
     projectFolder,
-    projectName: "okx-dex-v6",
+    projectName: "okx-dex-v2",
   })
 );

@@ -1,7 +1,7 @@
 
 
 [package]
-name = "yellowstone-vixen-okx-dex-v6-parser"
+name = "yellowstone-vixen-okx-dex-v2-parser"
 version = "0.1.0"
 edition = "2021"
 description = ""
