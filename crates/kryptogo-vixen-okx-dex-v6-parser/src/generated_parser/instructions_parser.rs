@@ -192,7 +192,13 @@ impl InstructionParser {
                     event_authority: next_account(accounts)?,
                     program: next_account(accounts)?,
                 };
-                let de_ix_data: ProxySwapIxData = deserialize_checked(ix_data, &ix_discriminator)?;
+                let de_ix_data: ProxySwapIxData =
+                    yellowstone_vixen_core::deserialize_checked_swap(
+                        ix_data,
+                        &ix_discriminator,
+                        "ProxySwap",
+                        deserialize_checked,
+                    )?;
                 let aggregation_event = AggregationEvent::from_logs(
                     &ix.shared
                         .log_messages
@@ -218,7 +224,12 @@ impl InstructionParser {
                     event_authority: next_account(accounts)?,
                     program: next_account(accounts)?,
                 };
-                let de_ix_data: SwapIxData = deserialize_checked(ix_data, &ix_discriminator)?;
+                let de_ix_data: SwapIxData = yellowstone_vixen_core::deserialize_checked_swap(
+                    ix_data,
+                    &ix_discriminator,
+                    "Swap",
+                    deserialize_checked,
+                )?;
                 let aggregation_event = AggregationEvent::from_logs(
                     &ix.shared
                         .log_messages
@@ -253,7 +264,12 @@ impl InstructionParser {
                     event_authority: next_account(accounts)?,
                     program: next_account(accounts)?,
                 };
-                let de_ix_data: SwapTobIxData = deserialize_checked(ix_data, &ix_discriminator)?;
+                let de_ix_data: SwapTobIxData = yellowstone_vixen_core::deserialize_checked_swap(
+                    ix_data,
+                    &ix_discriminator,
+                    "SwapTob",
+                    deserialize_checked,
+                )?;
                 let aggregation_event = AggregationEvent::from_logs(
                     &ix.shared
                         .log_messages
@@ -290,7 +306,12 @@ impl InstructionParser {
                     program: next_account(accounts)?,
                 };
                 let de_ix_data: SwapTobWithReceiverIxData =
-                    deserialize_checked(ix_data, &ix_discriminator)?;
+                    yellowstone_vixen_core::deserialize_checked_swap(
+                        ix_data,
+                        &ix_discriminator,
+                        "SwapTobWithReceiver",
+                        deserialize_checked,
+                    )?;
                 let aggregation_event = AggregationEvent::from_logs(
                     &ix.shared
                         .log_messages
@@ -325,7 +346,12 @@ impl InstructionParser {
                     event_authority: next_account(accounts)?,
                     program: next_account(accounts)?,
                 };
-                let de_ix_data: SwapTocIxData = deserialize_checked(ix_data, &ix_discriminator)?;
+                let de_ix_data: SwapTocIxData = yellowstone_vixen_core::deserialize_checked_swap(
+                    ix_data,
+                    &ix_discriminator,
+                    "SwapToc",
+                    deserialize_checked,
+                )?;
                 let aggregation_event = AggregationEvent::from_logs(
                     &ix.shared
                         .log_messages
