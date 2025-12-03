@@ -76,12 +76,14 @@ mod pipeline_error {
                 Errors::Parse(_) => {
                     for e in self {
                         // Skip logging for common benign errors related to version mismatches
+                        // or malformed token extension accounts
                         let err_msg = format!("{}", crate::Chain(&e));
                         let is_swap_error = err_msg.contains("Swap Instruction Failed");
                         let is_benign_parse_error = !is_swap_error
                             && (err_msg.contains("Invalid Instruction discriminator")
                                 || err_msg.contains("Instruction data too short")
-                                || err_msg.contains("Unexpected length of input"));
+                                || err_msg.contains("Unexpected length of input")
+                                || err_msg.contains("An account's data contents was invalid"));
 
                         if is_benign_parse_error {
                             // Log benign errors at debug level for troubleshooting
