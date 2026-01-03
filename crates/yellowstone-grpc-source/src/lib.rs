@@ -139,7 +139,7 @@ impl SourceTrait for YellowstoneGrpcSource {
                 }
 
                 // Forward all updates to the buffer
-                if let Err(_) = tx.send(update_result).await {
+                if tx.send(update_result).await.is_err() {
                     // Channel closed, likely due to shutdown - exit gracefully
                     tracing::debug!("Update channel closed, shutting down receiver task");
                     break;
