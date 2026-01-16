@@ -294,10 +294,10 @@ message MigratePoolCoinCreatorEvent {
 	string new_coin_creator = 6;
 }
 
-pub type OptionBool = message OptionBool {
-  bool field_0 = 1;
+message OptionBool {
+	bool value = 1;
 }
-;
+
 message ReservedFeeRecipientsEvent {
 	int64 timestamp = 1;
 	string reserved_fee_recipient = 2;

@@ -250,6 +250,10 @@ pub mod proto_types_parsers {
             }
         }
     }
+    use crate::types::OptionBool;
+    impl IntoProto<proto_def::OptionBool> for OptionBool {
+        fn into_proto(self) -> proto_def::OptionBool { proto_def::OptionBool { value: self.value } }
+    }
     use crate::types::ReservedFeeRecipientsEvent;
     impl IntoProto<proto_def::ReservedFeeRecipientsEvent> for ReservedFeeRecipientsEvent {
         fn into_proto(self) -> proto_def::ReservedFeeRecipientsEvent {
