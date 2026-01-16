@@ -10,20 +10,16 @@ use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct UpdateFeeConfigEvent {
+pub struct AdminUpdateTokenIncentivesEvent {
+    pub start_time: i64,
+    pub end_time: i64,
+    pub day_number: u64,
+    pub token_supply_per_day: u64,
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub mint: Pubkey,
+    pub seconds_in_a_day: i64,
     pub timestamp: i64,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub admin: Pubkey,
-    pub lp_fee_basis_points: u64,
-    pub protocol_fee_basis_points: u64,
-    pub protocol_fee_recipients: [Pubkey; 8],
-    pub coin_creator_fee_basis_points: u64,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub admin_set_coin_creator_authority: Pubkey,
 }

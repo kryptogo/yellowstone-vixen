@@ -7,40 +7,41 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
-pub const EXTEND_ACCOUNT_DISCRIMINATOR: [u8; 8] = [234, 102, 194, 203, 150, 72, 62, 229];
+pub const TOGGLE_MAYHEM_MODE_DISCRIMINATOR: [u8; 8] = [1, 9, 111, 208, 100, 31, 255, 163];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct ExtendAccount {
-    pub account: solana_pubkey::Pubkey,
+pub struct ToggleMayhemMode {
+    pub admin: solana_pubkey::Pubkey,
 
-    pub user: solana_pubkey::Pubkey,
-
-    pub system_program: solana_pubkey::Pubkey,
+    pub global_config: solana_pubkey::Pubkey,
 
     pub event_authority: solana_pubkey::Pubkey,
 
     pub program: solana_pubkey::Pubkey,
 }
 
-impl ExtendAccount {
-    pub fn instruction(&self) -> solana_instruction::Instruction {
-        self.instruction_with_remaining_accounts(&[])
+impl ToggleMayhemMode {
+    pub fn instruction(
+        &self,
+        args: ToggleMayhemModeInstructionArgs,
+    ) -> solana_instruction::Instruction {
+        self.instruction_with_remaining_accounts(args, &[])
     }
 
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
+        args: ToggleMayhemModeInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
-        accounts.push(solana_instruction::AccountMeta::new(self.account, false));
+        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.user, true,
+            self.admin, true,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.system_program,
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.global_config,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -52,7 +53,9 @@ impl ExtendAccount {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = ExtendAccountInstructionData::new().try_to_vec().unwrap();
+        let mut data = ToggleMayhemModeInstructionData::new().try_to_vec().unwrap();
+        let mut args = args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         solana_instruction::Instruction {
             program_id: crate::PUMP_AMM_ID,
@@ -64,62 +67,64 @@ impl ExtendAccount {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ExtendAccountInstructionData {
+pub struct ToggleMayhemModeInstructionData {
     discriminator: [u8; 8],
 }
 
-impl ExtendAccountInstructionData {
+impl ToggleMayhemModeInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [234, 102, 194, 203, 150, 72, 62, 229],
+            discriminator: [1, 9, 111, 208, 100, 31, 255, 163],
         }
     }
 
     pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
-impl Default for ExtendAccountInstructionData {
+impl Default for ToggleMayhemModeInstructionData {
     fn default() -> Self { Self::new() }
 }
 
-/// Instruction builder for `ExtendAccount`.
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ToggleMayhemModeInstructionArgs {
+    pub enabled: bool,
+}
+
+impl ToggleMayhemModeInstructionArgs {
+    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
+}
+
+/// Instruction builder for `ToggleMayhemMode`.
 ///
 /// ### Accounts:
 ///
-///   0. `[writable]` account
-///   1. `[signer]` user
-///   2. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   3. `[]` event_authority
-///   4. `[]` program
+///   0. `[signer]` admin
+///   1. `[writable]` global_config
+///   2. `[]` event_authority
+///   3. `[]` program
 #[derive(Clone, Debug, Default)]
-pub struct ExtendAccountBuilder {
-    account: Option<solana_pubkey::Pubkey>,
-    user: Option<solana_pubkey::Pubkey>,
-    system_program: Option<solana_pubkey::Pubkey>,
+pub struct ToggleMayhemModeBuilder {
+    admin: Option<solana_pubkey::Pubkey>,
+    global_config: Option<solana_pubkey::Pubkey>,
     event_authority: Option<solana_pubkey::Pubkey>,
     program: Option<solana_pubkey::Pubkey>,
+    enabled: Option<bool>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl ExtendAccountBuilder {
+impl ToggleMayhemModeBuilder {
     pub fn new() -> Self { Self::default() }
 
     #[inline(always)]
-    pub fn account(&mut self, account: solana_pubkey::Pubkey) -> &mut Self {
-        self.account = Some(account);
+    pub fn admin(&mut self, admin: solana_pubkey::Pubkey) -> &mut Self {
+        self.admin = Some(admin);
         self
     }
 
     #[inline(always)]
-    pub fn user(&mut self, user: solana_pubkey::Pubkey) -> &mut Self {
-        self.user = Some(user);
-        self
-    }
-
-    /// `[optional account, default to '11111111111111111111111111111111']`
-    #[inline(always)]
-    pub fn system_program(&mut self, system_program: solana_pubkey::Pubkey) -> &mut Self {
-        self.system_program = Some(system_program);
+    pub fn global_config(&mut self, global_config: solana_pubkey::Pubkey) -> &mut Self {
+        self.global_config = Some(global_config);
         self
     }
 
@@ -132,6 +137,12 @@ impl ExtendAccountBuilder {
     #[inline(always)]
     pub fn program(&mut self, program: solana_pubkey::Pubkey) -> &mut Self {
         self.program = Some(program);
+        self
+    }
+
+    #[inline(always)]
+    pub fn enabled(&mut self, enabled: bool) -> &mut Self {
+        self.enabled = Some(enabled);
         self
     }
 
@@ -154,61 +165,60 @@ impl ExtendAccountBuilder {
 
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = ExtendAccount {
-            account: self.account.expect("account is not set"),
-            user: self.user.expect("user is not set"),
-            system_program: self
-                .system_program
-                .unwrap_or(solana_pubkey::pubkey!("11111111111111111111111111111111")),
+        let accounts = ToggleMayhemMode {
+            admin: self.admin.expect("admin is not set"),
+            global_config: self.global_config.expect("global_config is not set"),
             event_authority: self.event_authority.expect("event_authority is not set"),
             program: self.program.expect("program is not set"),
         };
+        let args = ToggleMayhemModeInstructionArgs {
+            enabled: self.enabled.clone().expect("enabled is not set"),
+        };
 
-        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `extend_account` CPI accounts.
-pub struct ExtendAccountCpiAccounts<'a, 'b> {
-    pub account: &'b solana_account_info::AccountInfo<'a>,
+/// `toggle_mayhem_mode` CPI accounts.
+pub struct ToggleMayhemModeCpiAccounts<'a, 'b> {
+    pub admin: &'b solana_account_info::AccountInfo<'a>,
 
-    pub user: &'b solana_account_info::AccountInfo<'a>,
-
-    pub system_program: &'b solana_account_info::AccountInfo<'a>,
+    pub global_config: &'b solana_account_info::AccountInfo<'a>,
 
     pub event_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `extend_account` CPI instruction.
-pub struct ExtendAccountCpi<'a, 'b> {
+/// `toggle_mayhem_mode` CPI instruction.
+pub struct ToggleMayhemModeCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
 
-    pub account: &'b solana_account_info::AccountInfo<'a>,
+    pub admin: &'b solana_account_info::AccountInfo<'a>,
 
-    pub user: &'b solana_account_info::AccountInfo<'a>,
-
-    pub system_program: &'b solana_account_info::AccountInfo<'a>,
+    pub global_config: &'b solana_account_info::AccountInfo<'a>,
 
     pub event_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub program: &'b solana_account_info::AccountInfo<'a>,
+    /// The arguments for the instruction.
+    pub __args: ToggleMayhemModeInstructionArgs,
 }
 
-impl<'a, 'b> ExtendAccountCpi<'a, 'b> {
+impl<'a, 'b> ToggleMayhemModeCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: ExtendAccountCpiAccounts<'a, 'b>,
+        accounts: ToggleMayhemModeCpiAccounts<'a, 'b>,
+        args: ToggleMayhemModeInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
-            account: accounts.account,
-            user: accounts.user,
-            system_program: accounts.system_program,
+            admin: accounts.admin,
+            global_config: accounts.global_config,
             event_authority: accounts.event_authority,
             program: accounts.program,
+            __args: args,
         }
     }
 
@@ -238,17 +248,13 @@ impl<'a, 'b> ExtendAccountCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
-        accounts.push(solana_instruction::AccountMeta::new(
-            *self.account.key,
-            false,
-        ));
+        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.user.key,
+            *self.admin.key,
             true,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.system_program.key,
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.global_config.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -266,18 +272,19 @@ impl<'a, 'b> ExtendAccountCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = ExtendAccountInstructionData::new().try_to_vec().unwrap();
+        let mut data = ToggleMayhemModeInstructionData::new().try_to_vec().unwrap();
+        let mut args = self.__args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
             program_id: crate::PUMP_AMM_ID,
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(6 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(5 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
-        account_infos.push(self.account.clone());
-        account_infos.push(self.user.clone());
-        account_infos.push(self.system_program.clone());
+        account_infos.push(self.admin.clone());
+        account_infos.push(self.global_config.clone());
         account_infos.push(self.event_authority.clone());
         account_infos.push(self.program.clone());
         remaining_accounts
@@ -292,52 +299,45 @@ impl<'a, 'b> ExtendAccountCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `ExtendAccount` via CPI.
+/// Instruction builder for `ToggleMayhemMode` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[writable]` account
-///   1. `[signer]` user
-///   2. `[]` system_program
-///   3. `[]` event_authority
-///   4. `[]` program
+///   0. `[signer]` admin
+///   1. `[writable]` global_config
+///   2. `[]` event_authority
+///   3. `[]` program
 #[derive(Clone, Debug)]
-pub struct ExtendAccountCpiBuilder<'a, 'b> {
-    instruction: Box<ExtendAccountCpiBuilderInstruction<'a, 'b>>,
+pub struct ToggleMayhemModeCpiBuilder<'a, 'b> {
+    instruction: Box<ToggleMayhemModeCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> ExtendAccountCpiBuilder<'a, 'b> {
+impl<'a, 'b> ToggleMayhemModeCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(ExtendAccountCpiBuilderInstruction {
+        let instruction = Box::new(ToggleMayhemModeCpiBuilderInstruction {
             __program: program,
-            account: None,
-            user: None,
-            system_program: None,
+            admin: None,
+            global_config: None,
             event_authority: None,
             program: None,
+            enabled: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
     }
 
     #[inline(always)]
-    pub fn account(&mut self, account: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.account = Some(account);
+    pub fn admin(&mut self, admin: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.admin = Some(admin);
         self
     }
 
     #[inline(always)]
-    pub fn user(&mut self, user: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.user = Some(user);
-        self
-    }
-
-    #[inline(always)]
-    pub fn system_program(
+    pub fn global_config(
         &mut self,
-        system_program: &'b solana_account_info::AccountInfo<'a>,
+        global_config: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.system_program = Some(system_program);
+        self.instruction.global_config = Some(global_config);
         self
     }
 
@@ -353,6 +353,12 @@ impl<'a, 'b> ExtendAccountCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn program(&mut self, program: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.program = Some(program);
+        self
+    }
+
+    #[inline(always)]
+    pub fn enabled(&mut self, enabled: bool) -> &mut Self {
+        self.instruction.enabled = Some(enabled);
         self
     }
 
@@ -391,17 +397,22 @@ impl<'a, 'b> ExtendAccountCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let instruction = ExtendAccountCpi {
+        let args = ToggleMayhemModeInstructionArgs {
+            enabled: self
+                .instruction
+                .enabled
+                .clone()
+                .expect("enabled is not set"),
+        };
+        let instruction = ToggleMayhemModeCpi {
             __program: self.instruction.__program,
 
-            account: self.instruction.account.expect("account is not set"),
+            admin: self.instruction.admin.expect("admin is not set"),
 
-            user: self.instruction.user.expect("user is not set"),
-
-            system_program: self
+            global_config: self
                 .instruction
-                .system_program
-                .expect("system_program is not set"),
+                .global_config
+                .expect("global_config is not set"),
 
             event_authority: self
                 .instruction
@@ -409,6 +420,7 @@ impl<'a, 'b> ExtendAccountCpiBuilder<'a, 'b> {
                 .expect("event_authority is not set"),
 
             program: self.instruction.program.expect("program is not set"),
+            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -418,13 +430,13 @@ impl<'a, 'b> ExtendAccountCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct ExtendAccountCpiBuilderInstruction<'a, 'b> {
+struct ToggleMayhemModeCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
-    account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    user: Option<&'b solana_account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    admin: Option<&'b solana_account_info::AccountInfo<'a>>,
+    global_config: Option<&'b solana_account_info::AccountInfo<'a>>,
     event_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    enabled: Option<bool>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

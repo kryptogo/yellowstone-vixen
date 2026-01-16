@@ -10,14 +10,13 @@ use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct CreatePoolEvent {
+pub struct AdminSetCoinCreatorEvent {
     pub timestamp: i64,
-    pub index: u16,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
-    pub creator: Pubkey,
+    pub admin_set_coin_creator_authority: Pubkey,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
@@ -27,41 +26,15 @@ pub struct CreatePoolEvent {
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
-    pub quote_mint: Pubkey,
-    pub base_mint_decimals: u8,
-    pub quote_mint_decimals: u8,
-    pub base_amount_in: u64,
-    pub quote_amount_in: u64,
-    pub pool_base_amount: u64,
-    pub pool_quote_amount: u64,
-    pub minimum_liquidity: u64,
-    pub initial_liquidity: u64,
-    pub lp_token_amount_out: u64,
-    pub pool_bump: u8,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     pub pool: Pubkey,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
-    pub lp_mint: Pubkey,
+    pub old_coin_creator: Pubkey,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
-    pub user_base_token_account: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub user_quote_token_account: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub coin_creator: Pubkey,
-    pub is_mayhem_mode: bool,
+    pub new_coin_creator: Pubkey,
 }

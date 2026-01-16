@@ -8,53 +8,25 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_pubkey::Pubkey;
 
+use crate::generated::types::{FeeTier, Fees};
+
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct GlobalConfig {
+pub struct FeeConfig {
     pub discriminator: [u8; 8],
-    /// The admin pubkey
+    pub bump: u8,
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub admin: Pubkey,
-    pub lp_fee_basis_points: u64,
-    pub protocol_fee_basis_points: u64,
-    /// Flags to disable certain functionality
-    /// bit 0 - Disable create pool
-    /// bit 1 - Disable deposit
-    /// bit 2 - Disable withdraw
-    /// bit 3 - Disable buy
-    /// bit 4 - Disable sell
-    pub disable_flags: u8,
-    /// Addresses of the protocol fee recipients
-    pub protocol_fee_recipients: [Pubkey; 8],
-    pub coin_creator_fee_basis_points: u64,
-    /// The admin authority for setting coin creators
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub admin_set_coin_creator_authority: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub whitelist_pda: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub reserved_fee_recipient: Pubkey,
-    pub mayhem_mode_enabled: bool,
-    pub reserved_fee_recipients: [Pubkey; 7],
+    pub flat_fees: Fees,
+    pub fee_tiers: Vec<FeeTier>,
 }
 
-pub const GLOBAL_CONFIG_DISCRIMINATOR: [u8; 8] = [149, 8, 156, 202, 160, 252, 176, 217];
+pub const FEE_CONFIG_DISCRIMINATOR: [u8; 8] = [143, 52, 146, 187, 219, 123, 76, 155];
 
-impl GlobalConfig {
-    pub const LEN: usize = 642;
-
+impl FeeConfig {
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;
@@ -62,7 +34,7 @@ impl GlobalConfig {
     }
 }
 
-impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for GlobalConfig {
+impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for FeeConfig {
     type Error = std::io::Error;
 
     fn try_from(account_info: &solana_account_info::AccountInfo<'a>) -> Result<Self, Self::Error> {
@@ -72,30 +44,30 @@ impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for GlobalConfig {
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_global_config(
+pub fn fetch_fee_config(
     rpc: &solana_client::rpc_client::RpcClient,
     address: &solana_pubkey::Pubkey,
-) -> Result<crate::shared::DecodedAccount<GlobalConfig>, std::io::Error> {
-    let accounts = fetch_all_global_config(rpc, &[*address])?;
+) -> Result<crate::shared::DecodedAccount<FeeConfig>, std::io::Error> {
+    let accounts = fetch_all_fee_config(rpc, &[*address])?;
     Ok(accounts[0].clone())
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_all_global_config(
+pub fn fetch_all_fee_config(
     rpc: &solana_client::rpc_client::RpcClient,
     addresses: &[solana_pubkey::Pubkey],
-) -> Result<Vec<crate::shared::DecodedAccount<GlobalConfig>>, std::io::Error> {
+) -> Result<Vec<crate::shared::DecodedAccount<FeeConfig>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
-    let mut decoded_accounts: Vec<crate::shared::DecodedAccount<GlobalConfig>> = Vec::new();
+    let mut decoded_accounts: Vec<crate::shared::DecodedAccount<FeeConfig>> = Vec::new();
     for i in 0..addresses.len() {
         let address = addresses[i];
         let account = accounts[i].as_ref().ok_or(std::io::Error::new(
             std::io::ErrorKind::Other,
             format!("Account not found: {}", address),
         ))?;
-        let data = GlobalConfig::from_bytes(&account.data)?;
+        let data = FeeConfig::from_bytes(&account.data)?;
         decoded_accounts.push(crate::shared::DecodedAccount {
             address,
             account: account.clone(),
@@ -106,27 +78,27 @@ pub fn fetch_all_global_config(
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_maybe_global_config(
+pub fn fetch_maybe_fee_config(
     rpc: &solana_client::rpc_client::RpcClient,
     address: &solana_pubkey::Pubkey,
-) -> Result<crate::shared::MaybeAccount<GlobalConfig>, std::io::Error> {
-    let accounts = fetch_all_maybe_global_config(rpc, &[*address])?;
+) -> Result<crate::shared::MaybeAccount<FeeConfig>, std::io::Error> {
+    let accounts = fetch_all_maybe_fee_config(rpc, &[*address])?;
     Ok(accounts[0].clone())
 }
 
 #[cfg(feature = "fetch")]
-pub fn fetch_all_maybe_global_config(
+pub fn fetch_all_maybe_fee_config(
     rpc: &solana_client::rpc_client::RpcClient,
     addresses: &[solana_pubkey::Pubkey],
-) -> Result<Vec<crate::shared::MaybeAccount<GlobalConfig>>, std::io::Error> {
+) -> Result<Vec<crate::shared::MaybeAccount<FeeConfig>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
-    let mut decoded_accounts: Vec<crate::shared::MaybeAccount<GlobalConfig>> = Vec::new();
+    let mut decoded_accounts: Vec<crate::shared::MaybeAccount<FeeConfig>> = Vec::new();
     for i in 0..addresses.len() {
         let address = addresses[i];
         if let Some(account) = accounts[i].as_ref() {
-            let data = GlobalConfig::from_bytes(&account.data)?;
+            let data = FeeConfig::from_bytes(&account.data)?;
             decoded_accounts.push(crate::shared::MaybeAccount::Exists(
                 crate::shared::DecodedAccount {
                     address,
@@ -142,24 +114,24 @@ pub fn fetch_all_maybe_global_config(
 }
 
 #[cfg(feature = "anchor")]
-impl anchor_lang::AccountDeserialize for GlobalConfig {
+impl anchor_lang::AccountDeserialize for FeeConfig {
     fn try_deserialize_unchecked(buf: &mut &[u8]) -> anchor_lang::Result<Self> {
         Ok(Self::deserialize(buf)?)
     }
 }
 
 #[cfg(feature = "anchor")]
-impl anchor_lang::AccountSerialize for GlobalConfig {}
+impl anchor_lang::AccountSerialize for FeeConfig {}
 
 #[cfg(feature = "anchor")]
-impl anchor_lang::Owner for GlobalConfig {
+impl anchor_lang::Owner for FeeConfig {
     fn owner() -> Pubkey { crate::PUMP_AMM_ID }
 }
 
 #[cfg(feature = "anchor-idl-build")]
-impl anchor_lang::IdlBuild for GlobalConfig {}
+impl anchor_lang::IdlBuild for FeeConfig {}
 
 #[cfg(feature = "anchor-idl-build")]
-impl anchor_lang::Discriminator for GlobalConfig {
+impl anchor_lang::Discriminator for FeeConfig {
     const DISCRIMINATOR: &[u8] = &[0; 8];
 }

@@ -6,7 +6,14 @@
 //!
 
 pub(crate) mod r#bonding_curve;
+pub(crate) mod r#fee_config;
 pub(crate) mod r#global_config;
+pub(crate) mod r#global_volume_accumulator;
 pub(crate) mod r#pool;
+pub(crate) mod r#sharing_config;
+pub(crate) mod r#user_volume_accumulator;
 
-pub use self::{r#bonding_curve::*, r#global_config::*, r#pool::*};
+pub use self::{
+    r#bonding_curve::*, r#fee_config::*, r#global_config::*, r#global_volume_accumulator::*,
+    r#pool::*, r#sharing_config::*, r#user_volume_accumulator::*,
+};

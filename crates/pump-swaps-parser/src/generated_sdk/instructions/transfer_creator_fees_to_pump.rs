@@ -7,14 +7,20 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
-pub const COLLECT_COIN_CREATOR_FEE_DISCRIMINATOR: [u8; 8] = [160, 57, 89, 42, 181, 139, 43, 66];
+pub const TRANSFER_CREATOR_FEES_TO_PUMP_DISCRIMINATOR: [u8; 8] =
+    [139, 52, 134, 85, 228, 229, 108, 241];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct CollectCoinCreatorFee {
-    pub quote_mint: solana_pubkey::Pubkey,
+pub struct TransferCreatorFeesToPump {
+    /// Pump Canonical Pool are quoted in wSOL
+    pub wsol_mint: solana_pubkey::Pubkey,
 
-    pub quote_token_program: solana_pubkey::Pubkey,
+    pub token_program: solana_pubkey::Pubkey,
+
+    pub system_program: solana_pubkey::Pubkey,
+
+    pub associated_token_program: solana_pubkey::Pubkey,
 
     pub coin_creator: solana_pubkey::Pubkey,
 
@@ -22,14 +28,14 @@ pub struct CollectCoinCreatorFee {
 
     pub coin_creator_vault_ata: solana_pubkey::Pubkey,
 
-    pub coin_creator_token_account: solana_pubkey::Pubkey,
+    pub pump_creator_vault: solana_pubkey::Pubkey,
 
     pub event_authority: solana_pubkey::Pubkey,
 
     pub program: solana_pubkey::Pubkey,
 }
 
-impl CollectCoinCreatorFee {
+impl TransferCreatorFeesToPump {
     pub fn instruction(&self) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(&[])
     }
@@ -40,20 +46,28 @@ impl CollectCoinCreatorFee {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.quote_mint,
+            self.wsol_mint,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.quote_token_program,
+            self.token_program,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.system_program,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.associated_token_program,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.coin_creator,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
+        accounts.push(solana_instruction::AccountMeta::new(
             self.coin_creator_vault_authority,
             false,
         ));
@@ -62,7 +76,7 @@ impl CollectCoinCreatorFee {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            self.coin_creator_token_account,
+            self.pump_creator_vault,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -74,7 +88,7 @@ impl CollectCoinCreatorFee {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = CollectCoinCreatorFeeInstructionData::new()
+        let data = TransferCreatorFeesToPumpInstructionData::new()
             .try_to_vec()
             .unwrap();
 
@@ -88,61 +102,84 @@ impl CollectCoinCreatorFee {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct CollectCoinCreatorFeeInstructionData {
+pub struct TransferCreatorFeesToPumpInstructionData {
     discriminator: [u8; 8],
 }
 
-impl CollectCoinCreatorFeeInstructionData {
+impl TransferCreatorFeesToPumpInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [160, 57, 89, 42, 181, 139, 43, 66],
+            discriminator: [139, 52, 134, 85, 228, 229, 108, 241],
         }
     }
 
     pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
-impl Default for CollectCoinCreatorFeeInstructionData {
+impl Default for TransferCreatorFeesToPumpInstructionData {
     fn default() -> Self { Self::new() }
 }
 
-/// Instruction builder for `CollectCoinCreatorFee`.
+/// Instruction builder for `TransferCreatorFeesToPump`.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` quote_mint
-///   1. `[]` quote_token_program
-///   2. `[]` coin_creator
-///   3. `[]` coin_creator_vault_authority
-///   4. `[writable]` coin_creator_vault_ata
-///   5. `[writable]` coin_creator_token_account
-///   6. `[]` event_authority
-///   7. `[]` program
+///   0. `[]` wsol_mint
+///   1. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   2. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   3. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
+///   4. `[]` coin_creator
+///   5. `[writable]` coin_creator_vault_authority
+///   6. `[writable]` coin_creator_vault_ata
+///   7. `[writable]` pump_creator_vault
+///   8. `[]` event_authority
+///   9. `[]` program
 #[derive(Clone, Debug, Default)]
-pub struct CollectCoinCreatorFeeBuilder {
-    quote_mint: Option<solana_pubkey::Pubkey>,
-    quote_token_program: Option<solana_pubkey::Pubkey>,
+pub struct TransferCreatorFeesToPumpBuilder {
+    wsol_mint: Option<solana_pubkey::Pubkey>,
+    token_program: Option<solana_pubkey::Pubkey>,
+    system_program: Option<solana_pubkey::Pubkey>,
+    associated_token_program: Option<solana_pubkey::Pubkey>,
     coin_creator: Option<solana_pubkey::Pubkey>,
     coin_creator_vault_authority: Option<solana_pubkey::Pubkey>,
     coin_creator_vault_ata: Option<solana_pubkey::Pubkey>,
-    coin_creator_token_account: Option<solana_pubkey::Pubkey>,
+    pump_creator_vault: Option<solana_pubkey::Pubkey>,
     event_authority: Option<solana_pubkey::Pubkey>,
     program: Option<solana_pubkey::Pubkey>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl CollectCoinCreatorFeeBuilder {
+impl TransferCreatorFeesToPumpBuilder {
     pub fn new() -> Self { Self::default() }
 
+    /// Pump Canonical Pool are quoted in wSOL
     #[inline(always)]
-    pub fn quote_mint(&mut self, quote_mint: solana_pubkey::Pubkey) -> &mut Self {
-        self.quote_mint = Some(quote_mint);
+    pub fn wsol_mint(&mut self, wsol_mint: solana_pubkey::Pubkey) -> &mut Self {
+        self.wsol_mint = Some(wsol_mint);
         self
     }
 
+    /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     #[inline(always)]
-    pub fn quote_token_program(&mut self, quote_token_program: solana_pubkey::Pubkey) -> &mut Self {
-        self.quote_token_program = Some(quote_token_program);
+    pub fn token_program(&mut self, token_program: solana_pubkey::Pubkey) -> &mut Self {
+        self.token_program = Some(token_program);
+        self
+    }
+
+    /// `[optional account, default to '11111111111111111111111111111111']`
+    #[inline(always)]
+    pub fn system_program(&mut self, system_program: solana_pubkey::Pubkey) -> &mut Self {
+        self.system_program = Some(system_program);
+        self
+    }
+
+    /// `[optional account, default to 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL']`
+    #[inline(always)]
+    pub fn associated_token_program(
+        &mut self,
+        associated_token_program: solana_pubkey::Pubkey,
+    ) -> &mut Self {
+        self.associated_token_program = Some(associated_token_program);
         self
     }
 
@@ -171,11 +208,8 @@ impl CollectCoinCreatorFeeBuilder {
     }
 
     #[inline(always)]
-    pub fn coin_creator_token_account(
-        &mut self,
-        coin_creator_token_account: solana_pubkey::Pubkey,
-    ) -> &mut Self {
-        self.coin_creator_token_account = Some(coin_creator_token_account);
+    pub fn pump_creator_vault(&mut self, pump_creator_vault: solana_pubkey::Pubkey) -> &mut Self {
+        self.pump_creator_vault = Some(pump_creator_vault);
         self
     }
 
@@ -210,11 +244,17 @@ impl CollectCoinCreatorFeeBuilder {
 
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = CollectCoinCreatorFee {
-            quote_mint: self.quote_mint.expect("quote_mint is not set"),
-            quote_token_program: self
-                .quote_token_program
-                .expect("quote_token_program is not set"),
+        let accounts = TransferCreatorFeesToPump {
+            wsol_mint: self.wsol_mint.expect("wsol_mint is not set"),
+            token_program: self.token_program.unwrap_or(solana_pubkey::pubkey!(
+                "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+            )),
+            system_program: self
+                .system_program
+                .unwrap_or(solana_pubkey::pubkey!("11111111111111111111111111111111")),
+            associated_token_program: self.associated_token_program.unwrap_or(
+                solana_pubkey::pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
+            ),
             coin_creator: self.coin_creator.expect("coin_creator is not set"),
             coin_creator_vault_authority: self
                 .coin_creator_vault_authority
@@ -222,9 +262,9 @@ impl CollectCoinCreatorFeeBuilder {
             coin_creator_vault_ata: self
                 .coin_creator_vault_ata
                 .expect("coin_creator_vault_ata is not set"),
-            coin_creator_token_account: self
-                .coin_creator_token_account
-                .expect("coin_creator_token_account is not set"),
+            pump_creator_vault: self
+                .pump_creator_vault
+                .expect("pump_creator_vault is not set"),
             event_authority: self.event_authority.expect("event_authority is not set"),
             program: self.program.expect("program is not set"),
         };
@@ -233,11 +273,16 @@ impl CollectCoinCreatorFeeBuilder {
     }
 }
 
-/// `collect_coin_creator_fee` CPI accounts.
-pub struct CollectCoinCreatorFeeCpiAccounts<'a, 'b> {
-    pub quote_mint: &'b solana_account_info::AccountInfo<'a>,
+/// `transfer_creator_fees_to_pump` CPI accounts.
+pub struct TransferCreatorFeesToPumpCpiAccounts<'a, 'b> {
+    /// Pump Canonical Pool are quoted in wSOL
+    pub wsol_mint: &'b solana_account_info::AccountInfo<'a>,
 
-    pub quote_token_program: &'b solana_account_info::AccountInfo<'a>,
+    pub token_program: &'b solana_account_info::AccountInfo<'a>,
+
+    pub system_program: &'b solana_account_info::AccountInfo<'a>,
+
+    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
 
     pub coin_creator: &'b solana_account_info::AccountInfo<'a>,
 
@@ -245,21 +290,25 @@ pub struct CollectCoinCreatorFeeCpiAccounts<'a, 'b> {
 
     pub coin_creator_vault_ata: &'b solana_account_info::AccountInfo<'a>,
 
-    pub coin_creator_token_account: &'b solana_account_info::AccountInfo<'a>,
+    pub pump_creator_vault: &'b solana_account_info::AccountInfo<'a>,
 
     pub event_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `collect_coin_creator_fee` CPI instruction.
-pub struct CollectCoinCreatorFeeCpi<'a, 'b> {
+/// `transfer_creator_fees_to_pump` CPI instruction.
+pub struct TransferCreatorFeesToPumpCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
+    /// Pump Canonical Pool are quoted in wSOL
+    pub wsol_mint: &'b solana_account_info::AccountInfo<'a>,
 
-    pub quote_mint: &'b solana_account_info::AccountInfo<'a>,
+    pub token_program: &'b solana_account_info::AccountInfo<'a>,
 
-    pub quote_token_program: &'b solana_account_info::AccountInfo<'a>,
+    pub system_program: &'b solana_account_info::AccountInfo<'a>,
+
+    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
 
     pub coin_creator: &'b solana_account_info::AccountInfo<'a>,
 
@@ -267,26 +316,28 @@ pub struct CollectCoinCreatorFeeCpi<'a, 'b> {
 
     pub coin_creator_vault_ata: &'b solana_account_info::AccountInfo<'a>,
 
-    pub coin_creator_token_account: &'b solana_account_info::AccountInfo<'a>,
+    pub pump_creator_vault: &'b solana_account_info::AccountInfo<'a>,
 
     pub event_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
+impl<'a, 'b> TransferCreatorFeesToPumpCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: CollectCoinCreatorFeeCpiAccounts<'a, 'b>,
+        accounts: TransferCreatorFeesToPumpCpiAccounts<'a, 'b>,
     ) -> Self {
         Self {
             __program: program,
-            quote_mint: accounts.quote_mint,
-            quote_token_program: accounts.quote_token_program,
+            wsol_mint: accounts.wsol_mint,
+            token_program: accounts.token_program,
+            system_program: accounts.system_program,
+            associated_token_program: accounts.associated_token_program,
             coin_creator: accounts.coin_creator,
             coin_creator_vault_authority: accounts.coin_creator_vault_authority,
             coin_creator_vault_ata: accounts.coin_creator_vault_ata,
-            coin_creator_token_account: accounts.coin_creator_token_account,
+            pump_creator_vault: accounts.pump_creator_vault,
             event_authority: accounts.event_authority,
             program: accounts.program,
         }
@@ -318,20 +369,28 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.quote_mint.key,
+            *self.wsol_mint.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.quote_token_program.key,
+            *self.token_program.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.system_program.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.associated_token_program.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.coin_creator.key,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
+        accounts.push(solana_instruction::AccountMeta::new(
             *self.coin_creator_vault_authority.key,
             false,
         ));
@@ -340,7 +399,7 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.coin_creator_token_account.key,
+            *self.pump_creator_vault.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -358,7 +417,7 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = CollectCoinCreatorFeeInstructionData::new()
+        let data = TransferCreatorFeesToPumpInstructionData::new()
             .try_to_vec()
             .unwrap();
 
@@ -367,14 +426,16 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(9 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(11 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
-        account_infos.push(self.quote_mint.clone());
-        account_infos.push(self.quote_token_program.clone());
+        account_infos.push(self.wsol_mint.clone());
+        account_infos.push(self.token_program.clone());
+        account_infos.push(self.system_program.clone());
+        account_infos.push(self.associated_token_program.clone());
         account_infos.push(self.coin_creator.clone());
         account_infos.push(self.coin_creator_vault_authority.clone());
         account_infos.push(self.coin_creator_vault_ata.clone());
-        account_infos.push(self.coin_creator_token_account.clone());
+        account_infos.push(self.pump_creator_vault.clone());
         account_infos.push(self.event_authority.clone());
         account_infos.push(self.program.clone());
         remaining_accounts
@@ -389,33 +450,37 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `CollectCoinCreatorFee` via CPI.
+/// Instruction builder for `TransferCreatorFeesToPump` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[]` quote_mint
-///   1. `[]` quote_token_program
-///   2. `[]` coin_creator
-///   3. `[]` coin_creator_vault_authority
-///   4. `[writable]` coin_creator_vault_ata
-///   5. `[writable]` coin_creator_token_account
-///   6. `[]` event_authority
-///   7. `[]` program
+///   0. `[]` wsol_mint
+///   1. `[]` token_program
+///   2. `[]` system_program
+///   3. `[]` associated_token_program
+///   4. `[]` coin_creator
+///   5. `[writable]` coin_creator_vault_authority
+///   6. `[writable]` coin_creator_vault_ata
+///   7. `[writable]` pump_creator_vault
+///   8. `[]` event_authority
+///   9. `[]` program
 #[derive(Clone, Debug)]
-pub struct CollectCoinCreatorFeeCpiBuilder<'a, 'b> {
-    instruction: Box<CollectCoinCreatorFeeCpiBuilderInstruction<'a, 'b>>,
+pub struct TransferCreatorFeesToPumpCpiBuilder<'a, 'b> {
+    instruction: Box<TransferCreatorFeesToPumpCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> CollectCoinCreatorFeeCpiBuilder<'a, 'b> {
+impl<'a, 'b> TransferCreatorFeesToPumpCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(CollectCoinCreatorFeeCpiBuilderInstruction {
+        let instruction = Box::new(TransferCreatorFeesToPumpCpiBuilderInstruction {
             __program: program,
-            quote_mint: None,
-            quote_token_program: None,
+            wsol_mint: None,
+            token_program: None,
+            system_program: None,
+            associated_token_program: None,
             coin_creator: None,
             coin_creator_vault_authority: None,
             coin_creator_vault_ata: None,
-            coin_creator_token_account: None,
+            pump_creator_vault: None,
             event_authority: None,
             program: None,
             __remaining_accounts: Vec::new(),
@@ -423,21 +488,37 @@ impl<'a, 'b> CollectCoinCreatorFeeCpiBuilder<'a, 'b> {
         Self { instruction }
     }
 
+    /// Pump Canonical Pool are quoted in wSOL
     #[inline(always)]
-    pub fn quote_mint(
-        &mut self,
-        quote_mint: &'b solana_account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.quote_mint = Some(quote_mint);
+    pub fn wsol_mint(&mut self, wsol_mint: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.wsol_mint = Some(wsol_mint);
         self
     }
 
     #[inline(always)]
-    pub fn quote_token_program(
+    pub fn token_program(
         &mut self,
-        quote_token_program: &'b solana_account_info::AccountInfo<'a>,
+        token_program: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.quote_token_program = Some(quote_token_program);
+        self.instruction.token_program = Some(token_program);
+        self
+    }
+
+    #[inline(always)]
+    pub fn system_program(
+        &mut self,
+        system_program: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.system_program = Some(system_program);
+        self
+    }
+
+    #[inline(always)]
+    pub fn associated_token_program(
+        &mut self,
+        associated_token_program: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.associated_token_program = Some(associated_token_program);
         self
     }
 
@@ -469,11 +550,11 @@ impl<'a, 'b> CollectCoinCreatorFeeCpiBuilder<'a, 'b> {
     }
 
     #[inline(always)]
-    pub fn coin_creator_token_account(
+    pub fn pump_creator_vault(
         &mut self,
-        coin_creator_token_account: &'b solana_account_info::AccountInfo<'a>,
+        pump_creator_vault: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.coin_creator_token_account = Some(coin_creator_token_account);
+        self.instruction.pump_creator_vault = Some(pump_creator_vault);
         self
     }
 
@@ -527,15 +608,25 @@ impl<'a, 'b> CollectCoinCreatorFeeCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let instruction = CollectCoinCreatorFeeCpi {
+        let instruction = TransferCreatorFeesToPumpCpi {
             __program: self.instruction.__program,
 
-            quote_mint: self.instruction.quote_mint.expect("quote_mint is not set"),
+            wsol_mint: self.instruction.wsol_mint.expect("wsol_mint is not set"),
 
-            quote_token_program: self
+            token_program: self
                 .instruction
-                .quote_token_program
-                .expect("quote_token_program is not set"),
+                .token_program
+                .expect("token_program is not set"),
+
+            system_program: self
+                .instruction
+                .system_program
+                .expect("system_program is not set"),
+
+            associated_token_program: self
+                .instruction
+                .associated_token_program
+                .expect("associated_token_program is not set"),
 
             coin_creator: self
                 .instruction
@@ -552,10 +643,10 @@ impl<'a, 'b> CollectCoinCreatorFeeCpiBuilder<'a, 'b> {
                 .coin_creator_vault_ata
                 .expect("coin_creator_vault_ata is not set"),
 
-            coin_creator_token_account: self
+            pump_creator_vault: self
                 .instruction
-                .coin_creator_token_account
-                .expect("coin_creator_token_account is not set"),
+                .pump_creator_vault
+                .expect("pump_creator_vault is not set"),
 
             event_authority: self
                 .instruction
@@ -572,14 +663,16 @@ impl<'a, 'b> CollectCoinCreatorFeeCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct CollectCoinCreatorFeeCpiBuilderInstruction<'a, 'b> {
+struct TransferCreatorFeesToPumpCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
-    quote_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
-    quote_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    wsol_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
+    token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    associated_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     coin_creator: Option<&'b solana_account_info::AccountInfo<'a>>,
     coin_creator_vault_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     coin_creator_vault_ata: Option<&'b solana_account_info::AccountInfo<'a>>,
-    coin_creator_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    pump_creator_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
     event_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     program: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.

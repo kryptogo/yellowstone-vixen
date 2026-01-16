@@ -97,16 +97,74 @@ pub enum PumpAmmError {
     /// 6028 -
     #[error("")]
     OnlyCanonicalPumpPoolsCanHaveCoinCreator = 0x178c,
+    /// 6029 -
+    #[error("")]
+    InvalidAdminSetCoinCreatorAuthority = 0x178d,
+    /// 6030 -
+    #[error("")]
+    StartTimeInThePast = 0x178e,
+    /// 6031 -
+    #[error("")]
+    EndTimeInThePast = 0x178f,
+    /// 6032 -
+    #[error("")]
+    EndTimeBeforeStartTime = 0x1790,
+    /// 6033 -
+    #[error("")]
+    TimeRangeTooLarge = 0x1791,
+    /// 6034 -
+    #[error("")]
+    EndTimeBeforeCurrentDay = 0x1792,
+    /// 6035 -
+    #[error("")]
+    SupplyUpdateForFinishedRange = 0x1793,
+    /// 6036 -
+    #[error("")]
+    DayIndexAfterEndIndex = 0x1794,
+    /// 6037 -
+    #[error("")]
+    DayInActiveRange = 0x1795,
+    /// 6038 -
+    #[error("")]
+    InvalidIncentiveMint = 0x1796,
+    /// 6039 - buy: Not enough quote tokens to cover for fees.
+    #[error("buy: Not enough quote tokens to cover for fees.")]
+    BuyNotEnoughQuoteTokensToCoverFees = 0x1797,
+    /// 6040 - buy: slippage - would buy less tokens than expected min_base_amount_out
+    #[error("buy: slippage - would buy less tokens than expected min_base_amount_out")]
+    BuySlippageBelowMinBaseAmountOut = 0x1798,
+    /// 6041 -
+    #[error("")]
+    MayhemModeDisabled = 0x1799,
+    /// 6042 -
+    #[error("")]
+    OnlyPumpPoolsMayhemMode = 0x179a,
+    /// 6043 -
+    #[error("")]
+    MayhemModeInDesiredState = 0x179b,
+    /// 6044 -
+    #[error("")]
+    NotEnoughRemainingAccounts = 0x179c,
+    /// 6045 -
+    #[error("")]
+    InvalidSharingConfigBaseMint = 0x179d,
+    /// 6046 -
+    #[error("")]
+    InvalidSharingConfigCoinCreator = 0x179e,
+    /// 6047 - coin creator has been migrated to sharing config, use pump_fees::reset_fee_sharing_config instead
+    #[error(
+        "coin creator has been migrated to sharing config, use \
+         pump_fees::reset_fee_sharing_config instead"
+    )]
+    CoinCreatorMigratedToSharingConfig = 0x179f,
+    /// 6048 - creator_vault has been migrated to sharing config, use pump:distribute_creator_fees instead
+    #[error(
+        "creator_vault has been migrated to sharing config, use pump:distribute_creator_fees \
+         instead"
+    )]
+    CreatorVaultMigratedToSharingConfig = 0x17a0,
 }
 
-#[allow(deprecated)]
-impl solana_program_error::PrintProgramError for PumpAmmError {
-    fn print<E>(&self) {
-        solana_msg::msg!(&self.to_string());
-    }
-}
-
-#[allow(deprecated)]
-impl<T> solana_decode_error::DecodeError<T> for PumpAmmError {
-    fn type_of() -> &'static str { "PumpAmmError" }
+impl From<PumpAmmError> for solana_program_error::ProgramError {
+    fn from(e: PumpAmmError) -> Self { solana_program_error::ProgramError::Custom(e as u32) }
 }

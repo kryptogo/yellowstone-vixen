@@ -9,64 +9,95 @@
 pub mod proto_types_parsers {
     use yellowstone_vixen_core::proto_helper_traits;
     proto_helper_traits!();
-    use crate::{proto_def, types::BuyEvent};
+    use crate::{proto_def, types::AdminSetCoinCreatorEvent};
+    impl IntoProto<proto_def::AdminSetCoinCreatorEvent> for AdminSetCoinCreatorEvent {
+        fn into_proto(self) -> proto_def::AdminSetCoinCreatorEvent {
+            proto_def::AdminSetCoinCreatorEvent {
+                timestamp: self.timestamp,
+                admin_set_coin_creator_authority: self.admin_set_coin_creator_authority.to_string(),
+                base_mint: self.base_mint.to_string(),
+                pool: self.pool.to_string(),
+                old_coin_creator: self.old_coin_creator.to_string(),
+                new_coin_creator: self.new_coin_creator.to_string(),
+            }
+        }
+    }
+    use crate::types::AdminUpdateTokenIncentivesEvent;
+    impl IntoProto<proto_def::AdminUpdateTokenIncentivesEvent> for AdminUpdateTokenIncentivesEvent {
+        fn into_proto(self) -> proto_def::AdminUpdateTokenIncentivesEvent {
+            proto_def::AdminUpdateTokenIncentivesEvent {
+                start_time: self.start_time,
+                end_time: self.end_time,
+                day_number: self.day_number,
+                token_supply_per_day: self.token_supply_per_day,
+                mint: self.mint.to_string(),
+                seconds_in_a_day: self.seconds_in_a_day,
+                timestamp: self.timestamp,
+            }
+        }
+    }
+    use crate::types::BuyEvent;
     impl IntoProto<proto_def::BuyEvent> for BuyEvent {
         fn into_proto(self) -> proto_def::BuyEvent {
-            match self {
-                BuyEvent::V1(v1_event) => proto_def::BuyEvent {
-                    timestamp: v1_event.timestamp,
-                    base_amount_out: v1_event.base_amount_out,
-                    max_quote_amount_in: v1_event.max_quote_amount_in,
-                    user_base_token_reserves: v1_event.user_base_token_reserves,
-                    user_quote_token_reserves: v1_event.user_quote_token_reserves,
-                    pool_base_token_reserves: v1_event.pool_base_token_reserves,
-                    pool_quote_token_reserves: v1_event.pool_quote_token_reserves,
-                    quote_amount_in: v1_event.quote_amount_in,
-                    lp_fee_basis_points: v1_event.lp_fee_basis_points,
-                    lp_fee: v1_event.lp_fee,
-                    protocol_fee_basis_points: v1_event.protocol_fee_basis_points,
-                    protocol_fee: v1_event.protocol_fee,
-                    quote_amount_in_with_lp_fee: v1_event.quote_amount_in_with_lp_fee,
-                    user_quote_amount_in: v1_event.user_quote_amount_in,
-                    pool: v1_event.pool.to_string(),
-                    user: v1_event.user.to_string(),
-                    user_base_token_account: v1_event.user_base_token_account.to_string(),
-                    user_quote_token_account: v1_event.user_quote_token_account.to_string(),
-                    protocol_fee_recipient: v1_event.protocol_fee_recipient.to_string(),
-                    protocol_fee_recipient_token_account: v1_event
-                        .protocol_fee_recipient_token_account
-                        .to_string(),
-                    coin_creator: "11111111111111111111111111111111".to_string(),
-                    coin_creator_fee_basis_points: 0,
-                    coin_creator_fee: 0,
-                },
-                BuyEvent::V2(v2_event) => proto_def::BuyEvent {
-                    timestamp: v2_event.timestamp,
-                    base_amount_out: v2_event.base_amount_out,
-                    max_quote_amount_in: v2_event.max_quote_amount_in,
-                    user_base_token_reserves: v2_event.user_base_token_reserves,
-                    user_quote_token_reserves: v2_event.user_quote_token_reserves,
-                    pool_base_token_reserves: v2_event.pool_base_token_reserves,
-                    pool_quote_token_reserves: v2_event.pool_quote_token_reserves,
-                    quote_amount_in: v2_event.quote_amount_in,
-                    lp_fee_basis_points: v2_event.lp_fee_basis_points,
-                    lp_fee: v2_event.lp_fee,
-                    protocol_fee_basis_points: v2_event.protocol_fee_basis_points,
-                    protocol_fee: v2_event.protocol_fee,
-                    quote_amount_in_with_lp_fee: v2_event.quote_amount_in_with_lp_fee,
-                    user_quote_amount_in: v2_event.user_quote_amount_in,
-                    pool: v2_event.pool.to_string(),
-                    user: v2_event.user.to_string(),
-                    user_base_token_account: v2_event.user_base_token_account.to_string(),
-                    user_quote_token_account: v2_event.user_quote_token_account.to_string(),
-                    protocol_fee_recipient: v2_event.protocol_fee_recipient.to_string(),
-                    protocol_fee_recipient_token_account: v2_event
-                        .protocol_fee_recipient_token_account
-                        .to_string(),
-                    coin_creator: v2_event.coin_creator.to_string(),
-                    coin_creator_fee_basis_points: v2_event.coin_creator_fee_basis_points,
-                    coin_creator_fee: v2_event.coin_creator_fee,
-                },
+            proto_def::BuyEvent {
+                timestamp: self.timestamp,
+                base_amount_out: self.base_amount_out,
+                max_quote_amount_in: self.max_quote_amount_in,
+                user_base_token_reserves: self.user_base_token_reserves,
+                user_quote_token_reserves: self.user_quote_token_reserves,
+                pool_base_token_reserves: self.pool_base_token_reserves,
+                pool_quote_token_reserves: self.pool_quote_token_reserves,
+                quote_amount_in: self.quote_amount_in,
+                lp_fee_basis_points: self.lp_fee_basis_points,
+                lp_fee: self.lp_fee,
+                protocol_fee_basis_points: self.protocol_fee_basis_points,
+                protocol_fee: self.protocol_fee,
+                quote_amount_in_with_lp_fee: self.quote_amount_in_with_lp_fee,
+                user_quote_amount_in: self.user_quote_amount_in,
+                pool: self.pool.to_string(),
+                user: self.user.to_string(),
+                user_base_token_account: self.user_base_token_account.to_string(),
+                user_quote_token_account: self.user_quote_token_account.to_string(),
+                protocol_fee_recipient: self.protocol_fee_recipient.to_string(),
+                protocol_fee_recipient_token_account: self
+                    .protocol_fee_recipient_token_account
+                    .to_string(),
+                coin_creator: self.coin_creator.to_string(),
+                coin_creator_fee_basis_points: self.coin_creator_fee_basis_points,
+                coin_creator_fee: self.coin_creator_fee,
+                track_volume: self.track_volume,
+                total_unclaimed_tokens: self.total_unclaimed_tokens,
+                total_claimed_tokens: self.total_claimed_tokens,
+                current_sol_volume: self.current_sol_volume,
+                last_update_timestamp: self.last_update_timestamp,
+                min_base_amount_out: self.min_base_amount_out,
+                ix_name: self.ix_name,
+            }
+        }
+    }
+    use crate::types::ClaimTokenIncentivesEvent;
+    impl IntoProto<proto_def::ClaimTokenIncentivesEvent> for ClaimTokenIncentivesEvent {
+        fn into_proto(self) -> proto_def::ClaimTokenIncentivesEvent {
+            proto_def::ClaimTokenIncentivesEvent {
+                user: self.user.to_string(),
+                mint: self.mint.to_string(),
+                amount: self.amount,
+                timestamp: self.timestamp,
+                total_claimed_tokens: self.total_claimed_tokens,
+                current_sol_volume: self.current_sol_volume,
+            }
+        }
+    }
+    use crate::types::CloseUserVolumeAccumulatorEvent;
+    impl IntoProto<proto_def::CloseUserVolumeAccumulatorEvent> for CloseUserVolumeAccumulatorEvent {
+        fn into_proto(self) -> proto_def::CloseUserVolumeAccumulatorEvent {
+            proto_def::CloseUserVolumeAccumulatorEvent {
+                user: self.user.to_string(),
+                timestamp: self.timestamp,
+                total_unclaimed_tokens: self.total_unclaimed_tokens,
+                total_claimed_tokens: self.total_claimed_tokens,
+                current_sol_volume: self.current_sol_volume,
+                last_update_timestamp: self.last_update_timestamp,
             }
         }
     }
@@ -96,6 +127,7 @@ pub mod proto_types_parsers {
                     .map(|x| x.to_string())
                     .collect(),
                 coin_creator_fee_basis_points: self.coin_creator_fee_basis_points,
+                admin_set_coin_creator_authority: self.admin_set_coin_creator_authority.to_string(),
             }
         }
     }
@@ -123,6 +155,7 @@ pub mod proto_types_parsers {
                 user_base_token_account: self.user_base_token_account.to_string(),
                 user_quote_token_account: self.user_quote_token_account.to_string(),
                 coin_creator: self.coin_creator.to_string(),
+                is_mayhem_mode: self.is_mayhem_mode,
             }
         }
     }
@@ -175,64 +208,91 @@ pub mod proto_types_parsers {
             }
         }
     }
+    use crate::types::FeeTier;
+    impl IntoProto<proto_def::FeeTier> for FeeTier {
+        fn into_proto(self) -> proto_def::FeeTier {
+            proto_def::FeeTier {
+                market_cap_lamports_threshold: self.market_cap_lamports_threshold.to_string(),
+                fees: Some(self.fees.into_proto()),
+            }
+        }
+    }
+    use crate::types::Fees;
+    impl IntoProto<proto_def::Fees> for Fees {
+        fn into_proto(self) -> proto_def::Fees {
+            proto_def::Fees {
+                lp_fee_bps: self.lp_fee_bps,
+                protocol_fee_bps: self.protocol_fee_bps,
+                creator_fee_bps: self.creator_fee_bps,
+            }
+        }
+    }
+    use crate::types::InitUserVolumeAccumulatorEvent;
+    impl IntoProto<proto_def::InitUserVolumeAccumulatorEvent> for InitUserVolumeAccumulatorEvent {
+        fn into_proto(self) -> proto_def::InitUserVolumeAccumulatorEvent {
+            proto_def::InitUserVolumeAccumulatorEvent {
+                payer: self.payer.to_string(),
+                user: self.user.to_string(),
+                timestamp: self.timestamp,
+            }
+        }
+    }
+    use crate::types::MigratePoolCoinCreatorEvent;
+    impl IntoProto<proto_def::MigratePoolCoinCreatorEvent> for MigratePoolCoinCreatorEvent {
+        fn into_proto(self) -> proto_def::MigratePoolCoinCreatorEvent {
+            proto_def::MigratePoolCoinCreatorEvent {
+                timestamp: self.timestamp,
+                base_mint: self.base_mint.to_string(),
+                pool: self.pool.to_string(),
+                sharing_config: self.sharing_config.to_string(),
+                old_coin_creator: self.old_coin_creator.to_string(),
+                new_coin_creator: self.new_coin_creator.to_string(),
+            }
+        }
+    }
+    use crate::types::ReservedFeeRecipientsEvent;
+    impl IntoProto<proto_def::ReservedFeeRecipientsEvent> for ReservedFeeRecipientsEvent {
+        fn into_proto(self) -> proto_def::ReservedFeeRecipientsEvent {
+            proto_def::ReservedFeeRecipientsEvent {
+                timestamp: self.timestamp,
+                reserved_fee_recipient: self.reserved_fee_recipient.to_string(),
+                reserved_fee_recipients: self
+                    .reserved_fee_recipients
+                    .into_iter()
+                    .map(|x| x.to_string())
+                    .collect(),
+            }
+        }
+    }
     use crate::types::SellEvent;
     impl IntoProto<proto_def::SellEvent> for SellEvent {
         fn into_proto(self) -> proto_def::SellEvent {
-            match self {
-                SellEvent::V1(v1_event) => proto_def::SellEvent {
-                    timestamp: v1_event.timestamp,
-                    base_amount_in: v1_event.base_amount_in,
-                    min_quote_amount_out: v1_event.min_quote_amount_out,
-                    user_base_token_reserves: v1_event.user_base_token_reserves,
-                    user_quote_token_reserves: v1_event.user_quote_token_reserves,
-                    pool_base_token_reserves: v1_event.pool_base_token_reserves,
-                    pool_quote_token_reserves: v1_event.pool_quote_token_reserves,
-                    quote_amount_out: v1_event.quote_amount_out,
-                    lp_fee_basis_points: v1_event.lp_fee_basis_points,
-                    lp_fee: v1_event.lp_fee,
-                    protocol_fee_basis_points: v1_event.protocol_fee_basis_points,
-                    protocol_fee: v1_event.protocol_fee,
-                    quote_amount_out_without_lp_fee: v1_event.quote_amount_out_without_lp_fee,
-                    user_quote_amount_out: v1_event.user_quote_amount_out,
-                    pool: v1_event.pool.to_string(),
-                    user: v1_event.user.to_string(),
-                    user_base_token_account: v1_event.user_base_token_account.to_string(),
-                    user_quote_token_account: v1_event.user_quote_token_account.to_string(),
-                    protocol_fee_recipient: v1_event.protocol_fee_recipient.to_string(),
-                    protocol_fee_recipient_token_account: v1_event
-                        .protocol_fee_recipient_token_account
-                        .to_string(),
-                    coin_creator: "11111111111111111111111111111111".to_string(),
-                    coin_creator_fee_basis_points: 0,
-                    coin_creator_fee: 0,
-                },
-                SellEvent::V2(v2_event) => proto_def::SellEvent {
-                    timestamp: v2_event.timestamp,
-                    base_amount_in: v2_event.base_amount_in,
-                    min_quote_amount_out: v2_event.min_quote_amount_out,
-                    user_base_token_reserves: v2_event.user_base_token_reserves,
-                    user_quote_token_reserves: v2_event.user_quote_token_reserves,
-                    pool_base_token_reserves: v2_event.pool_base_token_reserves,
-                    pool_quote_token_reserves: v2_event.pool_quote_token_reserves,
-                    quote_amount_out: v2_event.quote_amount_out,
-                    lp_fee_basis_points: v2_event.lp_fee_basis_points,
-                    lp_fee: v2_event.lp_fee,
-                    protocol_fee_basis_points: v2_event.protocol_fee_basis_points,
-                    protocol_fee: v2_event.protocol_fee,
-                    quote_amount_out_without_lp_fee: v2_event.quote_amount_out_without_lp_fee,
-                    user_quote_amount_out: v2_event.user_quote_amount_out,
-                    pool: v2_event.pool.to_string(),
-                    user: v2_event.user.to_string(),
-                    user_base_token_account: v2_event.user_base_token_account.to_string(),
-                    user_quote_token_account: v2_event.user_quote_token_account.to_string(),
-                    protocol_fee_recipient: v2_event.protocol_fee_recipient.to_string(),
-                    protocol_fee_recipient_token_account: v2_event
-                        .protocol_fee_recipient_token_account
-                        .to_string(),
-                    coin_creator: v2_event.coin_creator.to_string(),
-                    coin_creator_fee_basis_points: v2_event.coin_creator_fee_basis_points,
-                    coin_creator_fee: v2_event.coin_creator_fee,
-                },
+            proto_def::SellEvent {
+                timestamp: self.timestamp,
+                base_amount_in: self.base_amount_in,
+                min_quote_amount_out: self.min_quote_amount_out,
+                user_base_token_reserves: self.user_base_token_reserves,
+                user_quote_token_reserves: self.user_quote_token_reserves,
+                pool_base_token_reserves: self.pool_base_token_reserves,
+                pool_quote_token_reserves: self.pool_quote_token_reserves,
+                quote_amount_out: self.quote_amount_out,
+                lp_fee_basis_points: self.lp_fee_basis_points,
+                lp_fee: self.lp_fee,
+                protocol_fee_basis_points: self.protocol_fee_basis_points,
+                protocol_fee: self.protocol_fee,
+                quote_amount_out_without_lp_fee: self.quote_amount_out_without_lp_fee,
+                user_quote_amount_out: self.user_quote_amount_out,
+                pool: self.pool.to_string(),
+                user: self.user.to_string(),
+                user_base_token_account: self.user_base_token_account.to_string(),
+                user_quote_token_account: self.user_quote_token_account.to_string(),
+                protocol_fee_recipient: self.protocol_fee_recipient.to_string(),
+                protocol_fee_recipient_token_account: self
+                    .protocol_fee_recipient_token_account
+                    .to_string(),
+                coin_creator: self.coin_creator.to_string(),
+                coin_creator_fee_basis_points: self.coin_creator_fee_basis_points,
+                coin_creator_fee: self.coin_creator_fee,
             }
         }
     }
@@ -260,6 +320,26 @@ pub mod proto_types_parsers {
             }
         }
     }
+    use crate::types::Shareholder;
+    impl IntoProto<proto_def::Shareholder> for Shareholder {
+        fn into_proto(self) -> proto_def::Shareholder {
+            proto_def::Shareholder {
+                address: self.address.to_string(),
+                share_bps: self.share_bps.into(),
+            }
+        }
+    }
+    use crate::types::SyncUserVolumeAccumulatorEvent;
+    impl IntoProto<proto_def::SyncUserVolumeAccumulatorEvent> for SyncUserVolumeAccumulatorEvent {
+        fn into_proto(self) -> proto_def::SyncUserVolumeAccumulatorEvent {
+            proto_def::SyncUserVolumeAccumulatorEvent {
+                user: self.user.to_string(),
+                total_claimed_tokens_before: self.total_claimed_tokens_before,
+                total_claimed_tokens_after: self.total_claimed_tokens_after,
+                timestamp: self.timestamp,
+            }
+        }
+    }
     use crate::types::UpdateAdminEvent;
     impl IntoProto<proto_def::UpdateAdminEvent> for UpdateAdminEvent {
         fn into_proto(self) -> proto_def::UpdateAdminEvent {
@@ -284,6 +364,7 @@ pub mod proto_types_parsers {
                     .map(|x| x.to_string())
                     .collect(),
                 coin_creator_fee_basis_points: self.coin_creator_fee_basis_points,
+                admin_set_coin_creator_authority: self.admin_set_coin_creator_authority.to_string(),
             }
         }
     }

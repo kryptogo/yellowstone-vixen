@@ -5,24 +5,42 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+pub(crate) mod r#admin_set_coin_creator_event;
+pub(crate) mod r#admin_update_token_incentives_event;
 pub(crate) mod r#buy_event;
+pub(crate) mod r#claim_token_incentives_event;
+pub(crate) mod r#close_user_volume_accumulator_event;
 pub(crate) mod r#collect_coin_creator_fee_event;
+pub(crate) mod r#config_status;
 pub(crate) mod r#create_config_event;
 pub(crate) mod r#create_pool_event;
 pub(crate) mod r#deposit_event;
 pub(crate) mod r#disable_event;
 pub(crate) mod r#extend_account_event;
+pub(crate) mod r#fee_tier;
+pub(crate) mod r#fees;
+pub(crate) mod r#init_user_volume_accumulator_event;
+pub(crate) mod r#migrate_pool_coin_creator_event;
+pub(crate) mod r#option_bool;
+pub(crate) mod r#reserved_fee_recipients_event;
 pub(crate) mod r#sell_event;
 pub(crate) mod r#set_bonding_curve_coin_creator_event;
 pub(crate) mod r#set_metaplex_coin_creator_event;
+pub(crate) mod r#shareholder;
+pub(crate) mod r#sync_user_volume_accumulator_event;
 pub(crate) mod r#update_admin_event;
 pub(crate) mod r#update_fee_config_event;
 pub(crate) mod r#withdraw_event;
 
 pub use self::{
-    r#buy_event::*, r#collect_coin_creator_fee_event::*, r#create_config_event::*,
+    r#admin_set_coin_creator_event::*, r#admin_update_token_incentives_event::*, r#buy_event::*,
+    r#claim_token_incentives_event::*, r#close_user_volume_accumulator_event::*,
+    r#collect_coin_creator_fee_event::*, r#config_status::*, r#create_config_event::*,
     r#create_pool_event::*, r#deposit_event::*, r#disable_event::*, r#extend_account_event::*,
+    r#fee_tier::*, r#fees::*, r#init_user_volume_accumulator_event::*,
+    r#migrate_pool_coin_creator_event::*, r#option_bool::*, r#reserved_fee_recipients_event::*,
     r#sell_event::*, r#set_bonding_curve_coin_creator_event::*,
-    r#set_metaplex_coin_creator_event::*, r#update_admin_event::*, r#update_fee_config_event::*,
+    r#set_metaplex_coin_creator_event::*, r#shareholder::*,
+    r#sync_user_volume_accumulator_event::*, r#update_admin_event::*, r#update_fee_config_event::*,
     r#withdraw_event::*,
 };

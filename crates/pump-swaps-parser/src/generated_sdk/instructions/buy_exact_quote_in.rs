@@ -7,11 +7,13 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
-pub const SELL_DISCRIMINATOR: [u8; 8] = [51, 230, 133, 164, 1, 127, 131, 173];
+use crate::generated::types::OptionBool;
+
+pub const BUY_EXACT_QUOTE_IN_DISCRIMINATOR: [u8; 8] = [198, 46, 21, 82, 180, 217, 232, 112];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct Sell {
+pub struct BuyExactQuoteIn {
     pub pool: solana_pubkey::Pubkey,
 
     pub user: solana_pubkey::Pubkey,
@@ -50,13 +52,20 @@ pub struct Sell {
 
     pub coin_creator_vault_authority: solana_pubkey::Pubkey,
 
+    pub global_volume_accumulator: solana_pubkey::Pubkey,
+
+    pub user_volume_accumulator: solana_pubkey::Pubkey,
+
     pub fee_config: solana_pubkey::Pubkey,
 
     pub fee_program: solana_pubkey::Pubkey,
 }
 
-impl Sell {
-    pub fn instruction(&self, args: SellInstructionArgs) -> solana_instruction::Instruction {
+impl BuyExactQuoteIn {
+    pub fn instruction(
+        &self,
+        args: BuyExactQuoteInInstructionArgs,
+    ) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
 
@@ -64,10 +73,10 @@ impl Sell {
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: SellInstructionArgs,
+        args: BuyExactQuoteInInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(21 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(23 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.pool, false));
         accounts.push(solana_instruction::AccountMeta::new(self.user, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -139,6 +148,14 @@ impl Sell {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.global_volume_accumulator,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.user_volume_accumulator,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.fee_config,
             false,
         ));
@@ -147,7 +164,7 @@ impl Sell {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = SellInstructionData::new().try_to_vec().unwrap();
+        let mut data = BuyExactQuoteInInstructionData::new().try_to_vec().unwrap();
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -161,36 +178,37 @@ impl Sell {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SellInstructionData {
+pub struct BuyExactQuoteInInstructionData {
     discriminator: [u8; 8],
 }
 
-impl SellInstructionData {
+impl BuyExactQuoteInInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [51, 230, 133, 164, 1, 127, 131, 173],
+            discriminator: [198, 46, 21, 82, 180, 217, 232, 112],
         }
     }
 
     pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
-impl Default for SellInstructionData {
+impl Default for BuyExactQuoteInInstructionData {
     fn default() -> Self { Self::new() }
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SellInstructionArgs {
-    pub base_amount_in: u64,
-    pub min_quote_amount_out: u64,
+pub struct BuyExactQuoteInInstructionArgs {
+    pub spendable_quote_in: u64,
+    pub min_base_amount_out: u64,
+    pub track_volume: OptionBool,
 }
 
-impl SellInstructionArgs {
+impl BuyExactQuoteInInstructionArgs {
     pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
-/// Instruction builder for `Sell`.
+/// Instruction builder for `BuyExactQuoteIn`.
 ///
 /// ### Accounts:
 ///
@@ -213,10 +231,12 @@ impl SellInstructionArgs {
 ///   16. `[optional]` program (default to `pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA`)
 ///   17. `[writable]` coin_creator_vault_ata
 ///   18. `[]` coin_creator_vault_authority
-///   19. `[]` fee_config
-///   20. `[optional]` fee_program (default to `pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ`)
+///   19. `[]` global_volume_accumulator
+///   20. `[writable]` user_volume_accumulator
+///   21. `[]` fee_config
+///   22. `[optional]` fee_program (default to `pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ`)
 #[derive(Clone, Debug, Default)]
-pub struct SellBuilder {
+pub struct BuyExactQuoteInBuilder {
     pool: Option<solana_pubkey::Pubkey>,
     user: Option<solana_pubkey::Pubkey>,
     global_config: Option<solana_pubkey::Pubkey>,
@@ -236,14 +256,17 @@ pub struct SellBuilder {
     program: Option<solana_pubkey::Pubkey>,
     coin_creator_vault_ata: Option<solana_pubkey::Pubkey>,
     coin_creator_vault_authority: Option<solana_pubkey::Pubkey>,
+    global_volume_accumulator: Option<solana_pubkey::Pubkey>,
+    user_volume_accumulator: Option<solana_pubkey::Pubkey>,
     fee_config: Option<solana_pubkey::Pubkey>,
     fee_program: Option<solana_pubkey::Pubkey>,
-    base_amount_in: Option<u64>,
-    min_quote_amount_out: Option<u64>,
+    spendable_quote_in: Option<u64>,
+    min_base_amount_out: Option<u64>,
+    track_volume: Option<OptionBool>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl SellBuilder {
+impl BuyExactQuoteInBuilder {
     pub fn new() -> Self { Self::default() }
 
     #[inline(always)]
@@ -391,6 +414,24 @@ impl SellBuilder {
     }
 
     #[inline(always)]
+    pub fn global_volume_accumulator(
+        &mut self,
+        global_volume_accumulator: solana_pubkey::Pubkey,
+    ) -> &mut Self {
+        self.global_volume_accumulator = Some(global_volume_accumulator);
+        self
+    }
+
+    #[inline(always)]
+    pub fn user_volume_accumulator(
+        &mut self,
+        user_volume_accumulator: solana_pubkey::Pubkey,
+    ) -> &mut Self {
+        self.user_volume_accumulator = Some(user_volume_accumulator);
+        self
+    }
+
+    #[inline(always)]
     pub fn fee_config(&mut self, fee_config: solana_pubkey::Pubkey) -> &mut Self {
         self.fee_config = Some(fee_config);
         self
@@ -404,14 +445,20 @@ impl SellBuilder {
     }
 
     #[inline(always)]
-    pub fn base_amount_in(&mut self, base_amount_in: u64) -> &mut Self {
-        self.base_amount_in = Some(base_amount_in);
+    pub fn spendable_quote_in(&mut self, spendable_quote_in: u64) -> &mut Self {
+        self.spendable_quote_in = Some(spendable_quote_in);
         self
     }
 
     #[inline(always)]
-    pub fn min_quote_amount_out(&mut self, min_quote_amount_out: u64) -> &mut Self {
-        self.min_quote_amount_out = Some(min_quote_amount_out);
+    pub fn min_base_amount_out(&mut self, min_base_amount_out: u64) -> &mut Self {
+        self.min_base_amount_out = Some(min_base_amount_out);
+        self
+    }
+
+    #[inline(always)]
+    pub fn track_volume(&mut self, track_volume: OptionBool) -> &mut Self {
+        self.track_volume = Some(track_volume);
         self
     }
 
@@ -434,7 +481,7 @@ impl SellBuilder {
 
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = Sell {
+        let accounts = BuyExactQuoteIn {
             pool: self.pool.expect("pool is not set"),
             user: self.user.expect("user is not set"),
             global_config: self.global_config.expect("global_config is not set"),
@@ -480,28 +527,35 @@ impl SellBuilder {
             coin_creator_vault_authority: self
                 .coin_creator_vault_authority
                 .expect("coin_creator_vault_authority is not set"),
+            global_volume_accumulator: self
+                .global_volume_accumulator
+                .expect("global_volume_accumulator is not set"),
+            user_volume_accumulator: self
+                .user_volume_accumulator
+                .expect("user_volume_accumulator is not set"),
             fee_config: self.fee_config.expect("fee_config is not set"),
             fee_program: self.fee_program.unwrap_or(solana_pubkey::pubkey!(
                 "pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ"
             )),
         };
-        let args = SellInstructionArgs {
-            base_amount_in: self
-                .base_amount_in
+        let args = BuyExactQuoteInInstructionArgs {
+            spendable_quote_in: self
+                .spendable_quote_in
                 .clone()
-                .expect("base_amount_in is not set"),
-            min_quote_amount_out: self
-                .min_quote_amount_out
+                .expect("spendable_quote_in is not set"),
+            min_base_amount_out: self
+                .min_base_amount_out
                 .clone()
-                .expect("min_quote_amount_out is not set"),
+                .expect("min_base_amount_out is not set"),
+            track_volume: self.track_volume.clone().expect("track_volume is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `sell` CPI accounts.
-pub struct SellCpiAccounts<'a, 'b> {
+/// `buy_exact_quote_in` CPI accounts.
+pub struct BuyExactQuoteInCpiAccounts<'a, 'b> {
     pub pool: &'b solana_account_info::AccountInfo<'a>,
 
     pub user: &'b solana_account_info::AccountInfo<'a>,
@@ -540,13 +594,17 @@ pub struct SellCpiAccounts<'a, 'b> {
 
     pub coin_creator_vault_authority: &'b solana_account_info::AccountInfo<'a>,
 
+    pub global_volume_accumulator: &'b solana_account_info::AccountInfo<'a>,
+
+    pub user_volume_accumulator: &'b solana_account_info::AccountInfo<'a>,
+
     pub fee_config: &'b solana_account_info::AccountInfo<'a>,
 
     pub fee_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `sell` CPI instruction.
-pub struct SellCpi<'a, 'b> {
+/// `buy_exact_quote_in` CPI instruction.
+pub struct BuyExactQuoteInCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
 
@@ -588,18 +646,22 @@ pub struct SellCpi<'a, 'b> {
 
     pub coin_creator_vault_authority: &'b solana_account_info::AccountInfo<'a>,
 
+    pub global_volume_accumulator: &'b solana_account_info::AccountInfo<'a>,
+
+    pub user_volume_accumulator: &'b solana_account_info::AccountInfo<'a>,
+
     pub fee_config: &'b solana_account_info::AccountInfo<'a>,
 
     pub fee_program: &'b solana_account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
-    pub __args: SellInstructionArgs,
+    pub __args: BuyExactQuoteInInstructionArgs,
 }
 
-impl<'a, 'b> SellCpi<'a, 'b> {
+impl<'a, 'b> BuyExactQuoteInCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: SellCpiAccounts<'a, 'b>,
-        args: SellInstructionArgs,
+        accounts: BuyExactQuoteInCpiAccounts<'a, 'b>,
+        args: BuyExactQuoteInInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
@@ -622,6 +684,8 @@ impl<'a, 'b> SellCpi<'a, 'b> {
             program: accounts.program,
             coin_creator_vault_ata: accounts.coin_creator_vault_ata,
             coin_creator_vault_authority: accounts.coin_creator_vault_authority,
+            global_volume_accumulator: accounts.global_volume_accumulator,
+            user_volume_accumulator: accounts.user_volume_accumulator,
             fee_config: accounts.fee_config,
             fee_program: accounts.fee_program,
             __args: args,
@@ -654,7 +718,7 @@ impl<'a, 'b> SellCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(21 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(23 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.pool.key, false));
         accounts.push(solana_instruction::AccountMeta::new(*self.user.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -726,6 +790,14 @@ impl<'a, 'b> SellCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.global_volume_accumulator.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.user_volume_accumulator.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.fee_config.key,
             false,
         ));
@@ -740,7 +812,7 @@ impl<'a, 'b> SellCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = SellInstructionData::new().try_to_vec().unwrap();
+        let mut data = BuyExactQuoteInInstructionData::new().try_to_vec().unwrap();
         let mut args = self.__args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -749,7 +821,7 @@ impl<'a, 'b> SellCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(22 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(24 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.pool.clone());
         account_infos.push(self.user.clone());
@@ -770,6 +842,8 @@ impl<'a, 'b> SellCpi<'a, 'b> {
         account_infos.push(self.program.clone());
         account_infos.push(self.coin_creator_vault_ata.clone());
         account_infos.push(self.coin_creator_vault_authority.clone());
+        account_infos.push(self.global_volume_accumulator.clone());
+        account_infos.push(self.user_volume_accumulator.clone());
         account_infos.push(self.fee_config.clone());
         account_infos.push(self.fee_program.clone());
         remaining_accounts
@@ -784,7 +858,7 @@ impl<'a, 'b> SellCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `Sell` via CPI.
+/// Instruction builder for `BuyExactQuoteIn` via CPI.
 ///
 /// ### Accounts:
 ///
@@ -807,16 +881,18 @@ impl<'a, 'b> SellCpi<'a, 'b> {
 ///   16. `[]` program
 ///   17. `[writable]` coin_creator_vault_ata
 ///   18. `[]` coin_creator_vault_authority
-///   19. `[]` fee_config
-///   20. `[]` fee_program
+///   19. `[]` global_volume_accumulator
+///   20. `[writable]` user_volume_accumulator
+///   21. `[]` fee_config
+///   22. `[]` fee_program
 #[derive(Clone, Debug)]
-pub struct SellCpiBuilder<'a, 'b> {
-    instruction: Box<SellCpiBuilderInstruction<'a, 'b>>,
+pub struct BuyExactQuoteInCpiBuilder<'a, 'b> {
+    instruction: Box<BuyExactQuoteInCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> SellCpiBuilder<'a, 'b> {
+impl<'a, 'b> BuyExactQuoteInCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(SellCpiBuilderInstruction {
+        let instruction = Box::new(BuyExactQuoteInCpiBuilderInstruction {
             __program: program,
             pool: None,
             user: None,
@@ -837,10 +913,13 @@ impl<'a, 'b> SellCpiBuilder<'a, 'b> {
             program: None,
             coin_creator_vault_ata: None,
             coin_creator_vault_authority: None,
+            global_volume_accumulator: None,
+            user_volume_accumulator: None,
             fee_config: None,
             fee_program: None,
-            base_amount_in: None,
-            min_quote_amount_out: None,
+            spendable_quote_in: None,
+            min_base_amount_out: None,
+            track_volume: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -1007,6 +1086,24 @@ impl<'a, 'b> SellCpiBuilder<'a, 'b> {
     }
 
     #[inline(always)]
+    pub fn global_volume_accumulator(
+        &mut self,
+        global_volume_accumulator: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.global_volume_accumulator = Some(global_volume_accumulator);
+        self
+    }
+
+    #[inline(always)]
+    pub fn user_volume_accumulator(
+        &mut self,
+        user_volume_accumulator: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.user_volume_accumulator = Some(user_volume_accumulator);
+        self
+    }
+
+    #[inline(always)]
     pub fn fee_config(
         &mut self,
         fee_config: &'b solana_account_info::AccountInfo<'a>,
@@ -1025,14 +1122,20 @@ impl<'a, 'b> SellCpiBuilder<'a, 'b> {
     }
 
     #[inline(always)]
-    pub fn base_amount_in(&mut self, base_amount_in: u64) -> &mut Self {
-        self.instruction.base_amount_in = Some(base_amount_in);
+    pub fn spendable_quote_in(&mut self, spendable_quote_in: u64) -> &mut Self {
+        self.instruction.spendable_quote_in = Some(spendable_quote_in);
         self
     }
 
     #[inline(always)]
-    pub fn min_quote_amount_out(&mut self, min_quote_amount_out: u64) -> &mut Self {
-        self.instruction.min_quote_amount_out = Some(min_quote_amount_out);
+    pub fn min_base_amount_out(&mut self, min_base_amount_out: u64) -> &mut Self {
+        self.instruction.min_base_amount_out = Some(min_base_amount_out);
+        self
+    }
+
+    #[inline(always)]
+    pub fn track_volume(&mut self, track_volume: OptionBool) -> &mut Self {
+        self.instruction.track_volume = Some(track_volume);
         self
     }
 
@@ -1071,19 +1174,24 @@ impl<'a, 'b> SellCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let args = SellInstructionArgs {
-            base_amount_in: self
+        let args = BuyExactQuoteInInstructionArgs {
+            spendable_quote_in: self
                 .instruction
-                .base_amount_in
+                .spendable_quote_in
                 .clone()
-                .expect("base_amount_in is not set"),
-            min_quote_amount_out: self
+                .expect("spendable_quote_in is not set"),
+            min_base_amount_out: self
                 .instruction
-                .min_quote_amount_out
+                .min_base_amount_out
                 .clone()
-                .expect("min_quote_amount_out is not set"),
+                .expect("min_base_amount_out is not set"),
+            track_volume: self
+                .instruction
+                .track_volume
+                .clone()
+                .expect("track_volume is not set"),
         };
-        let instruction = SellCpi {
+        let instruction = BuyExactQuoteInCpi {
             __program: self.instruction.__program,
 
             pool: self.instruction.pool.expect("pool is not set"),
@@ -1166,6 +1274,16 @@ impl<'a, 'b> SellCpiBuilder<'a, 'b> {
                 .coin_creator_vault_authority
                 .expect("coin_creator_vault_authority is not set"),
 
+            global_volume_accumulator: self
+                .instruction
+                .global_volume_accumulator
+                .expect("global_volume_accumulator is not set"),
+
+            user_volume_accumulator: self
+                .instruction
+                .user_volume_accumulator
+                .expect("user_volume_accumulator is not set"),
+
             fee_config: self.instruction.fee_config.expect("fee_config is not set"),
 
             fee_program: self
@@ -1182,7 +1300,7 @@ impl<'a, 'b> SellCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct SellCpiBuilderInstruction<'a, 'b> {
+struct BuyExactQuoteInCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     pool: Option<&'b solana_account_info::AccountInfo<'a>>,
     user: Option<&'b solana_account_info::AccountInfo<'a>>,
@@ -1203,10 +1321,13 @@ struct SellCpiBuilderInstruction<'a, 'b> {
     program: Option<&'b solana_account_info::AccountInfo<'a>>,
     coin_creator_vault_ata: Option<&'b solana_account_info::AccountInfo<'a>>,
     coin_creator_vault_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
+    global_volume_accumulator: Option<&'b solana_account_info::AccountInfo<'a>>,
+    user_volume_accumulator: Option<&'b solana_account_info::AccountInfo<'a>>,
     fee_config: Option<&'b solana_account_info::AccountInfo<'a>>,
     fee_program: Option<&'b solana_account_info::AccountInfo<'a>>,
-    base_amount_in: Option<u64>,
-    min_quote_amount_out: Option<u64>,
+    spendable_quote_in: Option<u64>,
+    min_base_amount_out: Option<u64>,
+    track_volume: Option<OptionBool>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

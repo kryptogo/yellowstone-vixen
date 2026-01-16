@@ -10,7 +10,7 @@ use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SellEventV1 {
+pub struct SellEvent {
     pub timestamp: i64,
     pub base_amount_in: u64,
     pub min_quote_amount_out: u64,
@@ -55,56 +55,6 @@ pub struct SellEventV1 {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub protocol_fee_recipient_token_account: Pubkey,
-}
-
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SellEventV2 {
-    pub timestamp: i64,
-    pub base_amount_in: u64,
-    pub min_quote_amount_out: u64,
-    pub user_base_token_reserves: u64,
-    pub user_quote_token_reserves: u64,
-    pub pool_base_token_reserves: u64,
-    pub pool_quote_token_reserves: u64,
-    pub quote_amount_out: u64,
-    pub lp_fee_basis_points: u64,
-    pub lp_fee: u64,
-    pub protocol_fee_basis_points: u64,
-    pub protocol_fee: u64,
-    pub quote_amount_out_without_lp_fee: u64,
-    pub user_quote_amount_out: u64,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub pool: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub user: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub user_base_token_account: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub user_quote_token_account: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub protocol_fee_recipient: Pubkey,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub protocol_fee_recipient_token_account: Pubkey,
-    // Additional V2 fields
     #[cfg_attr(
         feature = "serde",
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
@@ -112,126 +62,4 @@ pub struct SellEventV2 {
     pub coin_creator: Pubkey,
     pub coin_creator_fee_basis_points: u64,
     pub coin_creator_fee: u64,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum SellEvent {
-    V1(SellEventV1),
-    V2(SellEventV2),
-}
-
-impl SellEvent {
-    /// CPI log prefix for self CPI events
-    pub const CPI_LOG_PREFIX: [u8; 8] = [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d];
-    /// SellEvent discriminator bytes
-    pub const DISCRIMINATOR: [u8; 8] = [0x3e, 0x2f, 0x37, 0x0a, 0xa5, 0x03, 0xdc, 0x2a];
-
-    /// Parse SellEvent from inner instruction data
-    pub fn from_inner_instruction_data(data: &[u8]) -> Option<Self> {
-        // Check if data starts with CPI log prefix
-        if data.len() >= 16 && data.starts_with(&Self::CPI_LOG_PREFIX) {
-            let event_data = &data[8..]; // Skip CPI log prefix (8 bytes)
-
-            // Check if the remaining data starts with SellEvent discriminator
-            if event_data.starts_with(&Self::DISCRIMINATOR) {
-                let sell_event_data = &event_data[8..]; // Skip the discriminator (8 bytes)
-
-                // Try to parse as V2 first (longer structure)
-                if let Ok(v2_event) = SellEventV2::try_from_slice(sell_event_data) {
-                    return Some(SellEvent::V2(v2_event));
-                }
-
-                // If V2 fails, try V1 using first 304 bytes
-                if sell_event_data.len() >= 304 {
-                    if let Ok(v1_event) = SellEventV1::try_from_slice(&sell_event_data[..304]) {
-                        return Some(SellEvent::V1(v1_event));
-                    }
-                }
-            }
-        }
-        None
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_sell_event_from_inner_data() {
-        // Test data from provided hex string
-        let hex_data = "e445a52e51cb9a1d3e2f370aa503dc2ac37ed268000000007115bc19000000002cc00431b0000000e5b00c3e00000000e4fae5f80800000020627a3a170000001ce9c6f1faa20000ba7587c9b30000001900000000000000b25610730000000005000000000000008a44031700000000081f7756b30000007eda733fb3000000bb21d533b78de89ad6acab0ef110ba950d1b9fda6ee33cb398e53b8a947a6d36fa9af8b4bdf246a32f969fe644a92fd3978910971dd2937ba914153e2156088b98f68c714ac240a39812f642a2eb6fad0c30c11ca0ca4aa41f07562daeb41c061a5ef4f6e60bf9012c89288aa085c2b56cba15655c429d8efc9dcee37b8c0407d7aa8fb060d8291b4c4d475daff762c96bdc0daceb36c012ead12ed3a94841617d51b5d6ed303aa6834d96dfefb9e8e5530afedf18dd119ec78194b04dd3384b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-
-        let data = hex::decode(hex_data).expect("Failed to decode hex");
-
-        let result = SellEvent::from_inner_instruction_data(&data);
-        assert!(
-            result.is_some(),
-            "Should successfully parse SellEvent from inner instruction data"
-        );
-
-        let sell_event = result.unwrap();
-
-        // This should be parsed as V2 based on the data length
-        match sell_event {
-            SellEvent::V1(v1_event) => {
-                panic!("Expected SellEventV2, got SellEventV1: {v1_event:?}");
-            },
-            SellEvent::V2(v2_event) => {
-                assert_eq!(v2_event.timestamp, 1758625475);
-                assert_eq!(v2_event.base_amount_in, 431756657);
-                assert_eq!(v2_event.user_quote_amount_out, 769863703166);
-                println!("Parsed as SellEventV2: {v2_event:?}");
-            },
-        }
-    }
-
-    #[test]
-    fn test_parse_sell_event_from_inner_data_2() {
-        // Test data from provided hex string
-        let hex_data = "e445a52e51cb9a1d3e2f370aa503dc2a1d6c056800000000f49f5f55020000000000000000000000f49f5f55020000006c97f898040000005aca4b3fab3b000047399e3f4c000000263efb02000000001400000000000000c8860100000000000500000000000000b2610000000000005eb7f90200000000ac55f902000000003a6a41b14153f8720e8b8ef112fe2be81c3fbfe8e04e30a1cdf02289d5ed0efd567525666abc51671f1de7589b64bc03f7250f02bde0d700a166912240cae01b3f0bde3b3615da051fffea42e0049753b0f08e9d483b9d4b746a0216cbb24056e8e4f85b8ca8a288157bf9588e56278ccbd096920d52cb86db66f579ec5d3ef3638373000ea22cb264d34aff64a04b5efabfbb74ddcd048997b1981547d7d11007b46728c503a7c81598ec5167b9b632a0da7bdce98f07c5967b10ed6f78a1ce";
-
-        let data = hex::decode(hex_data).expect("Failed to decode hex");
-
-        let result = SellEvent::from_inner_instruction_data(&data);
-        assert!(
-            result.is_some(),
-            "Should successfully parse SellEvent from inner instruction data"
-        );
-
-        let sell_event = result.unwrap();
-
-        // This should be parsed as V2 based on the data length
-        match sell_event {
-            SellEvent::V1(v1_event) => {
-                assert_eq!(v1_event.timestamp, 1745185821);
-                assert_eq!(v1_event.base_amount_in, 10022264820);
-                assert_eq!(v1_event.user_quote_amount_out, 49894828);
-                println!("Parsed as SellEventV1: {v1_event:?}");
-            },
-            SellEvent::V2(v2_event) => {
-                panic!("Expected SellEventV1, got SellEventV2: {v2_event:?}");
-            },
-        }
-    }
-
-    #[test]
-    fn test_invalid_cpi_prefix() {
-        let invalid_data = vec![0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07];
-        let result = SellEvent::from_inner_instruction_data(&invalid_data);
-        assert!(result.is_none(), "Should not parse with invalid CPI prefix");
-    }
-
-    #[test]
-    fn test_invalid_discriminator() {
-        let mut data = SellEvent::CPI_LOG_PREFIX.to_vec();
-        data.extend_from_slice(&[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]); // Invalid discriminator
-
-        let result = SellEvent::from_inner_instruction_data(&data);
-        assert!(
-            result.is_none(),
-            "Should not parse with invalid discriminator"
-        );
-    }
 }

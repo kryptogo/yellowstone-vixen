@@ -6,43 +6,49 @@
 //!
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use solana_pubkey::Pubkey;
 
-pub const EXTEND_ACCOUNT_DISCRIMINATOR: [u8; 8] = [234, 102, 194, 203, 150, 72, 62, 229];
+pub const ADMIN_SET_COIN_CREATOR_DISCRIMINATOR: [u8; 8] = [242, 40, 117, 145, 73, 96, 105, 104];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct ExtendAccount {
-    pub account: solana_pubkey::Pubkey,
+pub struct AdminSetCoinCreator {
+    pub admin_set_coin_creator_authority: solana_pubkey::Pubkey,
 
-    pub user: solana_pubkey::Pubkey,
+    pub global_config: solana_pubkey::Pubkey,
 
-    pub system_program: solana_pubkey::Pubkey,
+    pub pool: solana_pubkey::Pubkey,
 
     pub event_authority: solana_pubkey::Pubkey,
 
     pub program: solana_pubkey::Pubkey,
 }
 
-impl ExtendAccount {
-    pub fn instruction(&self) -> solana_instruction::Instruction {
-        self.instruction_with_remaining_accounts(&[])
+impl AdminSetCoinCreator {
+    pub fn instruction(
+        &self,
+        args: AdminSetCoinCreatorInstructionArgs,
+    ) -> solana_instruction::Instruction {
+        self.instruction_with_remaining_accounts(args, &[])
     }
 
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
+        args: AdminSetCoinCreatorInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
         let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
-        accounts.push(solana_instruction::AccountMeta::new(self.account, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.user, true,
+            self.admin_set_coin_creator_authority,
+            true,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.system_program,
+            self.global_config,
             false,
         ));
+        accounts.push(solana_instruction::AccountMeta::new(self.pool, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.event_authority,
             false,
@@ -52,7 +58,11 @@ impl ExtendAccount {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = ExtendAccountInstructionData::new().try_to_vec().unwrap();
+        let mut data = AdminSetCoinCreatorInstructionData::new()
+            .try_to_vec()
+            .unwrap();
+        let mut args = args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         solana_instruction::Instruction {
             program_id: crate::PUMP_AMM_ID,
@@ -64,62 +74,75 @@ impl ExtendAccount {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ExtendAccountInstructionData {
+pub struct AdminSetCoinCreatorInstructionData {
     discriminator: [u8; 8],
 }
 
-impl ExtendAccountInstructionData {
+impl AdminSetCoinCreatorInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [234, 102, 194, 203, 150, 72, 62, 229],
+            discriminator: [242, 40, 117, 145, 73, 96, 105, 104],
         }
     }
 
     pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
-impl Default for ExtendAccountInstructionData {
+impl Default for AdminSetCoinCreatorInstructionData {
     fn default() -> Self { Self::new() }
 }
 
-/// Instruction builder for `ExtendAccount`.
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct AdminSetCoinCreatorInstructionArgs {
+    pub coin_creator: Pubkey,
+}
+
+impl AdminSetCoinCreatorInstructionArgs {
+    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
+}
+
+/// Instruction builder for `AdminSetCoinCreator`.
 ///
 /// ### Accounts:
 ///
-///   0. `[writable]` account
-///   1. `[signer]` user
-///   2. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   0. `[signer]` admin_set_coin_creator_authority
+///   1. `[]` global_config
+///   2. `[writable]` pool
 ///   3. `[]` event_authority
 ///   4. `[]` program
 #[derive(Clone, Debug, Default)]
-pub struct ExtendAccountBuilder {
-    account: Option<solana_pubkey::Pubkey>,
-    user: Option<solana_pubkey::Pubkey>,
-    system_program: Option<solana_pubkey::Pubkey>,
+pub struct AdminSetCoinCreatorBuilder {
+    admin_set_coin_creator_authority: Option<solana_pubkey::Pubkey>,
+    global_config: Option<solana_pubkey::Pubkey>,
+    pool: Option<solana_pubkey::Pubkey>,
     event_authority: Option<solana_pubkey::Pubkey>,
     program: Option<solana_pubkey::Pubkey>,
+    coin_creator: Option<Pubkey>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl ExtendAccountBuilder {
+impl AdminSetCoinCreatorBuilder {
     pub fn new() -> Self { Self::default() }
 
     #[inline(always)]
-    pub fn account(&mut self, account: solana_pubkey::Pubkey) -> &mut Self {
-        self.account = Some(account);
+    pub fn admin_set_coin_creator_authority(
+        &mut self,
+        admin_set_coin_creator_authority: solana_pubkey::Pubkey,
+    ) -> &mut Self {
+        self.admin_set_coin_creator_authority = Some(admin_set_coin_creator_authority);
         self
     }
 
     #[inline(always)]
-    pub fn user(&mut self, user: solana_pubkey::Pubkey) -> &mut Self {
-        self.user = Some(user);
+    pub fn global_config(&mut self, global_config: solana_pubkey::Pubkey) -> &mut Self {
+        self.global_config = Some(global_config);
         self
     }
 
-    /// `[optional account, default to '11111111111111111111111111111111']`
     #[inline(always)]
-    pub fn system_program(&mut self, system_program: solana_pubkey::Pubkey) -> &mut Self {
-        self.system_program = Some(system_program);
+    pub fn pool(&mut self, pool: solana_pubkey::Pubkey) -> &mut Self {
+        self.pool = Some(pool);
         self
     }
 
@@ -132,6 +155,12 @@ impl ExtendAccountBuilder {
     #[inline(always)]
     pub fn program(&mut self, program: solana_pubkey::Pubkey) -> &mut Self {
         self.program = Some(program);
+        self
+    }
+
+    #[inline(always)]
+    pub fn coin_creator(&mut self, coin_creator: Pubkey) -> &mut Self {
+        self.coin_creator = Some(coin_creator);
         self
     }
 
@@ -154,61 +183,68 @@ impl ExtendAccountBuilder {
 
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = ExtendAccount {
-            account: self.account.expect("account is not set"),
-            user: self.user.expect("user is not set"),
-            system_program: self
-                .system_program
-                .unwrap_or(solana_pubkey::pubkey!("11111111111111111111111111111111")),
+        let accounts = AdminSetCoinCreator {
+            admin_set_coin_creator_authority: self
+                .admin_set_coin_creator_authority
+                .expect("admin_set_coin_creator_authority is not set"),
+            global_config: self.global_config.expect("global_config is not set"),
+            pool: self.pool.expect("pool is not set"),
             event_authority: self.event_authority.expect("event_authority is not set"),
             program: self.program.expect("program is not set"),
         };
+        let args = AdminSetCoinCreatorInstructionArgs {
+            coin_creator: self.coin_creator.clone().expect("coin_creator is not set"),
+        };
 
-        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `extend_account` CPI accounts.
-pub struct ExtendAccountCpiAccounts<'a, 'b> {
-    pub account: &'b solana_account_info::AccountInfo<'a>,
+/// `admin_set_coin_creator` CPI accounts.
+pub struct AdminSetCoinCreatorCpiAccounts<'a, 'b> {
+    pub admin_set_coin_creator_authority: &'b solana_account_info::AccountInfo<'a>,
 
-    pub user: &'b solana_account_info::AccountInfo<'a>,
+    pub global_config: &'b solana_account_info::AccountInfo<'a>,
 
-    pub system_program: &'b solana_account_info::AccountInfo<'a>,
+    pub pool: &'b solana_account_info::AccountInfo<'a>,
 
     pub event_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `extend_account` CPI instruction.
-pub struct ExtendAccountCpi<'a, 'b> {
+/// `admin_set_coin_creator` CPI instruction.
+pub struct AdminSetCoinCreatorCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
 
-    pub account: &'b solana_account_info::AccountInfo<'a>,
+    pub admin_set_coin_creator_authority: &'b solana_account_info::AccountInfo<'a>,
 
-    pub user: &'b solana_account_info::AccountInfo<'a>,
+    pub global_config: &'b solana_account_info::AccountInfo<'a>,
 
-    pub system_program: &'b solana_account_info::AccountInfo<'a>,
+    pub pool: &'b solana_account_info::AccountInfo<'a>,
 
     pub event_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub program: &'b solana_account_info::AccountInfo<'a>,
+    /// The arguments for the instruction.
+    pub __args: AdminSetCoinCreatorInstructionArgs,
 }
 
-impl<'a, 'b> ExtendAccountCpi<'a, 'b> {
+impl<'a, 'b> AdminSetCoinCreatorCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: ExtendAccountCpiAccounts<'a, 'b>,
+        accounts: AdminSetCoinCreatorCpiAccounts<'a, 'b>,
+        args: AdminSetCoinCreatorInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
-            account: accounts.account,
-            user: accounts.user,
-            system_program: accounts.system_program,
+            admin_set_coin_creator_authority: accounts.admin_set_coin_creator_authority,
+            global_config: accounts.global_config,
+            pool: accounts.pool,
             event_authority: accounts.event_authority,
             program: accounts.program,
+            __args: args,
         }
     }
 
@@ -239,18 +275,15 @@ impl<'a, 'b> ExtendAccountCpi<'a, 'b> {
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
         let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
-        accounts.push(solana_instruction::AccountMeta::new(
-            *self.account.key,
-            false,
-        ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.user.key,
+            *self.admin_set_coin_creator_authority.key,
             true,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.system_program.key,
+            *self.global_config.key,
             false,
         ));
+        accounts.push(solana_instruction::AccountMeta::new(*self.pool.key, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.event_authority.key,
             false,
@@ -266,7 +299,11 @@ impl<'a, 'b> ExtendAccountCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = ExtendAccountInstructionData::new().try_to_vec().unwrap();
+        let mut data = AdminSetCoinCreatorInstructionData::new()
+            .try_to_vec()
+            .unwrap();
+        let mut args = self.__args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
             program_id: crate::PUMP_AMM_ID,
@@ -275,9 +312,9 @@ impl<'a, 'b> ExtendAccountCpi<'a, 'b> {
         };
         let mut account_infos = Vec::with_capacity(6 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
-        account_infos.push(self.account.clone());
-        account_infos.push(self.user.clone());
-        account_infos.push(self.system_program.clone());
+        account_infos.push(self.admin_set_coin_creator_authority.clone());
+        account_infos.push(self.global_config.clone());
+        account_infos.push(self.pool.clone());
         account_infos.push(self.event_authority.clone());
         account_infos.push(self.program.clone());
         remaining_accounts
@@ -292,52 +329,56 @@ impl<'a, 'b> ExtendAccountCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `ExtendAccount` via CPI.
+/// Instruction builder for `AdminSetCoinCreator` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[writable]` account
-///   1. `[signer]` user
-///   2. `[]` system_program
+///   0. `[signer]` admin_set_coin_creator_authority
+///   1. `[]` global_config
+///   2. `[writable]` pool
 ///   3. `[]` event_authority
 ///   4. `[]` program
 #[derive(Clone, Debug)]
-pub struct ExtendAccountCpiBuilder<'a, 'b> {
-    instruction: Box<ExtendAccountCpiBuilderInstruction<'a, 'b>>,
+pub struct AdminSetCoinCreatorCpiBuilder<'a, 'b> {
+    instruction: Box<AdminSetCoinCreatorCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> ExtendAccountCpiBuilder<'a, 'b> {
+impl<'a, 'b> AdminSetCoinCreatorCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(ExtendAccountCpiBuilderInstruction {
+        let instruction = Box::new(AdminSetCoinCreatorCpiBuilderInstruction {
             __program: program,
-            account: None,
-            user: None,
-            system_program: None,
+            admin_set_coin_creator_authority: None,
+            global_config: None,
+            pool: None,
             event_authority: None,
             program: None,
+            coin_creator: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
     }
 
     #[inline(always)]
-    pub fn account(&mut self, account: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.account = Some(account);
-        self
-    }
-
-    #[inline(always)]
-    pub fn user(&mut self, user: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.user = Some(user);
-        self
-    }
-
-    #[inline(always)]
-    pub fn system_program(
+    pub fn admin_set_coin_creator_authority(
         &mut self,
-        system_program: &'b solana_account_info::AccountInfo<'a>,
+        admin_set_coin_creator_authority: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.system_program = Some(system_program);
+        self.instruction.admin_set_coin_creator_authority = Some(admin_set_coin_creator_authority);
+        self
+    }
+
+    #[inline(always)]
+    pub fn global_config(
+        &mut self,
+        global_config: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.global_config = Some(global_config);
+        self
+    }
+
+    #[inline(always)]
+    pub fn pool(&mut self, pool: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.pool = Some(pool);
         self
     }
 
@@ -353,6 +394,12 @@ impl<'a, 'b> ExtendAccountCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn program(&mut self, program: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.program = Some(program);
+        self
+    }
+
+    #[inline(always)]
+    pub fn coin_creator(&mut self, coin_creator: Pubkey) -> &mut Self {
+        self.instruction.coin_creator = Some(coin_creator);
         self
     }
 
@@ -391,17 +438,27 @@ impl<'a, 'b> ExtendAccountCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let instruction = ExtendAccountCpi {
+        let args = AdminSetCoinCreatorInstructionArgs {
+            coin_creator: self
+                .instruction
+                .coin_creator
+                .clone()
+                .expect("coin_creator is not set"),
+        };
+        let instruction = AdminSetCoinCreatorCpi {
             __program: self.instruction.__program,
 
-            account: self.instruction.account.expect("account is not set"),
-
-            user: self.instruction.user.expect("user is not set"),
-
-            system_program: self
+            admin_set_coin_creator_authority: self
                 .instruction
-                .system_program
-                .expect("system_program is not set"),
+                .admin_set_coin_creator_authority
+                .expect("admin_set_coin_creator_authority is not set"),
+
+            global_config: self
+                .instruction
+                .global_config
+                .expect("global_config is not set"),
+
+            pool: self.instruction.pool.expect("pool is not set"),
 
             event_authority: self
                 .instruction
@@ -409,6 +466,7 @@ impl<'a, 'b> ExtendAccountCpiBuilder<'a, 'b> {
                 .expect("event_authority is not set"),
 
             program: self.instruction.program.expect("program is not set"),
+            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -418,13 +476,14 @@ impl<'a, 'b> ExtendAccountCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct ExtendAccountCpiBuilderInstruction<'a, 'b> {
+struct AdminSetCoinCreatorCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
-    account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    user: Option<&'b solana_account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    admin_set_coin_creator_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
+    global_config: Option<&'b solana_account_info::AccountInfo<'a>>,
+    pool: Option<&'b solana_account_info::AccountInfo<'a>>,
     event_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    coin_creator: Option<Pubkey>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }
