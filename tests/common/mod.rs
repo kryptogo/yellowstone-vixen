@@ -4,7 +4,19 @@ use std::{path::PathBuf, time::Duration};
 
 use tokio::sync::broadcast;
 use yellowstone_vixen::config::{BufferConfig, VixenConfig};
+use yellowstone_vixen_mock::{
+    create_mock_transaction_update_with_cache, parse_instructions_from_txn_update,
+};
 use yellowstone_vixen_yellowstone_grpc_source::YellowstoneGrpcConfig;
+
+/// Trait for CPI events that can be parsed from instruction data and have token changes
+pub trait CpiEventParseable {
+    fn from_inner_instruction_data(data: &[u8]) -> Option<Self>
+    where
+        Self: Sized;
+    fn source_token_change(&self) -> u64;
+    fn destination_token_change(&self) -> u64;
+}
 
 /// Command line options for integration tests
 #[derive(clap::Parser, Debug)]
@@ -179,3 +191,100 @@ where
         }
     }
 }
+
+/// Asserts that a CPI event at the specified instruction indices has the expected token changes.
+///
+/// # Arguments
+/// * `signature` - Transaction signature to fetch and parse
+/// * `ix_path` - Path of instruction indices: [top_level, inner, nested_inner, ...]
+/// * `expected_source_token_change` - Expected source token change value
+/// * `expected_destination_token_change` - Expected destination token change value
+///
+/// # Example
+/// ```ignore
+/// // 2-level: top-level #6 → inner #5
+/// assert_okx_dex_v2_cpi_event_token_changes::<SwapCpiEvent2>(sig, &[6, 5], 100, 200).await?;
+///
+/// // 3-level: top-level #3 → inner #2 → nested #8
+/// assert_okx_dex_v2_cpi_event_token_changes::<SwapCpiEvent2>(sig, &[3, 2, 8], 100, 200).await?;
+/// ```
+pub async fn assert_okx_dex_v2_cpi_event_token_changes<T: CpiEventParseable>(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    assert!(
+        ix_path.len() >= 2,
+        "ix_path must have at least 2 indices (top-level and inner)"
+    );
+
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .expect("Failed to fetch transaction");
+
+    let instruction_updates =
+        parse_instructions_from_txn_update(&txn_update).expect("Failed to parse instructions");
+
+    let top_level_ix = instruction_updates
+        .get(ix_path[0])
+        .ok_or_else(|| format!("Top-level instruction index {} not found", ix_path[0]))?;
+
+    // Navigate through the inner instruction path
+    let mut current_inner = top_level_ix
+        .inner
+        .get(ix_path[1])
+        .ok_or_else(|| format!("Inner instruction index {} not found", ix_path[1]))?;
+
+    for (depth, &idx) in ix_path.iter().enumerate().skip(2) {
+        current_inner = current_inner.inner.get(idx).ok_or_else(|| {
+            format!(
+                "Nested instruction index {} at depth {} not found",
+                idx, depth
+            )
+        })?;
+    }
+
+    let event = T::from_inner_instruction_data(&current_inner.data)
+        .ok_or("Failed to parse CPI event from instruction data")?;
+
+    assert_eq!(
+        event.source_token_change(),
+        expected_source_token_change,
+        "source_token_change mismatch"
+    );
+    assert_eq!(
+        event.destination_token_change(),
+        expected_destination_token_change,
+        "destination_token_change mismatch"
+    );
+
+    Ok(())
+}
+
+// Macro to implement CpiEventParseable for multiple types
+macro_rules! impl_cpi_event_parseable {
+    ($($ty:ty),+ $(,)?) => {
+        $(
+            impl CpiEventParseable for $ty {
+                fn from_inner_instruction_data(data: &[u8]) -> Option<Self> {
+                    Self::from_inner_instruction_data(data)
+                }
+                fn source_token_change(&self) -> u64 {
+                    self.source_token_change
+                }
+                fn destination_token_change(&self) -> u64 {
+                    self.destination_token_change
+                }
+            }
+        )+
+    };
+}
+
+impl_cpi_event_parseable!(
+    yellowstone_vixen_okx_dex_v2_parser::types::SwapCpiEvent2,
+    yellowstone_vixen_okx_dex_v2_parser::types::SwapWithFeesCpiEvent2,
+    yellowstone_vixen_okx_dex_v2_parser::types::SwapWithFeesCpiEventEnhanced,
+    yellowstone_vixen_okx_dex_v2_parser::types::SwapTobV2CpiEvent2,
+    yellowstone_vixen_okx_dex_v2_parser::types::SwapTocV2CpiEvent2,
+);

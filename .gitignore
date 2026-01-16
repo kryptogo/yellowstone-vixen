@@ -1,5 +1,6 @@
 target/
 crates/mock/fixtures
+tests/fixtures
 *.env*
 Vixen.toml
 Vixen.test.toml

@@ -509,3 +509,83 @@ async fn test_raydium_launchpad_specific_signatures(
     let parser = RaydiumLaunchpadInstructionParser;
     test_specific_signatures("Raydium Launchpad", &parser, signatures).await
 }
+
+/// Test OKX DEX v2 CPI event parsing from a specific transaction
+/// test all ix in [README.md](../crates/kryptogo-vixen-okx-dex-v2-parser/README.md)
+///
+/// NOTE:
+/// Use helius explorer (Orb) to see the logs for the transaction and find out inner instruction index.
+/// Solscan or Orb instruction page don't show inner instruction nested level
+/// cross reference instruction page with Solscan or Orb to find out which CPI event is the one we want to test.
+/// https://orbmarkets.io/tx/3Rrgt5ABbfUNoqerVQNCjfQYwafnSm3VNgmtB31aZ4y11Rc4FSHjdMzrXSkyquNnFVp8NAjrU1fAk6ero1cbw59q?tab=logs
+///
+/// For example i want to test last inner instruction (CPI event, Invoking OKX DEX Router Program) of top-level instruction (Invoking OKX DEX Router Program)
+/// top-level ix index to 6 and inner ix index to 6.
+/// The index on instruction page is 1-indexed, all index must minus 1.
+///
+/// You need to manually fill in the ix path and expected token changes and type of CPI event.
+/// You should add non existent type in impl_cpi_event_parseable
+#[tokio::test]
+async fn test_okx_dex_v2_cpi_event_parsing() {
+    use yellowstone_vixen_okx_dex_v2_parser::types::{
+        SwapCpiEvent2, SwapTocV2CpiEvent2, SwapWithFeesCpiEvent2, SwapWithFeesCpiEventEnhanced,
+    };
+
+    common::assert_okx_dex_v2_cpi_event_token_changes::<SwapCpiEvent2>(
+        "4XfXNQABC7igdCgtux9dXDb6Dj8VzxBQb5JzgpNdy3ajKdnMbRfiZbywfbuoQTvQ3XCHdBvPBSCCqzDKaenHETVY",
+        &[3, 3], // top-level #3 → inner #3
+        2000500000,
+        295045121,
+    )
+    .await
+    .expect("Swap CPI event parsing test failed");
+
+    // ProxySwap no real tx yet
+
+    common::assert_okx_dex_v2_cpi_event_token_changes::<SwapWithFeesCpiEvent2>(
+        "3Rrgt5ABbfUNoqerVQNCjfQYwafnSm3VNgmtB31aZ4y11Rc4FSHjdMzrXSkyquNnFVp8NAjrU1fAk6ero1cbw59q",
+        &[6, 6], // top-level #6 → inner #6
+        10000000,
+        14918710783,
+    )
+    .await
+    .expect("SwapTob CPI event parsing test failed");
+
+    common::assert_okx_dex_v2_cpi_event_token_changes::<SwapWithFeesCpiEventEnhanced>(
+        "2wpzTEZzyWgC9ZTHMmppcdVwKDdCE1owBby1cFPNKB2S6XWW4sc4w3mxgDq4N1Z5bhzAGhLQqk6qMDCrVEi5RVhc",
+        &[6, 10], // top-level #6 → inner #10
+        1000000,
+        5699503,
+    )
+    .await
+    .expect("SwapTobEnhanced CPI event parsing test failed");
+
+    // SwapTobV2 no real tx yet
+
+    common::assert_okx_dex_v2_cpi_event_token_changes::<SwapWithFeesCpiEvent2>(
+        "5H5SLPoNyvKjSQfUfiu3PxMKiqfejMh6wuge2TmteRJc6jGxW77XzbiQsvcd9y5zGrfkQ8E7cATepgTHkTu19shp",
+        &[3, 2, 9],
+        4675790000,
+        115187775,
+    )
+    .await
+    .expect("SwapTobWithReceiver CPI event parsing test failed");
+
+    common::assert_okx_dex_v2_cpi_event_token_changes::<SwapWithFeesCpiEvent2>(
+        "X41pjVYMdoZd15v1AnHpqV9sGspTEBfzhJ6uk95X2tdthxnQCiGDz5iLfdkhhPfV6cNX14Jpqivq5wmonDudDMi",
+        &[4, 8],
+        1191877137296814,
+        7968827164,
+    )
+    .await
+    .expect("SwapToc CPI event parsing test failed");
+
+    common::assert_okx_dex_v2_cpi_event_token_changes::<SwapTocV2CpiEvent2>(
+        "37DzX3osK9x5jKsCZnZHtkLopf3xmEekHDubpUBd9dVxPy9yCF9TWzvy5rLNSFnM9FyqnE9LeYyGDRvs4hdXmajc",
+        &[7, 8],
+        1986400000,
+        224645346850,
+    )
+    .await
+    .expect("SwapTocV2 CPI event parsing test failed");
+}
