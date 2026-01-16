@@ -21,5 +21,6 @@ visit(
   renderVisitor({
     projectFolder,
     projectName: "pump-swaps",
+    toolchain: "+nightly",
   })
 );
