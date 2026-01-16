@@ -9,9 +9,7 @@
 pub mod proto_types_parsers {
     use yellowstone_vixen_core::proto_helper_traits;
     proto_helper_traits!();
-    use crate::proto_def;
-
-    use crate::types::PlatformFeeWrapUnwrapArgs;
+    use crate::{proto_def, types::PlatformFeeWrapUnwrapArgs};
     impl IntoProto<proto_def::PlatformFeeWrapUnwrapArgs> for PlatformFeeWrapUnwrapArgs {
         fn into_proto(self) -> proto_def::PlatformFeeWrapUnwrapArgs {
             proto_def::PlatformFeeWrapUnwrapArgs {
@@ -297,8 +295,9 @@ pub mod proto_types_parsers {
         }
     }
 
-    use crate::types::Dex;
     use proto_def::dex;
+
+    use crate::types::Dex;
     impl IntoProto<proto_def::Dex> for Dex {
         fn into_proto(self) -> proto_def::Dex {
             let variant = match self {

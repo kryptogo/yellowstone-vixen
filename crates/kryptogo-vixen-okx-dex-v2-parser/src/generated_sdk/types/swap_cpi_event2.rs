@@ -5,8 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
@@ -41,7 +40,6 @@ pub struct SwapCpiEvent2 {
 impl SwapCpiEvent2 {
     /// CPI log prefix for self CPI events (Anchor standard)
     pub const CPI_LOG_PREFIX: [u8; 8] = [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d];
-
     /// SwapCpiEvent2 discriminator bytes (from IDL)
     pub const DISCRIMINATOR: [u8; 8] = [0x15, 0x5e, 0xe0, 0x35, 0xdc, 0xe8, 0xc1, 0x5e];
 
@@ -63,8 +61,9 @@ impl SwapCpiEvent2 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use borsh::BorshSerialize;
+
+    use super::*;
 
     #[test]
     fn test_discriminator_constant() {
@@ -87,7 +86,9 @@ mod tests {
         };
 
         let mut event_data = Vec::new();
-        mock_event.serialize(&mut event_data).expect("Failed to serialize");
+        mock_event
+            .serialize(&mut event_data)
+            .expect("Failed to serialize");
 
         let mut data = Vec::new();
         data.extend_from_slice(&SwapCpiEvent2::CPI_LOG_PREFIX);

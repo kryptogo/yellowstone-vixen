@@ -12,8 +12,7 @@ use yellowstone_vixen_yellowstone_grpc_source::YellowstoneGrpcConfig;
 /// Trait for CPI events that can be parsed from instruction data and have token changes
 pub trait CpiEventParseable {
     fn from_inner_instruction_data(data: &[u8]) -> Option<Self>
-    where
-        Self: Sized;
+    where Self: Sized;
     fn source_token_change(&self) -> u64;
     fn destination_token_change(&self) -> u64;
 }

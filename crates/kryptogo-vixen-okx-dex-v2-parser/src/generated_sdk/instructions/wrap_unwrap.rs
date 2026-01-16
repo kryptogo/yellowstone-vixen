@@ -5,9 +5,9 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+use borsh::{BorshDeserialize, BorshSerialize};
+
 use crate::generated::types::PlatformFeeWrapUnwrapArgs;
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
 
 pub const WRAP_UNWRAP_DISCRIMINATOR: [u8; 8] = [220, 101, 139, 249, 41, 190, 118, 199];
 
@@ -43,6 +43,7 @@ impl WrapUnwrap {
     pub fn instruction(&self, args: WrapUnwrapInstructionArgs) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
+
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
@@ -151,15 +152,11 @@ impl WrapUnwrapInstructionData {
         }
     }
 
-    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> {
-        borsh::to_vec(self)
-    }
+    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
 impl Default for WrapUnwrapInstructionData {
-    fn default() -> Self {
-        Self::new()
-    }
+    fn default() -> Self { Self::new() }
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
@@ -169,9 +166,7 @@ pub struct WrapUnwrapInstructionArgs {
 }
 
 impl WrapUnwrapInstructionArgs {
-    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> {
-        borsh::to_vec(self)
-    }
+    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
 /// Instruction builder for `WrapUnwrap`.
@@ -209,25 +204,27 @@ pub struct WrapUnwrapBuilder {
 }
 
 impl WrapUnwrapBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
+    pub fn new() -> Self { Self::default() }
+
     #[inline(always)]
     pub fn payer(&mut self, payer: solana_pubkey::Pubkey) -> &mut Self {
         self.payer = Some(payer);
         self
     }
+
     #[inline(always)]
     pub fn payer_wsol_account(&mut self, payer_wsol_account: solana_pubkey::Pubkey) -> &mut Self {
         self.payer_wsol_account = Some(payer_wsol_account);
         self
     }
+
     /// `[optional account, default to 'So11111111111111111111111111111111111111112']`
     #[inline(always)]
     pub fn wsol_mint(&mut self, wsol_mint: solana_pubkey::Pubkey) -> &mut Self {
         self.wsol_mint = Some(wsol_mint);
         self
     }
+
     /// `[optional account]`
     #[inline(always)]
     pub fn temp_wsol_account(
@@ -237,6 +234,7 @@ impl WrapUnwrapBuilder {
         self.temp_wsol_account = temp_wsol_account;
         self
     }
+
     /// `[optional account]`
     #[inline(always)]
     pub fn commission_account(
@@ -246,6 +244,7 @@ impl WrapUnwrapBuilder {
         self.commission_account = commission_account;
         self
     }
+
     /// `[optional account]`
     #[inline(always)]
     pub fn platform_fee_account(
@@ -255,6 +254,7 @@ impl WrapUnwrapBuilder {
         self.platform_fee_account = platform_fee_account;
         self
     }
+
     /// `[optional account]`
     /// Used for signing fee transfers from authority_pda (SOL) or wsol_sa (WSOL)
     #[inline(always)]
@@ -262,6 +262,7 @@ impl WrapUnwrapBuilder {
         self.authority_pda = authority_pda;
         self
     }
+
     /// `[optional account]`
     /// This is the authority_pda's associated token account for WSOL
     #[inline(always)]
@@ -269,39 +270,46 @@ impl WrapUnwrapBuilder {
         self.wsol_sa = wsol_sa;
         self
     }
+
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_pubkey::Pubkey) -> &mut Self {
         self.token_program = Some(token_program);
         self
     }
+
     /// `[optional account, default to '11111111111111111111111111111111']`
     #[inline(always)]
     pub fn system_program(&mut self, system_program: solana_pubkey::Pubkey) -> &mut Self {
         self.system_program = Some(system_program);
         self
     }
+
     #[inline(always)]
     pub fn event_authority(&mut self, event_authority: solana_pubkey::Pubkey) -> &mut Self {
         self.event_authority = Some(event_authority);
         self
     }
+
     #[inline(always)]
     pub fn program(&mut self, program: solana_pubkey::Pubkey) -> &mut Self {
         self.program = Some(program);
         self
     }
+
     #[inline(always)]
     pub fn args(&mut self, args: PlatformFeeWrapUnwrapArgs) -> &mut Self {
         self.args = Some(args);
         self
     }
+
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
         self.__remaining_accounts.push(account);
         self
     }
+
     /// Add additional accounts to the instruction.
     #[inline(always)]
     pub fn add_remaining_accounts(
@@ -311,6 +319,7 @@ impl WrapUnwrapBuilder {
         self.__remaining_accounts.extend_from_slice(accounts);
         self
     }
+
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
         let accounts = WrapUnwrap {
@@ -425,10 +434,12 @@ impl<'a, 'b> WrapUnwrapCpi<'a, 'b> {
             __args: args,
         }
     }
+
     #[inline(always)]
     pub fn invoke(&self) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], &[])
     }
+
     #[inline(always)]
     pub fn invoke_with_remaining_accounts(
         &self,
@@ -436,10 +447,12 @@ impl<'a, 'b> WrapUnwrapCpi<'a, 'b> {
     ) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], remaining_accounts)
     }
+
     #[inline(always)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(signers_seeds, &[])
     }
+
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
@@ -620,11 +633,13 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
         });
         Self { instruction }
     }
+
     #[inline(always)]
     pub fn payer(&mut self, payer: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.payer = Some(payer);
         self
     }
+
     #[inline(always)]
     pub fn payer_wsol_account(
         &mut self,
@@ -633,11 +648,13 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
         self.instruction.payer_wsol_account = Some(payer_wsol_account);
         self
     }
+
     #[inline(always)]
     pub fn wsol_mint(&mut self, wsol_mint: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.wsol_mint = Some(wsol_mint);
         self
     }
+
     /// `[optional account]`
     #[inline(always)]
     pub fn temp_wsol_account(
@@ -647,6 +664,7 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
         self.instruction.temp_wsol_account = temp_wsol_account;
         self
     }
+
     /// `[optional account]`
     #[inline(always)]
     pub fn commission_account(
@@ -656,6 +674,7 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
         self.instruction.commission_account = commission_account;
         self
     }
+
     /// `[optional account]`
     #[inline(always)]
     pub fn platform_fee_account(
@@ -665,6 +684,7 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
         self.instruction.platform_fee_account = platform_fee_account;
         self
     }
+
     /// `[optional account]`
     /// Used for signing fee transfers from authority_pda (SOL) or wsol_sa (WSOL)
     #[inline(always)]
@@ -675,6 +695,7 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
         self.instruction.authority_pda = authority_pda;
         self
     }
+
     /// `[optional account]`
     /// This is the authority_pda's associated token account for WSOL
     #[inline(always)]
@@ -685,6 +706,7 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
         self.instruction.wsol_sa = wsol_sa;
         self
     }
+
     #[inline(always)]
     pub fn token_program(
         &mut self,
@@ -693,6 +715,7 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
         self.instruction.token_program = Some(token_program);
         self
     }
+
     #[inline(always)]
     pub fn system_program(
         &mut self,
@@ -701,6 +724,7 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
         self.instruction.system_program = Some(system_program);
         self
     }
+
     #[inline(always)]
     pub fn event_authority(
         &mut self,
@@ -709,16 +733,19 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
         self.instruction.event_authority = Some(event_authority);
         self
     }
+
     #[inline(always)]
     pub fn program(&mut self, program: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.program = Some(program);
         self
     }
+
     #[inline(always)]
     pub fn args(&mut self, args: PlatformFeeWrapUnwrapArgs) -> &mut Self {
         self.instruction.args = Some(args);
         self
     }
+
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -732,6 +759,7 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
             .push((account, is_writable, is_signer));
         self
     }
+
     /// Add additional accounts to the instruction.
     ///
     /// Each account is represented by a tuple of the `AccountInfo`, a `bool` indicating whether the account is writable or not,
@@ -746,10 +774,10 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
             .extend_from_slice(accounts);
         self
     }
+
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program_error::ProgramResult {
-        self.invoke_signed(&[])
-    }
+    pub fn invoke(&self) -> solana_program_error::ProgramResult { self.invoke_signed(&[]) }
+
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {

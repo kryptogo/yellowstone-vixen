@@ -18,183 +18,123 @@ pub trait SwapEventData {
 }
 
 impl SwapEventData for SwapCpiEvent {
-    fn source_mint(&self) -> &Pubkey {
-        &self.source_mint
-    }
-    fn destination_mint(&self) -> &Pubkey {
-        &self.destination_mint
-    }
-    fn source_token_account_owner(&self) -> &Pubkey {
-        &self.source_token_account_owner
-    }
-    fn source_token_change(&self) -> u64 {
-        self.source_token_change
-    }
-    fn destination_token_change(&self) -> u64 {
-        self.destination_token_change
-    }
+    fn source_mint(&self) -> &Pubkey { &self.source_mint }
+
+    fn destination_mint(&self) -> &Pubkey { &self.destination_mint }
+
+    fn source_token_account_owner(&self) -> &Pubkey { &self.source_token_account_owner }
+
+    fn source_token_change(&self) -> u64 { self.source_token_change }
+
+    fn destination_token_change(&self) -> u64 { self.destination_token_change }
 }
 
 impl SwapEventData for SwapCpiEvent2 {
-    fn source_mint(&self) -> &Pubkey {
-        &self.source_mint
-    }
-    fn destination_mint(&self) -> &Pubkey {
-        &self.destination_mint
-    }
-    fn source_token_account_owner(&self) -> &Pubkey {
-        &self.source_token_account_owner
-    }
-    fn source_token_change(&self) -> u64 {
-        self.source_token_change
-    }
-    fn destination_token_change(&self) -> u64 {
-        self.destination_token_change
-    }
+    fn source_mint(&self) -> &Pubkey { &self.source_mint }
+
+    fn destination_mint(&self) -> &Pubkey { &self.destination_mint }
+
+    fn source_token_account_owner(&self) -> &Pubkey { &self.source_token_account_owner }
+
+    fn source_token_change(&self) -> u64 { self.source_token_change }
+
+    fn destination_token_change(&self) -> u64 { self.destination_token_change }
 }
 
 impl SwapEventData for SwapWithFeesCpiEvent {
-    fn source_mint(&self) -> &Pubkey {
-        &self.source_mint
-    }
-    fn destination_mint(&self) -> &Pubkey {
-        &self.destination_mint
-    }
-    fn source_token_account_owner(&self) -> &Pubkey {
-        &self.source_token_account_owner
-    }
-    fn source_token_change(&self) -> u64 {
-        self.source_token_change
-    }
-    fn destination_token_change(&self) -> u64 {
-        self.destination_token_change
-    }
+    fn source_mint(&self) -> &Pubkey { &self.source_mint }
+
+    fn destination_mint(&self) -> &Pubkey { &self.destination_mint }
+
+    fn source_token_account_owner(&self) -> &Pubkey { &self.source_token_account_owner }
+
+    fn source_token_change(&self) -> u64 { self.source_token_change }
+
+    fn destination_token_change(&self) -> u64 { self.destination_token_change }
 }
 
 impl SwapEventData for SwapWithFeesCpiEvent2 {
-    fn source_mint(&self) -> &Pubkey {
-        &self.source_mint
-    }
-    fn destination_mint(&self) -> &Pubkey {
-        &self.destination_mint
-    }
-    fn source_token_account_owner(&self) -> &Pubkey {
-        &self.source_token_account_owner
-    }
-    fn source_token_change(&self) -> u64 {
-        self.source_token_change
-    }
-    fn destination_token_change(&self) -> u64 {
-        self.destination_token_change
-    }
+    fn source_mint(&self) -> &Pubkey { &self.source_mint }
+
+    fn destination_mint(&self) -> &Pubkey { &self.destination_mint }
+
+    fn source_token_account_owner(&self) -> &Pubkey { &self.source_token_account_owner }
+
+    fn source_token_change(&self) -> u64 { self.source_token_change }
+
+    fn destination_token_change(&self) -> u64 { self.destination_token_change }
 }
 
 impl SwapEventData for SwapWithFeesCpiEventEnhanced {
-    fn source_mint(&self) -> &Pubkey {
-        &self.source_mint
-    }
-    fn destination_mint(&self) -> &Pubkey {
-        &self.destination_mint
-    }
-    fn source_token_account_owner(&self) -> &Pubkey {
-        &self.source_token_account_owner
-    }
-    fn source_token_change(&self) -> u64 {
-        self.source_token_change
-    }
-    fn destination_token_change(&self) -> u64 {
-        self.destination_token_change
-    }
+    fn source_mint(&self) -> &Pubkey { &self.source_mint }
+
+    fn destination_mint(&self) -> &Pubkey { &self.destination_mint }
+
+    fn source_token_account_owner(&self) -> &Pubkey { &self.source_token_account_owner }
+
+    fn source_token_change(&self) -> u64 { self.source_token_change }
+
+    fn destination_token_change(&self) -> u64 { self.destination_token_change }
 }
 
 impl SwapEventData for SwapTocV2CpiEvent2 {
-    fn source_mint(&self) -> &Pubkey {
-        &self.source_mint
-    }
-    fn destination_mint(&self) -> &Pubkey {
-        &self.destination_mint
-    }
-    fn source_token_account_owner(&self) -> &Pubkey {
-        &self.source_token_account_owner
-    }
-    fn source_token_change(&self) -> u64 {
-        self.source_token_change
-    }
-    fn destination_token_change(&self) -> u64 {
-        self.destination_token_change
-    }
+    fn source_mint(&self) -> &Pubkey { &self.source_mint }
+
+    fn destination_mint(&self) -> &Pubkey { &self.destination_mint }
+
+    fn source_token_account_owner(&self) -> &Pubkey { &self.source_token_account_owner }
+
+    fn source_token_change(&self) -> u64 { self.source_token_change }
+
+    fn destination_token_change(&self) -> u64 { self.destination_token_change }
 }
 
 impl SwapEventData for SwapToBWithFeesCpiEventV2 {
-    fn source_mint(&self) -> &Pubkey {
-        &self.source_mint
-    }
-    fn destination_mint(&self) -> &Pubkey {
-        &self.destination_mint
-    }
-    fn source_token_account_owner(&self) -> &Pubkey {
-        &self.source_token_account_owner
-    }
-    fn source_token_change(&self) -> u64 {
-        self.source_token_change
-    }
-    fn destination_token_change(&self) -> u64 {
-        self.destination_token_change
-    }
+    fn source_mint(&self) -> &Pubkey { &self.source_mint }
+
+    fn destination_mint(&self) -> &Pubkey { &self.destination_mint }
+
+    fn source_token_account_owner(&self) -> &Pubkey { &self.source_token_account_owner }
+
+    fn source_token_change(&self) -> u64 { self.source_token_change }
+
+    fn destination_token_change(&self) -> u64 { self.destination_token_change }
 }
 
 impl SwapEventData for SwapToCWithFeesCpiEventV2 {
-    fn source_mint(&self) -> &Pubkey {
-        &self.source_mint
-    }
-    fn destination_mint(&self) -> &Pubkey {
-        &self.destination_mint
-    }
-    fn source_token_account_owner(&self) -> &Pubkey {
-        &self.source_token_account_owner
-    }
-    fn source_token_change(&self) -> u64 {
-        self.source_token_change
-    }
-    fn destination_token_change(&self) -> u64 {
-        self.destination_token_change
-    }
+    fn source_mint(&self) -> &Pubkey { &self.source_mint }
+
+    fn destination_mint(&self) -> &Pubkey { &self.destination_mint }
+
+    fn source_token_account_owner(&self) -> &Pubkey { &self.source_token_account_owner }
+
+    fn source_token_change(&self) -> u64 { self.source_token_change }
+
+    fn destination_token_change(&self) -> u64 { self.destination_token_change }
 }
 
 impl SwapEventData for SwapTobV2CpiEvent2 {
-    fn source_mint(&self) -> &Pubkey {
-        &self.source_mint
-    }
-    fn destination_mint(&self) -> &Pubkey {
-        &self.destination_mint
-    }
-    fn source_token_account_owner(&self) -> &Pubkey {
-        &self.source_token_account_owner
-    }
-    fn source_token_change(&self) -> u64 {
-        self.source_token_change
-    }
-    fn destination_token_change(&self) -> u64 {
-        self.destination_token_change
-    }
+    fn source_mint(&self) -> &Pubkey { &self.source_mint }
+
+    fn destination_mint(&self) -> &Pubkey { &self.destination_mint }
+
+    fn source_token_account_owner(&self) -> &Pubkey { &self.source_token_account_owner }
+
+    fn source_token_change(&self) -> u64 { self.source_token_change }
+
+    fn destination_token_change(&self) -> u64 { self.destination_token_change }
 }
 
 impl SwapEventData for SwapWithFeesCpiEventEnhanced2 {
-    fn source_mint(&self) -> &Pubkey {
-        &self.source_mint
-    }
-    fn destination_mint(&self) -> &Pubkey {
-        &self.destination_mint
-    }
-    fn source_token_account_owner(&self) -> &Pubkey {
-        &self.source_token_account_owner
-    }
-    fn source_token_change(&self) -> u64 {
-        self.source_token_change
-    }
-    fn destination_token_change(&self) -> u64 {
-        self.destination_token_change
-    }
+    fn source_mint(&self) -> &Pubkey { &self.source_mint }
+
+    fn destination_mint(&self) -> &Pubkey { &self.destination_mint }
+
+    fn source_token_account_owner(&self) -> &Pubkey { &self.source_token_account_owner }
+
+    fn source_token_change(&self) -> u64 { self.source_token_change }
+
+    fn destination_token_change(&self) -> u64 { self.destination_token_change }
 }
 
 /// NOTE: Unified enum for swap CPI events with fallback parsing support.

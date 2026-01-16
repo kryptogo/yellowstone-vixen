@@ -5,8 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 use solana_pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
@@ -62,7 +61,6 @@ pub struct SwapWithFeesCpiEvent {
 impl SwapWithFeesCpiEvent {
     /// CPI log prefix for self CPI events (Anchor standard)
     pub const CPI_LOG_PREFIX: [u8; 8] = [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d];
-
     /// SwapWithFeesCpiEvent discriminator bytes (from IDL)
     pub const DISCRIMINATOR: [u8; 8] = [0xbd, 0x61, 0x43, 0x0c, 0x25, 0xd1, 0xf7, 0x1d];
 

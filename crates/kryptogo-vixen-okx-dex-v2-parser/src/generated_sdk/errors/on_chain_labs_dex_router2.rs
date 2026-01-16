@@ -42,22 +42,22 @@ pub enum OnChainLabsDexRouter2Error {
     TargetNodeNotFound = 0x1779,
     /// 6010 - Min return not reached
     #[error("Min return not reached")]
-    MinReturnNotReached = 0x177A,
+    MinReturnNotReached = 0x177a,
     /// 6011 - amount_in must be greater than 0
     #[error("amount_in must be greater than 0")]
-    AmountInMustBeGreaterThanZero = 0x177B,
+    AmountInMustBeGreaterThanZero = 0x177b,
     /// 6012 - slippage must be less than 100%
     #[error("slippage must be less than 100%")]
-    SlippageTooHigh = 0x177C,
+    SlippageTooHigh = 0x177c,
     /// 6013 - invalid expect amount out
     #[error("invalid expect amount out")]
-    InvalidExpectAmountOut = 0x177D,
+    InvalidExpectAmountOut = 0x177d,
     /// 6014 - weights must sum to 100%
     #[error("weights must sum to 100%")]
-    WeightsMustSumTo100 = 0x177E,
+    WeightsMustSumTo100 = 0x177e,
     /// 6015 - Invalid share amount
     #[error("Invalid share amount")]
-    InvalidShareAmount = 0x177F,
+    InvalidShareAmount = 0x177f,
     /// 6016 - Invalid commission rate
     #[error("Invalid commission rate")]
     InvalidCommissionRate = 0x1780,
@@ -90,22 +90,22 @@ pub enum OnChainLabsDexRouter2Error {
     InvalidProgramId = 0x1789,
     /// 6026 - Invalid pool
     #[error("Invalid pool")]
-    InvalidPool = 0x178A,
+    InvalidPool = 0x178a,
     /// 6027 - Invalid token mint
     #[error("Invalid token mint")]
-    InvalidTokenMint = 0x178B,
+    InvalidTokenMint = 0x178b,
     /// 6028 - Calculation error
     #[error("Calculation error")]
-    CalculationError = 0x178C,
+    CalculationError = 0x178c,
     /// 6029 - Invalid sanctum lst state list data
     #[error("Invalid sanctum lst state list data")]
-    InvalidSanctumLstStateListData = 0x178D,
+    InvalidSanctumLstStateListData = 0x178d,
     /// 6030 - Invalid sanctum lst state list index
     #[error("Invalid sanctum lst state list index")]
-    InvalidSanctumLstStateListIndex = 0x178E,
+    InvalidSanctumLstStateListIndex = 0x178e,
     /// 6031 - Invalid sanctum swap accounts
     #[error("Invalid sanctum swap accounts")]
-    InvalidSanctumSwapAccounts = 0x178F,
+    InvalidSanctumSwapAccounts = 0x178f,
     /// 6032 - Invalid swap authority account
     #[error("Invalid swap authority account")]
     InvalidSwapAuthorityAccounts = 0x1790,
@@ -138,148 +138,148 @@ pub enum OnChainLabsDexRouter2Error {
     InvalidChargeAccount = 0x1799,
     /// 6042 - Invalid platform fee amount
     #[error("Invalid platform fee amount")]
-    InvalidPlatformFeeAmount = 0x179A,
+    InvalidPlatformFeeAmount = 0x179a,
     /// 6043 - Invalid fee token account
     #[error("Invalid fee token account")]
-    InvalidFeeTokenAccount = 0x179B,
+    InvalidFeeTokenAccount = 0x179b,
     /// 6044 - Invalid sa authority
     #[error("Invalid sa authority")]
-    InvalidSaAuthority = 0x179C,
+    InvalidSaAuthority = 0x179c,
     /// 6045 - Invalid node from accounts
     #[error("Invalid node from accounts")]
-    InvalidNodeFromAccounts = 0x179D,
+    InvalidNodeFromAccounts = 0x179d,
     /// 6046 - Invalid node to accounts
     #[error("Invalid node to accounts")]
-    InvalidNodeToAccounts = 0x179E,
+    InvalidNodeToAccounts = 0x179e,
     /// 6047 - Invalid source token account
     #[error("Invalid source token account")]
-    InvalidSourceTokenAccount = 0x179F,
+    InvalidSourceTokenAccount = 0x179f,
     /// 6048 - Invalid token account
     #[error("Invalid token account")]
-    InvalidTokenAccount = 0x17A0,
+    InvalidTokenAccount = 0x17a0,
     /// 6049 - Invalid destination token account
     #[error("Invalid destination token account")]
-    InvalidDestinationTokenAccount = 0x17A1,
+    InvalidDestinationTokenAccount = 0x17a1,
     /// 6050 - Commission account is none
     #[error("Commission account is none")]
-    CommissionAccountIsNone = 0x17A2,
+    CommissionAccountIsNone = 0x17a2,
     /// 6051 - Platform fee account is none
     #[error("Platform fee account is none")]
-    PlatformFeeAccountIsNone = 0x17A3,
+    PlatformFeeAccountIsNone = 0x17a3,
     /// 6052 - Trim account is none
     #[error("Trim account is none")]
-    TrimAccountIsNone = 0x17A4,
+    TrimAccountIsNone = 0x17a4,
     /// 6053 - Charge account is none
     #[error("Charge account is none")]
-    ChargeAccountIsNone = 0x17A5,
+    ChargeAccountIsNone = 0x17a5,
     /// 6054 - Invalid fee account
     #[error("Invalid fee account")]
-    InvalidFeeAccount = 0x17A6,
+    InvalidFeeAccount = 0x17a6,
     /// 6055 - Invalid token owner
     #[error("Invalid token owner")]
-    InvalidTokenOwner = 0x17A7,
+    InvalidTokenOwner = 0x17a7,
     /// 6056 - Sa authority is none
     #[error("Sa authority is none")]
-    SaAuthorityIsNone = 0x17A8,
+    SaAuthorityIsNone = 0x17a8,
     /// 6057 - Source token sa is none
     #[error("Source token sa is none")]
-    SourceTokenSaIsNone = 0x17A9,
+    SourceTokenSaIsNone = 0x17a9,
     /// 6058 - Source token program is none
     #[error("Source token program is none")]
-    SourceTokenProgramIsNone = 0x17AA,
+    SourceTokenProgramIsNone = 0x17aa,
     /// 6059 - Destination token sa is none
     #[error("Destination token sa is none")]
-    DestinationTokenSaIsNone = 0x17AB,
+    DestinationTokenSaIsNone = 0x17ab,
     /// 6060 - Destination token program is none
     #[error("Destination token program is none")]
-    DestinationTokenProgramIsNone = 0x17AC,
+    DestinationTokenProgramIsNone = 0x17ac,
     /// 6061 - Calculation result must be greater than zero
     #[error("Calculation result must be greater than zero")]
-    ResultMustBeGreaterThanZero = 0x17AD,
+    ResultMustBeGreaterThanZero = 0x17ad,
     /// 6062 - Invalid account data
     #[error("Invalid account data")]
-    InvalidAccountData = 0x17AE,
+    InvalidAccountData = 0x17ae,
     /// 6063 - Invalid RFQ parameters
     #[error("Invalid RFQ parameters")]
-    InvalidRfqParameters = 0x17AF,
+    InvalidRfqParameters = 0x17af,
     /// 6064 - TOB mode requires authority PDA
     #[error("TOB mode requires authority PDA")]
-    TobAuthorityPdaRequired = 0x17B0,
+    TobAuthorityPdaRequired = 0x17b0,
     /// 6065 - TOB mode with WSOL fees requires wsol_sa account
     #[error("TOB mode with WSOL fees requires wsol_sa account")]
-    TobWsolSaRequired = 0x17B1,
+    TobWsolSaRequired = 0x17b1,
     /// 6066 - Invalid WSOL SA account
     #[error("Invalid WSOL SA account")]
-    InvalidWsolSa = 0x17B2,
+    InvalidWsolSa = 0x17b2,
     /// 6067 - Invalid commission account
     #[error("Invalid commission account")]
-    InvalidCommissionAccount = 0x17B3,
+    InvalidCommissionAccount = 0x17b3,
     /// 6068 - Invalid actual amount in
     #[error("Invalid actual amount in")]
-    InvalidActualAmountIn = 0x17B4,
+    InvalidActualAmountIn = 0x17b4,
     /// 6069 - Unexpected SA token account in CPI
     #[error("Unexpected SA token account in CPI")]
-    UnexpectedSaTokenAccount = 0x17B5,
+    UnexpectedSaTokenAccount = 0x17b5,
     /// 6070 - Invalid source token sa mint
     #[error("Invalid source token sa mint")]
-    InvalidSourceTokenSaMint = 0x17B6,
+    InvalidSourceTokenSaMint = 0x17b6,
     /// 6071 - Invalid destination token sa mint
     #[error("Invalid destination token sa mint")]
-    InvalidDestinationTokenSaMint = 0x17B7,
+    InvalidDestinationTokenSaMint = 0x17b7,
     /// 6072 - Insufficient funds
     #[error("Insufficient funds")]
-    InsufficientFunds = 0x17B8,
+    InsufficientFunds = 0x17b8,
     /// 6073 - Sa authority lamports decreased
     #[error("Sa authority lamports decreased")]
-    SaAuthorityLamportsDecreased = 0x17B9,
+    SaAuthorityLamportsDecreased = 0x17b9,
     /// 6074 - Invalid token program
     #[error("Invalid token program")]
-    InvalidTokenProgram = 0x17BA,
+    InvalidTokenProgram = 0x17ba,
     /// 6075 - Invalid signer
     #[error("Invalid signer")]
-    InvalidSigner = 0x17BB,
+    InvalidSigner = 0x17bb,
     /// 6076 - Invalid associated token program
     #[error("Invalid associated token program")]
-    InvalidAssociatedTokenProgram = 0x17BC,
+    InvalidAssociatedTokenProgram = 0x17bc,
     /// 6077 - Token program is none
     #[error("Token program is none")]
-    TokenProgramIsNone = 0x17BD,
+    TokenProgramIsNone = 0x17bd,
     /// 6078 - Associated token program is none
     #[error("Associated token program is none")]
-    AssociatedTokenProgramIsNone = 0x17BE,
+    AssociatedTokenProgramIsNone = 0x17be,
     /// 6079 - System program is none
     #[error("System program is none")]
-    SystemProgramIsNone = 0x17BF,
+    SystemProgramIsNone = 0x17bf,
     /// 6080 - Insufficient balance for transfer
     #[error("Insufficient balance for transfer")]
-    InsufficientBalance = 0x17C0,
+    InsufficientBalance = 0x17c0,
     /// 6081 - SOL receiver must be a system account
     #[error("SOL receiver must be a system account")]
-    SolReceiverMustBeSystemAccount = 0x17C1,
+    SolReceiverMustBeSystemAccount = 0x17c1,
     /// 6082 - SOL receiver requires acc_close_flag to be true
     #[error("SOL receiver requires acc_close_flag to be true")]
-    SolReceiverRequiresAccCloseFlag = 0x17C2,
+    SolReceiverRequiresAccCloseFlag = 0x17c2,
     /// 6083 - Destination must be wSOL when sol_receiver is specified
     #[error("Destination must be wSOL when sol_receiver is specified")]
-    DestinationMustBeWsolForSolReceiver = 0x17C3,
+    DestinationMustBeWsolForSolReceiver = 0x17c3,
     /// 6084 - Invalid goonfi parameters
     #[error("Invalid goonfi parameters")]
-    InvalidGoonfiParameters = 0x17C4,
+    InvalidGoonfiParameters = 0x17c4,
     /// 6085 - Adapter abort
     #[error("Adapter abort")]
-    AdapterAbort = 0x17C5,
+    AdapterAbort = 0x17c5,
     /// 6086 - Inconsistent fee account types
     #[error("Inconsistent fee account types")]
-    InconsistentFeeAccountTypes = 0x17C6,
+    InconsistentFeeAccountTypes = 0x17c6,
     /// 6087 - Receiver must be a token account
     #[error("Receiver must be a token account")]
-    ReceiverMustBeTokenAccount = 0x17C7,
+    ReceiverMustBeTokenAccount = 0x17c7,
     /// 6088 - Receiver must be a WSOL token account
     #[error("Receiver must be a WSOL token account")]
-    ReceiverMustBeWsolAccount = 0x17C8,
+    ReceiverMustBeWsolAccount = 0x17c8,
     /// 6089 - The commission fee account and trim account are different types.
     #[error("The commission fee account and trim account are different types.")]
-    InconsistentCommissionAndTrimAccountTypes = 0x17C9,
+    InconsistentCommissionAndTrimAccountTypes = 0x17c9,
 }
 
 impl From<OnChainLabsDexRouter2Error> for solana_program_error::ProgramError {

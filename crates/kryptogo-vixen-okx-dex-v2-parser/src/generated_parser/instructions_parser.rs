@@ -8,37 +8,38 @@
 #[cfg(feature = "shared-data")]
 use std::sync::Arc;
 
+use yellowstone_vixen_core::deserialize_checked_swap;
 #[cfg(feature = "shared-data")]
 use yellowstone_vixen_core::InstructionUpdateOutput;
 
-use crate::deserialize_checked;
-use crate::generated::types::{
-    CpiEventWithFallback, SwapCpiEvent2, SwapToBWithFeesCpiEventV2, SwapToCWithFeesCpiEventV2,
-    SwapTobV2CpiEvent2, SwapTocV2CpiEvent2, SwapWithFeesCpiEvent, SwapWithFeesCpiEvent2,
-    SwapWithFeesCpiEventEnhanced, SwapWithFeesCpiEventEnhanced2,
+use crate::{
+    deserialize_checked,
+    generated::types::{
+        CpiEventWithFallback, SwapCpiEvent2, SwapToBWithFeesCpiEventV2, SwapToCWithFeesCpiEventV2,
+        SwapTobV2CpiEvent2, SwapTocV2CpiEvent2, SwapWithFeesCpiEvent, SwapWithFeesCpiEvent2,
+        SwapWithFeesCpiEventEnhanced, SwapWithFeesCpiEventEnhanced2,
+    },
+    instructions::{
+        Claim as ClaimIxAccounts, CreateTokenAccount as CreateTokenAccountIxAccounts,
+        CreateTokenAccountInstructionArgs as CreateTokenAccountIxData,
+        CreateTokenAccountWithSeed as CreateTokenAccountWithSeedIxAccounts,
+        CreateTokenAccountWithSeedInstructionArgs as CreateTokenAccountWithSeedIxData,
+        ProxySwap as ProxySwapIxAccounts, ProxySwapInstructionArgs as ProxySwapIxData,
+        Swap as SwapIxAccounts, SwapInstructionArgs as SwapIxData, SwapTob as SwapTobIxAccounts,
+        SwapTobEnhanced as SwapTobEnhancedIxAccounts,
+        SwapTobEnhancedInstructionArgs as SwapTobEnhancedIxData,
+        SwapTobInstructionArgs as SwapTobIxData, SwapTobV2 as SwapTobV2IxAccounts,
+        SwapTobV2InstructionArgs as SwapTobV2IxData,
+        SwapTobWithReceiver as SwapTobWithReceiverIxAccounts,
+        SwapTobWithReceiverInstructionArgs as SwapTobWithReceiverIxData,
+        SwapToc as SwapTocIxAccounts, SwapTocInstructionArgs as SwapTocIxData,
+        SwapTocV2 as SwapTocV2IxAccounts, SwapTocV2InstructionArgs as SwapTocV2IxData,
+        WrapUnwrap as WrapUnwrapIxAccounts, WrapUnwrapInstructionArgs as WrapUnwrapIxData,
+        WrapUnwrapWithReceiver as WrapUnwrapWithReceiverIxAccounts,
+        WrapUnwrapWithReceiverInstructionArgs as WrapUnwrapWithReceiverIxData,
+    },
+    ID,
 };
-use yellowstone_vixen_core::deserialize_checked_swap;
-
-use crate::instructions::{
-    Claim as ClaimIxAccounts, CreateTokenAccount as CreateTokenAccountIxAccounts,
-    CreateTokenAccountInstructionArgs as CreateTokenAccountIxData,
-    CreateTokenAccountWithSeed as CreateTokenAccountWithSeedIxAccounts,
-    CreateTokenAccountWithSeedInstructionArgs as CreateTokenAccountWithSeedIxData,
-    ProxySwap as ProxySwapIxAccounts, ProxySwapInstructionArgs as ProxySwapIxData,
-    Swap as SwapIxAccounts, SwapInstructionArgs as SwapIxData, SwapTob as SwapTobIxAccounts,
-    SwapTobEnhanced as SwapTobEnhancedIxAccounts,
-    SwapTobEnhancedInstructionArgs as SwapTobEnhancedIxData,
-    SwapTobInstructionArgs as SwapTobIxData, SwapTobV2 as SwapTobV2IxAccounts,
-    SwapTobV2InstructionArgs as SwapTobV2IxData,
-    SwapTobWithReceiver as SwapTobWithReceiverIxAccounts,
-    SwapTobWithReceiverInstructionArgs as SwapTobWithReceiverIxData, SwapToc as SwapTocIxAccounts,
-    SwapTocInstructionArgs as SwapTocIxData, SwapTocV2 as SwapTocV2IxAccounts,
-    SwapTocV2InstructionArgs as SwapTocV2IxData, WrapUnwrap as WrapUnwrapIxAccounts,
-    WrapUnwrapInstructionArgs as WrapUnwrapIxData,
-    WrapUnwrapWithReceiver as WrapUnwrapWithReceiverIxAccounts,
-    WrapUnwrapWithReceiverInstructionArgs as WrapUnwrapWithReceiverIxData,
-};
-use crate::ID;
 
 /// OnChainLabsDexRouter2 Instructions
 #[derive(Debug)]
@@ -50,22 +51,42 @@ pub enum OnChainLabsDexRouter2ProgramIx {
         CreateTokenAccountWithSeedIxAccounts,
         CreateTokenAccountWithSeedIxData,
     ),
-    ProxySwap(ProxySwapIxAccounts, ProxySwapIxData, Option<CpiEventWithFallback>),
+    ProxySwap(
+        ProxySwapIxAccounts,
+        ProxySwapIxData,
+        Option<CpiEventWithFallback>,
+    ),
     Swap(SwapIxAccounts, SwapIxData, Option<CpiEventWithFallback>),
-    SwapTob(SwapTobIxAccounts, SwapTobIxData, Option<CpiEventWithFallback>),
+    SwapTob(
+        SwapTobIxAccounts,
+        SwapTobIxData,
+        Option<CpiEventWithFallback>,
+    ),
     SwapTobEnhanced(
         SwapTobEnhancedIxAccounts,
         SwapTobEnhancedIxData,
         Option<CpiEventWithFallback>,
     ),
-    SwapTobV2(SwapTobV2IxAccounts, SwapTobV2IxData, Option<CpiEventWithFallback>),
+    SwapTobV2(
+        SwapTobV2IxAccounts,
+        SwapTobV2IxData,
+        Option<CpiEventWithFallback>,
+    ),
     SwapTobWithReceiver(
         SwapTobWithReceiverIxAccounts,
         SwapTobWithReceiverIxData,
         Option<CpiEventWithFallback>,
     ),
-    SwapToc(SwapTocIxAccounts, SwapTocIxData, Option<CpiEventWithFallback>),
-    SwapTocV2(SwapTocV2IxAccounts, SwapTocV2IxData, Option<CpiEventWithFallback>),
+    SwapToc(
+        SwapTocIxAccounts,
+        SwapTocIxData,
+        Option<CpiEventWithFallback>,
+    ),
+    SwapTocV2(
+        SwapTocV2IxAccounts,
+        SwapTocV2IxData,
+        Option<CpiEventWithFallback>,
+    ),
     WrapUnwrap(WrapUnwrapIxAccounts, WrapUnwrapIxData),
     WrapUnwrapWithReceiver(
         WrapUnwrapWithReceiverIxAccounts,
@@ -81,10 +102,8 @@ pub struct InstructionParser;
 
 impl yellowstone_vixen_core::Parser for InstructionParser {
     type Input = yellowstone_vixen_core::instruction::InstructionUpdate;
-
     #[cfg(not(feature = "shared-data"))]
     type Output = OnChainLabsDexRouter2ProgramIx;
-
     #[cfg(feature = "shared-data")]
     type Output = InstructionUpdateOutput<OnChainLabsDexRouter2ProgramIx>;
 
@@ -129,9 +148,7 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
-        ID.to_bytes().into()
-    }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
 }
 
 impl InstructionParser {
@@ -677,11 +694,10 @@ pub fn next_program_id_optional_account<
 
 // #[cfg(feature = "proto")]
 mod proto_parser {
-    use super::{InstructionParser, OnChainLabsDexRouter2ProgramIx};
-    use crate::{proto_def, proto_helpers::proto_types_parsers::IntoProto};
     use yellowstone_vixen_core::proto::ParseProto;
 
-    use super::ClaimIxAccounts;
+    use super::{ClaimIxAccounts, InstructionParser, OnChainLabsDexRouter2ProgramIx};
+    use crate::{proto_def, proto_helpers::proto_types_parsers::IntoProto};
     impl IntoProto<proto_def::ClaimIxAccounts> for ClaimIxAccounts {
         fn into_proto(self) -> proto_def::ClaimIxAccounts {
             proto_def::ClaimIxAccounts {
