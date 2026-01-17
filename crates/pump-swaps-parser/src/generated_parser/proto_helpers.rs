@@ -75,6 +75,47 @@ pub mod proto_types_parsers {
             }
         }
     }
+    use crate::types::buy_event::BuyEventBaseVersion;
+    impl IntoProto<proto_def::BuyEvent> for BuyEventBaseVersion {
+        fn into_proto(self) -> proto_def::BuyEvent {
+            proto_def::BuyEvent {
+                // Base fields - use actual values
+                timestamp: self.timestamp,
+                base_amount_out: self.base_amount_out,
+                max_quote_amount_in: self.max_quote_amount_in,
+                user_base_token_reserves: self.user_base_token_reserves,
+                user_quote_token_reserves: self.user_quote_token_reserves,
+                pool_base_token_reserves: self.pool_base_token_reserves,
+                pool_quote_token_reserves: self.pool_quote_token_reserves,
+                quote_amount_in: self.quote_amount_in,
+                lp_fee_basis_points: self.lp_fee_basis_points,
+                lp_fee: self.lp_fee,
+                protocol_fee_basis_points: self.protocol_fee_basis_points,
+                protocol_fee: self.protocol_fee,
+                quote_amount_in_with_lp_fee: self.quote_amount_in_with_lp_fee,
+                user_quote_amount_in: self.user_quote_amount_in,
+                pool: self.pool.to_string(),
+                user: self.user.to_string(),
+                user_base_token_account: self.user_base_token_account.to_string(),
+                user_quote_token_account: self.user_quote_token_account.to_string(),
+                protocol_fee_recipient: self.protocol_fee_recipient.to_string(),
+                protocol_fee_recipient_token_account: self
+                    .protocol_fee_recipient_token_account
+                    .to_string(),
+                // Extra fields - use default values (not parsed from base version)
+                coin_creator: "11111111111111111111111111111111".to_string(),
+                coin_creator_fee_basis_points: 0,
+                coin_creator_fee: 0,
+                track_volume: false,
+                total_unclaimed_tokens: 0,
+                total_claimed_tokens: 0,
+                current_sol_volume: 0,
+                last_update_timestamp: 0,
+                min_base_amount_out: 0,
+                ix_name: String::new(),
+            }
+        }
+    }
     use crate::types::ClaimTokenIncentivesEvent;
     impl IntoProto<proto_def::ClaimTokenIncentivesEvent> for ClaimTokenIncentivesEvent {
         fn into_proto(self) -> proto_def::ClaimTokenIncentivesEvent {
@@ -297,6 +338,40 @@ pub mod proto_types_parsers {
                 coin_creator: self.coin_creator.to_string(),
                 coin_creator_fee_basis_points: self.coin_creator_fee_basis_points,
                 coin_creator_fee: self.coin_creator_fee,
+            }
+        }
+    }
+    use crate::types::sell_event::SellEventBaseVersion;
+    impl IntoProto<proto_def::SellEvent> for SellEventBaseVersion {
+        fn into_proto(self) -> proto_def::SellEvent {
+            proto_def::SellEvent {
+                // Base fields - use actual values
+                timestamp: self.timestamp,
+                base_amount_in: self.base_amount_in,
+                min_quote_amount_out: self.min_quote_amount_out,
+                user_base_token_reserves: self.user_base_token_reserves,
+                user_quote_token_reserves: self.user_quote_token_reserves,
+                pool_base_token_reserves: self.pool_base_token_reserves,
+                pool_quote_token_reserves: self.pool_quote_token_reserves,
+                quote_amount_out: self.quote_amount_out,
+                lp_fee_basis_points: self.lp_fee_basis_points,
+                lp_fee: self.lp_fee,
+                protocol_fee_basis_points: self.protocol_fee_basis_points,
+                protocol_fee: self.protocol_fee,
+                quote_amount_out_without_lp_fee: self.quote_amount_out_without_lp_fee,
+                user_quote_amount_out: self.user_quote_amount_out,
+                pool: self.pool.to_string(),
+                user: self.user.to_string(),
+                user_base_token_account: self.user_base_token_account.to_string(),
+                user_quote_token_account: self.user_quote_token_account.to_string(),
+                protocol_fee_recipient: self.protocol_fee_recipient.to_string(),
+                protocol_fee_recipient_token_account: self
+                    .protocol_fee_recipient_token_account
+                    .to_string(),
+                // Extra fields - use default values (not parsed from base version)
+                coin_creator: "11111111111111111111111111111111".to_string(),
+                coin_creator_fee_basis_points: 0,
+                coin_creator_fee: 0,
             }
         }
     }

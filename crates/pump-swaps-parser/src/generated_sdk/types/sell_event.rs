@@ -63,3 +63,86 @@ pub struct SellEvent {
     pub coin_creator_fee_basis_points: u64,
     pub coin_creator_fee: u64,
 }
+
+// Constants for parsing sell events from CPI logs
+// Discriminator from IDL: sha256("event:SellEvent")[0:8] = [62, 47, 55, 10, 165, 3, 220, 42]
+pub const SELL_EVENT_DISCRIMINATOR: [u8; 8] = [0x3e, 0x2f, 0x37, 0x0a, 0xa5, 0x03, 0xdc, 0x2a];
+pub const SELL_EVENT_CPI_LOG_PREFIX: [u8; 8] = [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d];
+
+/// SellEventBaseVersion only contains the first 304 bytes of data for forward compatibility.
+/// This allows parsing old version events that don't have extra fields like coin_creator.
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct SellEventBaseVersion {
+    pub timestamp: i64,                              // 8 bytes
+    pub base_amount_in: u64,                         // 8 bytes
+    pub min_quote_amount_out: u64,                   // 8 bytes
+    pub user_base_token_reserves: u64,               // 8 bytes
+    pub user_quote_token_reserves: u64,              // 8 bytes
+    pub pool_base_token_reserves: u64,               // 8 bytes
+    pub pool_quote_token_reserves: u64,              // 8 bytes
+    pub quote_amount_out: u64,                       // 8 bytes
+    pub lp_fee_basis_points: u64,                    // 8 bytes
+    pub lp_fee: u64,                                 // 8 bytes
+    pub protocol_fee_basis_points: u64,              // 8 bytes
+    pub protocol_fee: u64,                           // 8 bytes
+    pub quote_amount_out_without_lp_fee: u64,        // 8 bytes
+    pub user_quote_amount_out: u64,                  // 8 bytes
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub pool: Pubkey,                                // 32 bytes
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub user: Pubkey,                                // 32 bytes
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub user_base_token_account: Pubkey,             // 32 bytes
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub user_quote_token_account: Pubkey,            // 32 bytes
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub protocol_fee_recipient: Pubkey,              // 32 bytes
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
+    )]
+    pub protocol_fee_recipient_token_account: Pubkey, // 32 bytes
+    // Total: 304 bytes
+    // Extra fields (coin_creator, etc.) are ignored - we only parse base fields
+}
+
+impl SellEventBaseVersion {
+    /// Parse sell event from inner instruction data (CPI log)
+    pub fn from_inner_instruction_data(data: &[u8]) -> Option<Self> {
+        // Check for CPI log prefix
+        if data.len() < 8 || &data[..8] != &SELL_EVENT_CPI_LOG_PREFIX {
+            return None;
+        }
+        let event_data = &data[8..];
+
+        // Check for event discriminator
+        if event_data.len() < 8 || &event_data[..8] != &SELL_EVENT_DISCRIMINATOR {
+            return None;
+        }
+        let sell_event_data = &event_data[8..];
+
+        // Parse base version (first 304 bytes) for forward compatibility
+        if sell_event_data.len() >= 304 {
+            if let Ok(event) = SellEventBaseVersion::try_from_slice(&sell_event_data[..304]) {
+                return Some(event);
+            }
+        }
+        None
+    }
+}

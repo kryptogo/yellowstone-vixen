@@ -8,6 +8,7 @@
 #[cfg(feature = "shared-data")]
 use std::sync::Arc;
 
+use yellowstone_vixen_core::constants::is_known_aggregator;
 #[cfg(feature = "shared-data")]
 use yellowstone_vixen_core::InstructionUpdateOutput;
 
@@ -41,6 +42,8 @@ use crate::{
         UpdateFeeConfigInstructionArgs as UpdateFeeConfigIxData, Withdraw as WithdrawIxAccounts,
         WithdrawInstructionArgs as WithdrawIxData,
     },
+    types::buy_event::BuyEventBaseVersion,
+    types::sell_event::SellEventBaseVersion,
     ID,
 };
 
@@ -53,8 +56,12 @@ pub enum PumpAmmProgramIx {
         AdminUpdateTokenIncentivesIxAccounts,
         AdminUpdateTokenIncentivesIxData,
     ),
-    Buy(BuyIxAccounts, BuyIxData),
-    BuyExactQuoteIn(BuyExactQuoteInIxAccounts, BuyExactQuoteInIxData),
+    Buy(BuyIxAccounts, BuyIxData, Option<BuyEventBaseVersion>),
+    BuyExactQuoteIn(
+        BuyExactQuoteInIxAccounts,
+        BuyExactQuoteInIxData,
+        Option<BuyEventBaseVersion>,
+    ),
     ClaimTokenIncentives(ClaimTokenIncentivesIxAccounts),
     CloseUserVolumeAccumulator(CloseUserVolumeAccumulatorIxAccounts),
     CollectCoinCreatorFee(CollectCoinCreatorFeeIxAccounts),
@@ -65,7 +72,7 @@ pub enum PumpAmmProgramIx {
     ExtendAccount(ExtendAccountIxAccounts),
     InitUserVolumeAccumulator(InitUserVolumeAccumulatorIxAccounts),
     MigratePoolCoinCreator(MigratePoolCoinCreatorIxAccounts),
-    Sell(SellIxAccounts, SellIxData),
+    Sell(SellIxAccounts, SellIxData, Option<SellEventBaseVersion>),
     SetCoinCreator(SetCoinCreatorIxAccounts),
     SetReservedFeeRecipients(
         SetReservedFeeRecipientsIxAccounts,
@@ -89,7 +96,9 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
     #[cfg(feature = "shared-data")]
     type Output = InstructionUpdateOutput<PumpAmmProgramIx>;
 
-    fn id(&self) -> std::borrow::Cow<'static, str> { "PumpAmm::InstructionParser".into() }
+    fn id(&self) -> std::borrow::Cow<'static, str> {
+        "PumpAmm::InstructionParser".into()
+    }
 
     fn prefilter(&self) -> yellowstone_vixen_core::Prefilter {
         yellowstone_vixen_core::Prefilter::builder()
@@ -128,18 +137,37 @@ impl yellowstone_vixen_core::Parser for InstructionParser {
 
 impl yellowstone_vixen_core::ProgramParser for InstructionParser {
     #[inline]
-    fn program_id(&self) -> yellowstone_vixen_core::Pubkey { ID.to_bytes().into() }
+    fn program_id(&self) -> yellowstone_vixen_core::Pubkey {
+        ID.to_bytes().into()
+    }
 }
 
 impl InstructionParser {
     pub(crate) fn parse_impl(
         ix: &yellowstone_vixen_core::instruction::InstructionUpdate,
     ) -> yellowstone_vixen_core::ParseResult<<Self as yellowstone_vixen_core::Parser>::Output> {
+        // Fix panic on short data: check length before parsing discriminator
+        if ix.data.len() < 8 {
+            return Err(yellowstone_vixen_core::ParseError::from(
+                "Instruction data too short".to_owned(),
+            ));
+        }
+
+        // Filter Jupiter/OKX aggregator to avoid duplicate parsing
+        // Check parent_program field if available
+        #[cfg(feature = "shared-data")]
+        if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+            return Err(yellowstone_vixen_core::ParseError::Filtered);
+        }
+
         let accounts_len = ix.accounts.len();
         let accounts = &mut ix.accounts.iter();
 
         #[cfg(feature = "shared-data")]
         let shared_data = Arc::clone(&ix.shared);
+
+        #[cfg(feature = "shared-data")]
+        let ix_index = ix.ix_index;
 
         let ix_discriminator: [u8; 8] = ix.data[0..8].try_into()?;
         let ix_data = &ix.data[8..];
@@ -184,7 +212,8 @@ impl InstructionParser {
                 ))
             },
             [102, 6, 61, 18, 1, 218, 235, 234] => {
-                let expected_accounts_len = 23;
+                // Only require minimum 17 accounts for forward compatibility
+                let expected_accounts_len = 17;
                 check_min_accounts_req(accounts_len, expected_accounts_len)?;
                 let ix_accounts = BuyIxAccounts {
                     pool: next_account(accounts)?,
@@ -204,18 +233,48 @@ impl InstructionParser {
                     associated_token_program: next_account(accounts)?,
                     event_authority: next_account(accounts)?,
                     program: next_account(accounts)?,
-                    coin_creator_vault_ata: next_account(accounts)?,
-                    coin_creator_vault_authority: next_account(accounts)?,
-                    global_volume_accumulator: next_account(accounts)?,
-                    user_volume_accumulator: next_account(accounts)?,
-                    fee_config: next_account(accounts)?,
-                    fee_program: next_account(accounts)?,
+                    // Optional accounts 18-23 (use default if not present)
+                    coin_creator_vault_ata: if accounts_len >= 18 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    coin_creator_vault_authority: if accounts_len >= 19 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    global_volume_accumulator: if accounts_len >= 20 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    user_volume_accumulator: if accounts_len >= 21 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    fee_config: if accounts_len >= 22 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    fee_program: if accounts_len >= 23 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
                 };
                 let de_ix_data: BuyIxData = deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(PumpAmmProgramIx::Buy(ix_accounts, de_ix_data))
+                // Parse buy event from inner instructions
+                let buy_event = ix.inner.iter().find_map(|inner_ix| {
+                    BuyEventBaseVersion::from_inner_instruction_data(&inner_ix.data)
+                });
+                Ok(PumpAmmProgramIx::Buy(ix_accounts, de_ix_data, buy_event))
             },
             [198, 46, 21, 82, 180, 217, 232, 112] => {
-                let expected_accounts_len = 23;
+                // Only require minimum 17 accounts for forward compatibility
+                let expected_accounts_len = 17;
                 check_min_accounts_req(accounts_len, expected_accounts_len)?;
                 let ix_accounts = BuyExactQuoteInIxAccounts {
                     pool: next_account(accounts)?,
@@ -235,16 +294,49 @@ impl InstructionParser {
                     associated_token_program: next_account(accounts)?,
                     event_authority: next_account(accounts)?,
                     program: next_account(accounts)?,
-                    coin_creator_vault_ata: next_account(accounts)?,
-                    coin_creator_vault_authority: next_account(accounts)?,
-                    global_volume_accumulator: next_account(accounts)?,
-                    user_volume_accumulator: next_account(accounts)?,
-                    fee_config: next_account(accounts)?,
-                    fee_program: next_account(accounts)?,
+                    // Optional accounts 18-23 (use default if not present)
+                    coin_creator_vault_ata: if accounts_len >= 18 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    coin_creator_vault_authority: if accounts_len >= 19 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    global_volume_accumulator: if accounts_len >= 20 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    user_volume_accumulator: if accounts_len >= 21 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    fee_config: if accounts_len >= 22 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    fee_program: if accounts_len >= 23 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
                 };
                 let de_ix_data: BuyExactQuoteInIxData =
                     deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(PumpAmmProgramIx::BuyExactQuoteIn(ix_accounts, de_ix_data))
+                // Parse buy event from inner instructions
+                let buy_event = ix.inner.iter().find_map(|inner_ix| {
+                    BuyEventBaseVersion::from_inner_instruction_data(&inner_ix.data)
+                });
+                Ok(PumpAmmProgramIx::BuyExactQuoteIn(
+                    ix_accounts,
+                    de_ix_data,
+                    buy_event,
+                ))
             },
             [16, 4, 71, 28, 204, 1, 40, 27] => {
                 let expected_accounts_len = 12;
@@ -403,7 +495,8 @@ impl InstructionParser {
                 Ok(PumpAmmProgramIx::MigratePoolCoinCreator(ix_accounts))
             },
             [51, 230, 133, 164, 1, 127, 131, 173] => {
-                let expected_accounts_len = 21;
+                // Only require minimum 17 accounts for forward compatibility
+                let expected_accounts_len = 17;
                 check_min_accounts_req(accounts_len, expected_accounts_len)?;
                 let ix_accounts = SellIxAccounts {
                     pool: next_account(accounts)?,
@@ -423,13 +516,40 @@ impl InstructionParser {
                     associated_token_program: next_account(accounts)?,
                     event_authority: next_account(accounts)?,
                     program: next_account(accounts)?,
-                    coin_creator_vault_ata: next_account(accounts)?,
-                    coin_creator_vault_authority: next_account(accounts)?,
-                    fee_config: next_account(accounts)?,
-                    fee_program: next_account(accounts)?,
+                    // Optional accounts 18-21 (use default if not present)
+                    coin_creator_vault_ata: if accounts_len >= 18 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    coin_creator_vault_authority: if accounts_len >= 19 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    fee_config: if accounts_len >= 20 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
+                    fee_program: if accounts_len >= 21 {
+                        next_account(accounts)?
+                    } else {
+                        solana_pubkey::Pubkey::default()
+                    },
                 };
                 let de_ix_data: SellIxData = deserialize_checked(ix_data, &ix_discriminator)?;
-                Ok(PumpAmmProgramIx::Sell(ix_accounts, de_ix_data))
+                // Parse sell event from inner instructions
+
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
+                let sell_event = ix.inner.iter().find_map(|inner_ix| {
+                    SellEventBaseVersion::from_inner_instruction_data(&inner_ix.data)
+                });
+                Ok(PumpAmmProgramIx::Sell(ix_accounts, de_ix_data, sell_event))
             },
             [210, 149, 128, 45, 188, 58, 78, 175] => {
                 let expected_accounts_len = 5;
@@ -549,6 +669,10 @@ impl InstructionParser {
                 let de_ix_data: WithdrawIxData = deserialize_checked(ix_data, &ix_discriminator)?;
                 Ok(PumpAmmProgramIx::Withdraw(ix_accounts, de_ix_data))
             },
+            // Self CPI log - filter these out
+            [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d] => {
+                Err(yellowstone_vixen_core::ParseError::Filtered)
+            },
             _ => Err(yellowstone_vixen_core::ParseError::from(
                 "Invalid Instruction discriminator".to_owned(),
             )),
@@ -583,6 +707,7 @@ impl InstructionParser {
         ix.map(|ix| InstructionUpdateOutput {
             parsed_ix: ix,
             shared_data,
+            ix_index,
         })
     }
 }
@@ -1203,13 +1328,13 @@ mod proto_parser {
                         },
                     )),
                 },
-                PumpAmmProgramIx::Buy(acc, data) => proto_def::ProgramIxs {
+                PumpAmmProgramIx::Buy(acc, data, _event) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Buy(proto_def::BuyIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
                     })),
                 },
-                PumpAmmProgramIx::BuyExactQuoteIn(acc, data) => proto_def::ProgramIxs {
+                PumpAmmProgramIx::BuyExactQuoteIn(acc, data, _event) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::BuyExactQuoteIn(
                         proto_def::BuyExactQuoteInIx {
                             accounts: Some(acc.into_proto()),
@@ -1291,7 +1416,7 @@ mod proto_parser {
                         },
                     )),
                 },
-                PumpAmmProgramIx::Sell(acc, data) => proto_def::ProgramIxs {
+                PumpAmmProgramIx::Sell(acc, data, _event) => proto_def::ProgramIxs {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Sell(proto_def::SellIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
