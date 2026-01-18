@@ -3,19 +3,15 @@ pub mod test_handlers;
 use std::{path::PathBuf, time::Duration};
 
 use tokio::sync::broadcast;
-use yellowstone_vixen::config::{BufferConfig, VixenConfig};
+use yellowstone_vixen::{
+    config::{BufferConfig, VixenConfig},
+    vixen_core::Parser,
+};
+use yellowstone_vixen::vixen_core::instruction::InstructionUpdate;
 use yellowstone_vixen_mock::{
     create_mock_transaction_update_with_cache, parse_instructions_from_txn_update,
 };
 use yellowstone_vixen_yellowstone_grpc_source::YellowstoneGrpcConfig;
-
-/// Trait for CPI events that can be parsed from instruction data and have token changes
-pub trait CpiEventParseable {
-    fn from_inner_instruction_data(data: &[u8]) -> Option<Self>
-    where Self: Sized;
-    fn source_token_change(&self) -> u64;
-    fn destination_token_change(&self) -> u64;
-}
 
 /// Command line options for integration tests
 #[derive(clap::Parser, Debug)]
@@ -191,61 +187,99 @@ where
     }
 }
 
-/// Asserts that a CPI event at the specified instruction indices has the expected token changes.
+// ============================================================================
+// Navigation Helper
+// ============================================================================
+
+/// Navigate to an instruction using ix_path.
 ///
 /// # Arguments
-/// * `signature` - Transaction signature to fetch and parse
-/// * `ix_path` - Path of instruction indices: [top_level, inner, nested_inner, ...]
-/// * `expected_source_token_change` - Expected source token change value
-/// * `expected_destination_token_change` - Expected destination token change value
+/// * `instructions` - List of top-level instructions
+/// * `ix_path` - Path to the target instruction (e.g., &[3] for top-level #3, &[2, 0] for inner)
 ///
 /// # Example
 /// ```ignore
-/// // 2-level: top-level #6 → inner #5
-/// assert_okx_dex_v2_cpi_event_token_changes::<SwapCpiEvent2>(sig, &[6, 5], 100, 200).await?;
+/// // Top-level instruction #3
+/// navigate_to_instruction(&instructions, &[3])
 ///
-/// // 3-level: top-level #3 → inner #2 → nested #8
-/// assert_okx_dex_v2_cpi_event_token_changes::<SwapCpiEvent2>(sig, &[3, 2, 8], 100, 200).await?;
+/// // Top-level #2 → inner #0
+/// navigate_to_instruction(&instructions, &[2, 0])
+///
+/// // Top-level #2 → inner #0 → inner #1
+/// navigate_to_instruction(&instructions, &[2, 0, 1])
 /// ```
-pub async fn assert_okx_dex_v2_cpi_event_token_changes<T: CpiEventParseable>(
-    signature: &str,
+fn navigate_to_instruction<'a>(
+    instructions: &'a [InstructionUpdate],
     ix_path: &[usize],
-    expected_source_token_change: u64,
-    expected_destination_token_change: u64,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    assert!(
-        ix_path.len() >= 2,
-        "ix_path must have at least 2 indices (top-level and inner)"
-    );
+) -> Result<&'a InstructionUpdate, Box<dyn std::error::Error + Send + Sync>> {
+    if ix_path.is_empty() {
+        return Err("ix_path cannot be empty".into());
+    }
 
-    let txn_update = create_mock_transaction_update_with_cache(signature)
-        .await
-        .expect("Failed to fetch transaction");
-
-    let instruction_updates =
-        parse_instructions_from_txn_update(&txn_update).expect("Failed to parse instructions");
-
-    let top_level_ix = instruction_updates
+    let mut current = instructions
         .get(ix_path[0])
-        .ok_or_else(|| format!("Top-level instruction index {} not found", ix_path[0]))?;
+        .ok_or_else(|| format!("Instruction index {} not found", ix_path[0]))?;
 
-    // Navigate through the inner instruction path
-    let mut current_inner = top_level_ix
-        .inner
-        .get(ix_path[1])
-        .ok_or_else(|| format!("Inner instruction index {} not found", ix_path[1]))?;
-
-    for (depth, &idx) in ix_path.iter().enumerate().skip(2) {
-        current_inner = current_inner.inner.get(idx).ok_or_else(|| {
+    for (depth, &idx) in ix_path.iter().enumerate().skip(1) {
+        current = current.inner.get(idx).ok_or_else(|| {
             format!(
-                "Nested instruction index {} at depth {} not found",
+                "Inner instruction index {} at depth {} not found",
                 idx, depth
             )
         })?;
     }
 
-    let event = T::from_inner_instruction_data(&current_inner.data)
-        .ok_or("Failed to parse CPI event from instruction data")?;
+    Ok(current)
+}
+
+// ============================================================================
+// CPI-based Parser Helpers
+// ============================================================================
+
+/// Assert OKX DEX v2 parser flow with expected token changes.
+///
+/// # Arguments
+/// * `signature` - Transaction signature
+/// * `ix_path` - Path to the OKX instruction (e.g., &[3] for top-level)
+/// * `expected_source_token_change` - Expected input amount
+/// * `expected_destination_token_change` - Expected output amount
+pub async fn assert_okx_v2_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_okx_dex_v2_parser::{
+        instructions_parser::InstructionParser as OkxV2Parser,
+        instructions_parser::OnChainLabsDexRouter2ProgramIx,
+        types::{CpiEventWithFallback, SwapEventData},
+    };
+
+    let parser = OkxV2Parser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    // Extract CPI event from parsed enum
+    let event: &CpiEventWithFallback = match &parsed {
+        OnChainLabsDexRouter2ProgramIx::Swap(_, _, Some(e)) => e,
+        OnChainLabsDexRouter2ProgramIx::ProxySwap(_, _, Some(e)) => e,
+        OnChainLabsDexRouter2ProgramIx::SwapTob(_, _, Some(e)) => e,
+        OnChainLabsDexRouter2ProgramIx::SwapTobEnhanced(_, _, Some(e)) => e,
+        OnChainLabsDexRouter2ProgramIx::SwapTobV2(_, _, Some(e)) => e,
+        OnChainLabsDexRouter2ProgramIx::SwapTobWithReceiver(_, _, Some(e)) => e,
+        OnChainLabsDexRouter2ProgramIx::SwapToc(_, _, Some(e)) => e,
+        OnChainLabsDexRouter2ProgramIx::SwapTocV2(_, _, Some(e)) => e,
+        _ => return Err("No CPI event found in parsed instruction".into()),
+    };
 
     assert_eq!(
         event.source_token_change(),
@@ -257,33 +291,597 @@ pub async fn assert_okx_dex_v2_cpi_event_token_changes<T: CpiEventParseable>(
         expected_destination_token_change,
         "destination_token_change mismatch"
     );
-
     Ok(())
 }
 
-// Macro to implement CpiEventParseable for multiple types
-macro_rules! impl_cpi_event_parseable {
-    ($($ty:ty),+ $(,)?) => {
-        $(
-            impl CpiEventParseable for $ty {
-                fn from_inner_instruction_data(data: &[u8]) -> Option<Self> {
-                    Self::from_inner_instruction_data(data)
-                }
-                fn source_token_change(&self) -> u64 {
-                    self.source_token_change
-                }
-                fn destination_token_change(&self) -> u64 {
-                    self.destination_token_change
-                }
-            }
-        )+
+/// Assert PumpSwap Buy parser flow with expected token changes.
+///
+/// # Arguments
+/// * `signature` - Transaction signature
+/// * `ix_path` - Path to the PumpSwap instruction
+/// * `expected_quote_amount_in` - Expected SOL spent
+/// * `expected_base_amount_out` - Expected tokens received
+pub async fn assert_pumpswap_buy_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_quote_amount_in: u64,
+    expected_base_amount_out: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_pump_swaps_parser::instructions_parser::{
+        InstructionParser as PumpSwapsParser, PumpAmmProgramIx,
     };
+
+    let parser = PumpSwapsParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    let event = match &parsed {
+        PumpAmmProgramIx::Buy(_, _, Some(e)) => e,
+        PumpAmmProgramIx::BuyExactQuoteIn(_, _, Some(e)) => e,
+        _ => return Err("Expected Buy instruction with event".into()),
+    };
+
+    assert_eq!(
+        event.quote_amount_in, expected_quote_amount_in,
+        "quote_amount_in mismatch"
+    );
+    assert_eq!(
+        event.base_amount_out, expected_base_amount_out,
+        "base_amount_out mismatch"
+    );
+    Ok(())
 }
 
-impl_cpi_event_parseable!(
-    yellowstone_vixen_okx_dex_v2_parser::types::SwapCpiEvent2,
-    yellowstone_vixen_okx_dex_v2_parser::types::SwapWithFeesCpiEvent2,
-    yellowstone_vixen_okx_dex_v2_parser::types::SwapWithFeesCpiEventEnhanced,
-    yellowstone_vixen_okx_dex_v2_parser::types::SwapTobV2CpiEvent2,
-    yellowstone_vixen_okx_dex_v2_parser::types::SwapTocV2CpiEvent2,
-);
+/// Assert PumpSwap Sell parser flow with expected token changes.
+///
+/// # Arguments
+/// * `signature` - Transaction signature
+/// * `ix_path` - Path to the PumpSwap instruction
+/// * `expected_base_amount_in` - Expected tokens spent
+/// * `expected_quote_amount_out` - Expected SOL received
+pub async fn assert_pumpswap_sell_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_base_amount_in: u64,
+    expected_quote_amount_out: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_pump_swaps_parser::instructions_parser::{
+        InstructionParser as PumpSwapsParser, PumpAmmProgramIx,
+    };
+
+    let parser = PumpSwapsParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    let event = match &parsed {
+        PumpAmmProgramIx::Sell(_, _, Some(e)) => e,
+        _ => return Err("Expected Sell instruction with event".into()),
+    };
+
+    assert_eq!(
+        event.base_amount_in, expected_base_amount_in,
+        "base_amount_in mismatch"
+    );
+    assert_eq!(
+        event.quote_amount_out, expected_quote_amount_out,
+        "quote_amount_out mismatch"
+    );
+    Ok(())
+}
+
+/// Assert Jupiter parser flow with expected token changes.
+///
+/// # Arguments
+/// * `signature` - Transaction signature
+/// * `ix_path` - Path to the Jupiter instruction
+/// * `event_index` - Index into Vec<(SwapEvent, u16)> to select which event to verify
+/// * `expected_source_token_change` - Expected input_amount
+/// * `expected_destination_token_change` - Expected output_amount
+pub async fn assert_jupiter_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    event_index: usize,
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_jupiter_swap_parser::{
+        instructions_parser::{InstructionParser as JupiterParser, JupiterProgramIx},
+        types::SwapEvent as JupiterSwapEvent,
+    };
+
+    let parser = JupiterParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    // Jupiter V1 Route variants return Vec<(SwapEvent, u16)>
+    let events: &Vec<(JupiterSwapEvent, u16)> = match &parsed {
+        JupiterProgramIx::Route(_, _, events) => events,
+        JupiterProgramIx::ExactOutRoute(_, _, events) => events,
+        JupiterProgramIx::RouteWithTokenLedger(_, _, events) => events,
+        JupiterProgramIx::SharedAccountsRoute(_, _, events) => events,
+        JupiterProgramIx::SharedAccountsExactOutRoute(_, _, events) => events,
+        JupiterProgramIx::SharedAccountsRouteWithTokenLedger(_, _, events) => events,
+        // V2 variants need different handling
+        _ => return Err("Unsupported Jupiter instruction variant".into()),
+    };
+
+    let (event, _) = events.get(event_index).ok_or_else(|| {
+        format!(
+            "Event index {} out of bounds (len={})",
+            event_index,
+            events.len()
+        )
+    })?;
+
+    assert_eq!(
+        event.input_amount, expected_source_token_change,
+        "input_amount mismatch"
+    );
+    assert_eq!(
+        event.output_amount, expected_destination_token_change,
+        "output_amount mismatch"
+    );
+    Ok(())
+}
+
+/// Assert Meteora DLMM parser flow with expected token changes.
+///
+/// # Arguments
+/// * `signature` - Transaction signature
+/// * `ix_path` - Path to the Meteora DLMM instruction
+/// * `expected_source_token_change` - Expected amount_in
+/// * `expected_destination_token_change` - Expected amount_out
+pub async fn assert_meteora_dlmm_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_meteora_parser::instructions_parser::{
+        InstructionParser as MeteoraDlmmParser, LbClmmProgramIx,
+    };
+
+    let parser = MeteoraDlmmParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    let event = match &parsed {
+        LbClmmProgramIx::Swap(_, _, Some(e)) => e,
+        LbClmmProgramIx::SwapExactOut(_, _, Some(e)) => e,
+        LbClmmProgramIx::SwapWithPriceImpact(_, _, Some(e)) => e,
+        _ => return Err("No swap event found in parsed instruction".into()),
+    };
+
+    assert_eq!(
+        event.amount_in, expected_source_token_change,
+        "amount_in mismatch"
+    );
+    assert_eq!(
+        event.amount_out, expected_destination_token_change,
+        "amount_out mismatch"
+    );
+    Ok(())
+}
+
+/// Assert PumpFun parser flow with expected token changes.
+///
+/// # Arguments
+/// * `signature` - Transaction signature
+/// * `ix_path` - Path to the PumpFun instruction
+/// * `expected_source_token_change` - Expected source amount (sol_amount if buy, token_amount if sell)
+/// * `expected_destination_token_change` - Expected dest amount (token_amount if buy, sol_amount if sell)
+pub async fn assert_pumpfun_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_pumpfun_parser::{
+        instructions_parser::{InstructionParser as PumpFunParser, PumpProgramIx},
+        types::TradeEvent,
+    };
+
+    let parser = PumpFunParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    let event = match &parsed {
+        PumpProgramIx::Buy(_, _, Some(e)) => e,
+        PumpProgramIx::Sell(_, _, Some(e)) => e,
+        _ => return Err("No trade event found in parsed instruction".into()),
+    };
+
+    let (source, dest) = match event {
+        TradeEvent::V1(v) => {
+            if v.is_buy {
+                (v.sol_amount, v.token_amount)
+            } else {
+                (v.token_amount, v.sol_amount)
+            }
+        }
+        TradeEvent::V2(v) => {
+            if v.is_buy {
+                (v.sol_amount, v.token_amount)
+            } else {
+                (v.token_amount, v.sol_amount)
+            }
+        }
+    };
+
+    assert_eq!(source, expected_source_token_change, "source mismatch");
+    assert_eq!(dest, expected_destination_token_change, "dest mismatch");
+    Ok(())
+}
+
+// ============================================================================
+// Log-based Parser Helpers
+// ============================================================================
+
+/// Assert Raydium AMM V4 parser flow with expected token changes.
+///
+/// # Arguments
+/// * `signature` - Transaction signature
+/// * `ix_path` - Path to the instruction
+/// * `expected_source_token_change` - Expected amount_in (BaseIn) or direct_in (BaseOut)
+/// * `expected_destination_token_change` - Expected out_amount (BaseIn) or amount_out (BaseOut)
+pub async fn assert_raydium_amm_v4_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_raydium_amm_v4_parser::{
+        instructions_parser::{InstructionParser as RaydiumAmmV4Parser, RaydiumAmmV4ProgramIx},
+        types::SwapEvent as RaydiumAmmV4SwapEvent,
+    };
+
+    let parser = RaydiumAmmV4Parser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    let event = match &parsed {
+        RaydiumAmmV4ProgramIx::SwapBaseIn(_, _, Some(e)) => e,
+        RaydiumAmmV4ProgramIx::SwapBaseOut(_, _, Some(e)) => e,
+        _ => return Err("No swap event found in parsed instruction".into()),
+    };
+
+    let (source, dest) = match event {
+        RaydiumAmmV4SwapEvent::BaseIn(e) => (e.amount_in, e.out_amount),
+        RaydiumAmmV4SwapEvent::BaseOut(e) => (e.direct_in, e.amount_out),
+    };
+
+    assert_eq!(
+        source, expected_source_token_change,
+        "source_token_change mismatch"
+    );
+    assert_eq!(
+        dest, expected_destination_token_change,
+        "destination_token_change mismatch"
+    );
+    Ok(())
+}
+
+/// Assert Raydium CLMM parser flow with expected token changes.
+pub async fn assert_raydium_clmm_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_raydium_clmm_parser::instructions_parser::{
+        AmmV3ProgramIx, InstructionParser as RaydiumClmmParser,
+    };
+
+    let parser = RaydiumClmmParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    let event = match &parsed {
+        AmmV3ProgramIx::Swap(_, _, Some(e)) => e,
+        AmmV3ProgramIx::SwapV2(_, _, Some(e)) => e,
+        // SwapRouterBaseIn doesn't have an event field
+        _ => return Err("No swap event found in parsed instruction".into()),
+    };
+
+    // zero_for_one determines direction: true = token0 -> token1, false = token1 -> token0
+    let (source, dest) = if event.zero_for_one {
+        (event.amount_0, event.amount_1)
+    } else {
+        (event.amount_1, event.amount_0)
+    };
+
+    assert_eq!(
+        source, expected_source_token_change,
+        "source_token_change mismatch"
+    );
+    assert_eq!(
+        dest, expected_destination_token_change,
+        "destination_token_change mismatch"
+    );
+    Ok(())
+}
+
+/// Assert Raydium CPMM parser flow with expected token changes.
+pub async fn assert_raydium_cpmm_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_raydium_cpmm_parser::{
+        instructions_parser::{InstructionParser as RaydiumCpmmParser, RaydiumCpSwapProgramIx},
+        types::SwapEvent as RaydiumCpmmSwapEvent,
+    };
+
+    let parser = RaydiumCpmmParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    let event = match &parsed {
+        RaydiumCpSwapProgramIx::SwapBaseInput(_, _, Some(e)) => e,
+        RaydiumCpSwapProgramIx::SwapBaseOutput(_, _, Some(e)) => e,
+        _ => return Err("No swap event found in parsed instruction".into()),
+    };
+
+    let (source, dest) = match event {
+        RaydiumCpmmSwapEvent::V1(e) => (e.input_amount, e.output_amount),
+        RaydiumCpmmSwapEvent::V2(e) => (e.input_amount, e.output_amount),
+    };
+
+    assert_eq!(
+        source, expected_source_token_change,
+        "source_token_change mismatch"
+    );
+    assert_eq!(
+        dest, expected_destination_token_change,
+        "destination_token_change mismatch"
+    );
+    Ok(())
+}
+
+/// Assert Meteora Pools parser flow with expected token changes.
+pub async fn assert_meteora_pools_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_meteora_pools_parser::instructions_parser::{
+        AmmProgramIx, InstructionParser as MeteoraPoolsParser,
+    };
+
+    let parser = MeteoraPoolsParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    let event = match &parsed {
+        AmmProgramIx::Swap(_, _, Some(e)) => e,
+        _ => return Err("No swap event found in parsed instruction".into()),
+    };
+
+    assert_eq!(
+        event.in_amount, expected_source_token_change,
+        "in_amount mismatch"
+    );
+    assert_eq!(
+        event.out_amount, expected_destination_token_change,
+        "out_amount mismatch"
+    );
+    Ok(())
+}
+
+/// Assert Moonshot parser flow with expected token changes.
+pub async fn assert_moonshot_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_moonshot_parser::instructions_parser::{
+        InstructionParser as MoonshotParser, TokenLaunchpadProgramIx,
+    };
+
+    let parser = MoonshotParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    let event = match &parsed {
+        TokenLaunchpadProgramIx::Buy(_, _, Some(e)) => e,
+        TokenLaunchpadProgramIx::Sell(_, _, Some(e)) => e,
+        _ => return Err("No trade event found in parsed instruction".into()),
+    };
+
+    assert_eq!(
+        event.collateral_amount, expected_source_token_change,
+        "collateral_amount mismatch"
+    );
+    assert_eq!(
+        event.amount, expected_destination_token_change,
+        "amount mismatch"
+    );
+    Ok(())
+}
+
+/// Assert Orca Whirlpool parser flow with expected token changes.
+pub async fn assert_orca_whirlpool_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_orca_whirlpool_parser::instructions_parser::{
+        InstructionParser as OrcaWhirlpoolParser, WhirlpoolProgramIx,
+    };
+
+    let parser = OrcaWhirlpoolParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    // Extract TradedEvent - Swap/SwapV2 return Option, TwoHopSwap/TwoHopSwapV2 return Vec
+    let event = match &parsed {
+        WhirlpoolProgramIx::Swap(_, _, Some(e)) => e,
+        WhirlpoolProgramIx::SwapV2(_, _, Some(e)) => e,
+        WhirlpoolProgramIx::TwoHopSwap(_, _, events) if !events.is_empty() => events.first().unwrap(),
+        WhirlpoolProgramIx::TwoHopSwapV2(_, _, events) if !events.is_empty() => events.first().unwrap(),
+        _ => return Err("No traded event found in parsed instruction".into()),
+    };
+
+    assert_eq!(
+        event.input_amount, expected_source_token_change,
+        "input_amount mismatch"
+    );
+    assert_eq!(
+        event.output_amount, expected_destination_token_change,
+        "output_amount mismatch"
+    );
+    Ok(())
+}
+
+/// Assert Pancake parser flow with expected token changes.
+pub async fn assert_pancake_parser_flow(
+    signature: &str,
+    ix_path: &[usize],
+    expected_source_token_change: u64,
+    expected_destination_token_change: u64,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use yellowstone_vixen_pancake_parser::instructions_parser::{
+        AmmV3ProgramIx, InstructionParser as PancakeParser,
+    };
+
+    let parser = PancakeParser;
+    let txn_update = create_mock_transaction_update_with_cache(signature)
+        .await
+        .map_err(|e| format!("{e}"))?;
+    let instructions =
+        parse_instructions_from_txn_update(&txn_update).map_err(|e| format!("{e}"))?;
+    let target_ix = navigate_to_instruction(&instructions, ix_path)?;
+
+    let parsed = parser
+        .parse(target_ix)
+        .await
+        .map_err(|e| format!("{e:?}"))?;
+
+    // Pancake SwapRouterBaseIn returns Vec<SwapEvent>
+    let event = match &parsed {
+        AmmV3ProgramIx::Swap(_, _, Some(e)) => e,
+        AmmV3ProgramIx::SwapV2(_, _, Some(e)) => e,
+        AmmV3ProgramIx::SwapRouterBaseIn(_, _, events) if !events.is_empty() => events.first().unwrap(),
+        _ => return Err("No swap event found in parsed instruction".into()),
+    };
+
+    // zero_for_one determines direction: true = token0 -> token1, false = token1 -> token0
+    let (source, dest) = if event.zero_for_one {
+        (event.amount0, event.amount1)
+    } else {
+        (event.amount1, event.amount0)
+    };
+
+    assert_eq!(
+        source, expected_source_token_change,
+        "source_token_change mismatch"
+    );
+    assert_eq!(
+        dest, expected_destination_token_change,
+        "destination_token_change mismatch"
+    );
+    Ok(())
+}
