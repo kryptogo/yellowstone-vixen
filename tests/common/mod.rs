@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub mod test_handlers;
 
 use std::{path::PathBuf, time::Duration};
@@ -5,9 +7,8 @@ use std::{path::PathBuf, time::Duration};
 use tokio::sync::broadcast;
 use yellowstone_vixen::{
     config::{BufferConfig, VixenConfig},
-    vixen_core::Parser,
+    vixen_core::{instruction::InstructionUpdate, Parser},
 };
-use yellowstone_vixen::vixen_core::instruction::InstructionUpdate;
 use yellowstone_vixen_mock::{
     create_mock_transaction_update_with_cache, parse_instructions_from_txn_update,
 };
@@ -250,8 +251,7 @@ pub async fn assert_okx_v2_parser_flow(
     expected_destination_token_change: u64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use yellowstone_vixen_okx_dex_v2_parser::{
-        instructions_parser::InstructionParser as OkxV2Parser,
-        instructions_parser::OnChainLabsDexRouter2ProgramIx,
+        instructions_parser::{InstructionParser as OkxV2Parser, OnChainLabsDexRouter2ProgramIx},
         types::{CpiEventWithFallback, SwapEventData},
     };
 
@@ -543,14 +543,14 @@ pub async fn assert_pumpfun_parser_flow(
             } else {
                 (v.token_amount, v.sol_amount)
             }
-        }
+        },
         TradeEvent::V2(v) => {
             if v.is_buy {
                 (v.sol_amount, v.token_amount)
             } else {
                 (v.token_amount, v.sol_amount)
             }
-        }
+        },
     };
 
     assert_eq!(source, expected_source_token_change, "source mismatch");
@@ -593,7 +593,7 @@ pub async fn assert_raydium_amm_v4_parser_flow(
         .await
         .map_err(|e| format!("{e:?}"))?;
 
-    let event = match &parsed {
+    let event = match &parsed.parsed_ix {
         RaydiumAmmV4ProgramIx::SwapBaseIn(_, _, Some(e)) => e,
         RaydiumAmmV4ProgramIx::SwapBaseOut(_, _, Some(e)) => e,
         _ => return Err("No swap event found in parsed instruction".into()),
@@ -820,8 +820,12 @@ pub async fn assert_orca_whirlpool_parser_flow(
     let event = match &parsed {
         WhirlpoolProgramIx::Swap(_, _, Some(e)) => e,
         WhirlpoolProgramIx::SwapV2(_, _, Some(e)) => e,
-        WhirlpoolProgramIx::TwoHopSwap(_, _, events) if !events.is_empty() => events.first().unwrap(),
-        WhirlpoolProgramIx::TwoHopSwapV2(_, _, events) if !events.is_empty() => events.first().unwrap(),
+        WhirlpoolProgramIx::TwoHopSwap(_, _, events) if !events.is_empty() => {
+            events.first().unwrap()
+        },
+        WhirlpoolProgramIx::TwoHopSwapV2(_, _, events) if !events.is_empty() => {
+            events.first().unwrap()
+        },
         _ => return Err("No traded event found in parsed instruction".into()),
     };
 
@@ -864,7 +868,9 @@ pub async fn assert_pancake_parser_flow(
     let event = match &parsed {
         AmmV3ProgramIx::Swap(_, _, Some(e)) => e,
         AmmV3ProgramIx::SwapV2(_, _, Some(e)) => e,
-        AmmV3ProgramIx::SwapRouterBaseIn(_, _, events) if !events.is_empty() => events.first().unwrap(),
+        AmmV3ProgramIx::SwapRouterBaseIn(_, _, events) if !events.is_empty() => {
+            events.first().unwrap()
+        },
         _ => return Err("No swap event found in parsed instruction".into()),
     };
 

@@ -1,10 +1,7 @@
 use std::time::Duration;
 
-use tracing::{error, info, warn};
+use tracing::{error, info};
 use yellowstone_vixen::{vixen_core::Parser, Pipeline, Runtime};
-use yellowstone_vixen_mock::{
-    create_mock_transaction_update_with_cache, parse_instructions_from_txn_update,
-};
 use yellowstone_vixen_yellowstone_grpc_source::YellowstoneGrpcSource;
 
 #[path = "../common/mod.rs"]
