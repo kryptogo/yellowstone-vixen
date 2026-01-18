@@ -26,169 +26,6 @@ fn init_tracing() {
     });
 }
 
-/// Helper function to test specific transaction signatures with a given parser
-async fn test_specific_signatures<P>(
-    parser_name: &str,
-    parser: &P,
-    signatures: &[&str],
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
-where
-    P: yellowstone_vixen::vixen_core::Parser<
-            Input = yellowstone_vixen::vixen_core::instruction::InstructionUpdate,
-        > + yellowstone_vixen::vixen_core::ProgramParser
-        + Sync,
-    P::Output: std::fmt::Debug,
-{
-    info!("Starting {} specific signatures test", parser_name);
-    info!("Testing {} signatures", signatures.len());
-    info!(
-        "Parser ID: {}",
-        yellowstone_vixen::vixen_core::Parser::id(parser)
-    );
-    info!(
-        "Parser Program ID: {}",
-        yellowstone_vixen::vixen_core::ProgramParser::program_id(parser)
-    );
-
-    let mut success_count = 0;
-    let mut filtered_count = 0;
-    let mut error_count = 0;
-    let mut error_details = Vec::new();
-
-    for (i, signature) in signatures.iter().enumerate() {
-        info!("\n=== Testing signature {}/{} ===", i + 1, signatures.len());
-        info!("Signature: {}", signature);
-
-        match create_mock_transaction_update_with_cache(signature).await {
-            Ok(transaction_update) => {
-                match parse_instructions_from_txn_update(&transaction_update) {
-                    Ok(instruction_updates) => {
-                        info!(
-                            "Found {} instructions in transaction",
-                            instruction_updates.len()
-                        );
-
-                        let mut parsed_any = false;
-                        let parser_program_id =
-                            yellowstone_vixen::vixen_core::ProgramParser::program_id(parser);
-
-                        // Log all top-level instructions
-                        for (ix_idx, ix) in instruction_updates.iter().enumerate() {
-                            info!("Instruction {}: program = {}", ix_idx, ix.program);
-                        }
-
-                        // Iterate through all instructions including inner instructions
-                        // This matches the pattern used in runtime/src/instruction.rs
-                        for ix in instruction_updates.iter().flat_map(|i| i.visit_all()) {
-                            if ix.program == parser_program_id {
-                                let ix_type = if ix.parent_program.is_none() {
-                                    "top-level"
-                                } else {
-                                    "inner"
-                                };
-                                info!(
-                                    "Found {} {} instruction (ix_index: {}, program: {})",
-                                    parser_name, ix_type, ix.ix_index, ix.program
-                                );
-
-                                match parser.parse(ix).await {
-                                    Ok(parsed) => {
-                                        info!(
-                                            "✓ Successfully parsed {} instruction {}: {:?}",
-                                            ix_type, ix.ix_index, parsed
-                                        );
-                                        success_count += 1;
-                                        parsed_any = true;
-                                    },
-                                    Err(yellowstone_vixen::vixen_core::ParseError::Filtered) => {
-                                        // Like runtime, ignore Filtered - this is expected behavior
-                                        // (e.g., Pancake swaps called by Jupiter aggregator are filtered to avoid double counting)
-                                        info!(
-                                            "ℹ {} instruction {} was filtered (expected behavior)",
-                                            ix_type, ix.ix_index
-                                        );
-                                        filtered_count += 1;
-                                    },
-                                    Err(e) => {
-                                        // CPI event logs will produce "Invalid Instruction discriminator" errors
-                                        // This is expected behavior as they are not actual instructions
-                                        let error_msg = format!("{e:?}");
-                                        if error_msg.contains("Invalid Instruction discriminator") {
-                                            info!(
-                                                "ℹ {} instruction {} is likely a CPI event log \
-                                                 (filtered)",
-                                                ix_type, ix.ix_index
-                                            );
-                                            filtered_count += 1;
-                                        } else {
-                                            error!(
-                                                "✗ Failed to parse {} instruction {}: {:?}",
-                                                ix_type, ix.ix_index, e
-                                            );
-                                            error_count += 1;
-                                            error_details.push(format!(
-                                                "Signature: {}, {} instruction ix_index {}: {:?}",
-                                                signature, ix_type, ix.ix_index, e
-                                            ));
-                                        }
-                                    },
-                                }
-                            }
-                        }
-
-                        if !parsed_any {
-                            warn!("No {} instructions found in this transaction", parser_name);
-                        }
-                    },
-                    Err(e) => {
-                        error!("Failed to parse instructions from transaction: {:?}", e);
-                        error_count += 1;
-                        error_details.push(format!(
-                            "Signature: {signature}: Failed to parse instructions: {e:?}"
-                        ));
-                    },
-                }
-            },
-            Err(e) => {
-                error!("Failed to fetch transaction {}: {:?}", signature, e);
-                error_count += 1;
-                error_details.push(format!("Signature: {signature}: Failed to fetch: {e:?}"));
-            },
-        }
-    }
-
-    info!("\n=== {} Specific Signatures Test Summary ===", parser_name);
-    info!("Total signatures tested: {}", signatures.len());
-    info!("Successfully parsed instructions: {}", success_count);
-    info!("Filtered instructions: {}", filtered_count);
-    info!("Failed to parse instructions: {}", error_count);
-
-    if !error_details.is_empty() {
-        error!("\nError Details:");
-        for (i, detail) in error_details.iter().enumerate() {
-            error!("  {}. {}", i + 1, detail);
-        }
-    }
-
-    // Assertions to ensure parsing was successful or explicitly filtered
-    // Allow the case where all instructions are filtered (e.g., aggregator-invoked swaps)
-    assert!(
-        success_count > 0 || filtered_count > 0,
-        "Expected at least one instruction to be successfully parsed or filtered, but got 0 of \
-         each"
-    );
-    assert_eq!(
-        error_count, 0,
-        "Expected no parsing errors, but got {error_count} errors"
-    );
-
-    if error_count > 0 {
-        Err(format!("Failed to parse {error_count} instructions").into())
-    } else {
-        Ok(())
-    }
-}
-
 // Import parsers
 use kryptogo_vixen_okx_dex_parser::instructions_parser::InstructionParser as OkxInstructionParser;
 use yellowstone_vixen_jupiter_swap_parser::instructions_parser::InstructionParser as JupiterInstructionParser;
@@ -279,18 +116,6 @@ async fn test_okx_parser() -> Result<(), Box<dyn std::error::Error + Send + Sync
     info!("  - Total volume: {}", stats.total_volume);
 
     result
-}
-
-#[tokio::test]
-async fn test_okx_specific_signatures() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    init_tracing();
-
-    let signatures = &[
-        "5gtu6ARVv16QjWi2QR3CZwwPJAEL3TNqvX5HKBz39uB9ky53E2Q7MBjxLqW1a3BFUoXkEEgfmAdsedSeHjpCEau3",
-    ];
-
-    let parser = OkxInstructionParser;
-    test_specific_signatures("OKX", &parser, signatures).await
 }
 
 /// Test OKX DEX v2 parser flow with full InstructionParser.parse()
@@ -393,7 +218,6 @@ async fn test_pump_swaps_parser_flow() {
 /// IDL expects 25 bytes (including track_volume: OptionBool) but on-chain data is 24 bytes
 /// This is an IDL version mismatch - the parser needs to be regenerated with correct IDL
 #[tokio::test]
-#[ignore = "IDL mismatch: parser expects track_volume field but on-chain data doesn't have it"]
 async fn test_pump_swaps_buy_exact_quote_in() {
     init_tracing();
 

@@ -196,12 +196,29 @@ impl Default for BuyExactQuoteInInstructionData {
     fn default() -> Self { Self::new() }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(BorshSerialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BuyExactQuoteInInstructionArgs {
     pub spendable_quote_in: u64,
     pub min_base_amount_out: u64,
     pub track_volume: OptionBool,
+}
+
+impl BorshDeserialize for BuyExactQuoteInInstructionArgs {
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        // Required fields - must be present
+        let spendable_quote_in = u64::deserialize_reader(reader)?;
+        let min_base_amount_out = u64::deserialize_reader(reader)?;
+        // Optional field - old versions may not have it, default to false
+        // Also ignore any extra bytes that may be added in future versions
+        let track_volume =
+            OptionBool::deserialize_reader(reader).unwrap_or(OptionBool { value: false });
+        Ok(Self {
+            spendable_quote_in,
+            min_base_amount_out,
+            track_volume,
+        })
+    }
 }
 
 impl BuyExactQuoteInInstructionArgs {
