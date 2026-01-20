@@ -23,10 +23,13 @@ pub struct BondingCurve {
         serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
     )]
     pub creator: Pubkey,
+    pub is_mayhem_mode: bool,
 }
 
+pub const BONDING_CURVE_DISCRIMINATOR: [u8; 8] = [23, 183, 248, 55, 96, 216, 172, 96];
+
 impl BondingCurve {
-    pub const LEN: usize = 81;
+    pub const LEN: usize = 82;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
@@ -134,5 +137,5 @@ impl anchor_lang::IdlBuild for BondingCurve {}
 
 #[cfg(feature = "anchor-idl-build")]
 impl anchor_lang::Discriminator for BondingCurve {
-    const DISCRIMINATOR: [u8; 8] = [0; 8];
+    const DISCRIMINATOR: &[u8] = &[0; 8];
 }

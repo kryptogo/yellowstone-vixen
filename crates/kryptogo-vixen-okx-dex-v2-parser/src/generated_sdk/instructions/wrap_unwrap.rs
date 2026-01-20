@@ -7,6 +7,8 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
+use crate::generated::types::PlatformFeeWrapUnwrapArgs;
+
 pub const WRAP_UNWRAP_DISCRIMINATOR: [u8; 8] = [220, 101, 139, 249, 41, 190, 118, 199];
 
 /// Accounts.
@@ -66,7 +68,7 @@ impl WrapUnwrap {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -77,7 +79,7 @@ impl WrapUnwrap {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -88,7 +90,7 @@ impl WrapUnwrap {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -96,7 +98,7 @@ impl WrapUnwrap {
             accounts.push(solana_instruction::AccountMeta::new(authority_pda, false));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -104,7 +106,7 @@ impl WrapUnwrap {
             accounts.push(solana_instruction::AccountMeta::new(wsol_sa, false));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -130,7 +132,7 @@ impl WrapUnwrap {
         data.append(&mut args);
 
         solana_instruction::Instruction {
-            program_id: crate::DEX_SOLANA_V2_ID,
+            program_id: crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
             accounts,
             data,
         }
@@ -160,11 +162,7 @@ impl Default for WrapUnwrapInstructionData {
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct WrapUnwrapInstructionArgs {
-    pub order_id: u64,
-    pub amount_in: u64,
-    pub commission_info: u32,
-    pub platform_fee_rate: u16,
-    pub tob: bool,
+    pub args: PlatformFeeWrapUnwrapArgs,
 }
 
 impl WrapUnwrapInstructionArgs {
@@ -201,11 +199,7 @@ pub struct WrapUnwrapBuilder {
     system_program: Option<solana_pubkey::Pubkey>,
     event_authority: Option<solana_pubkey::Pubkey>,
     program: Option<solana_pubkey::Pubkey>,
-    order_id: Option<u64>,
-    amount_in: Option<u64>,
-    commission_info: Option<u32>,
-    platform_fee_rate: Option<u16>,
-    tob: Option<bool>,
+    args: Option<PlatformFeeWrapUnwrapArgs>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -304,32 +298,8 @@ impl WrapUnwrapBuilder {
     }
 
     #[inline(always)]
-    pub fn order_id(&mut self, order_id: u64) -> &mut Self {
-        self.order_id = Some(order_id);
-        self
-    }
-
-    #[inline(always)]
-    pub fn amount_in(&mut self, amount_in: u64) -> &mut Self {
-        self.amount_in = Some(amount_in);
-        self
-    }
-
-    #[inline(always)]
-    pub fn commission_info(&mut self, commission_info: u32) -> &mut Self {
-        self.commission_info = Some(commission_info);
-        self
-    }
-
-    #[inline(always)]
-    pub fn platform_fee_rate(&mut self, platform_fee_rate: u16) -> &mut Self {
-        self.platform_fee_rate = Some(platform_fee_rate);
-        self
-    }
-
-    #[inline(always)]
-    pub fn tob(&mut self, tob: bool) -> &mut Self {
-        self.tob = Some(tob);
+    pub fn args(&mut self, args: PlatformFeeWrapUnwrapArgs) -> &mut Self {
+        self.args = Some(args);
         self
     }
 
@@ -375,17 +345,7 @@ impl WrapUnwrapBuilder {
             program: self.program.expect("program is not set"),
         };
         let args = WrapUnwrapInstructionArgs {
-            order_id: self.order_id.clone().expect("order_id is not set"),
-            amount_in: self.amount_in.clone().expect("amount_in is not set"),
-            commission_info: self
-                .commission_info
-                .clone()
-                .expect("commission_info is not set"),
-            platform_fee_rate: self
-                .platform_fee_rate
-                .clone()
-                .expect("platform_fee_rate is not set"),
-            tob: self.tob.clone().expect("tob is not set"),
+            args: self.args.clone().expect("args is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -518,7 +478,7 @@ impl<'a, 'b> WrapUnwrapCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -529,7 +489,7 @@ impl<'a, 'b> WrapUnwrapCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -540,7 +500,7 @@ impl<'a, 'b> WrapUnwrapCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -551,7 +511,7 @@ impl<'a, 'b> WrapUnwrapCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -559,7 +519,7 @@ impl<'a, 'b> WrapUnwrapCpi<'a, 'b> {
             accounts.push(solana_instruction::AccountMeta::new(*wsol_sa.key, false));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -591,7 +551,7 @@ impl<'a, 'b> WrapUnwrapCpi<'a, 'b> {
         data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
-            program_id: crate::DEX_SOLANA_V2_ID,
+            program_id: crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
             accounts,
             data,
         };
@@ -668,11 +628,7 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
             system_program: None,
             event_authority: None,
             program: None,
-            order_id: None,
-            amount_in: None,
-            commission_info: None,
-            platform_fee_rate: None,
-            tob: None,
+            args: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -785,32 +741,8 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
     }
 
     #[inline(always)]
-    pub fn order_id(&mut self, order_id: u64) -> &mut Self {
-        self.instruction.order_id = Some(order_id);
-        self
-    }
-
-    #[inline(always)]
-    pub fn amount_in(&mut self, amount_in: u64) -> &mut Self {
-        self.instruction.amount_in = Some(amount_in);
-        self
-    }
-
-    #[inline(always)]
-    pub fn commission_info(&mut self, commission_info: u32) -> &mut Self {
-        self.instruction.commission_info = Some(commission_info);
-        self
-    }
-
-    #[inline(always)]
-    pub fn platform_fee_rate(&mut self, platform_fee_rate: u16) -> &mut Self {
-        self.instruction.platform_fee_rate = Some(platform_fee_rate);
-        self
-    }
-
-    #[inline(always)]
-    pub fn tob(&mut self, tob: bool) -> &mut Self {
-        self.instruction.tob = Some(tob);
+    pub fn args(&mut self, args: PlatformFeeWrapUnwrapArgs) -> &mut Self {
+        self.instruction.args = Some(args);
         self
     }
 
@@ -850,27 +782,7 @@ impl<'a, 'b> WrapUnwrapCpiBuilder<'a, 'b> {
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         let args = WrapUnwrapInstructionArgs {
-            order_id: self
-                .instruction
-                .order_id
-                .clone()
-                .expect("order_id is not set"),
-            amount_in: self
-                .instruction
-                .amount_in
-                .clone()
-                .expect("amount_in is not set"),
-            commission_info: self
-                .instruction
-                .commission_info
-                .clone()
-                .expect("commission_info is not set"),
-            platform_fee_rate: self
-                .instruction
-                .platform_fee_rate
-                .clone()
-                .expect("platform_fee_rate is not set"),
-            tob: self.instruction.tob.clone().expect("tob is not set"),
+            args: self.instruction.args.clone().expect("args is not set"),
         };
         let instruction = WrapUnwrapCpi {
             __program: self.instruction.__program,
@@ -934,11 +846,7 @@ struct WrapUnwrapCpiBuilderInstruction<'a, 'b> {
     system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     event_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     program: Option<&'b solana_account_info::AccountInfo<'a>>,
-    order_id: Option<u64>,
-    amount_in: Option<u64>,
-    commission_info: Option<u32>,
-    platform_fee_rate: Option<u16>,
-    tob: Option<bool>,
+    args: Option<PlatformFeeWrapUnwrapArgs>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

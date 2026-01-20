@@ -70,7 +70,7 @@ impl CreateTokenAccountWithSeed {
         data.append(&mut args);
 
         solana_instruction::Instruction {
-            program_id: crate::DEX_SOLANA_V2_ID,
+            program_id: crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
             accounts,
             data,
         }
@@ -342,7 +342,7 @@ impl<'a, 'b> CreateTokenAccountWithSeedCpi<'a, 'b> {
         data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
-            program_id: crate::DEX_SOLANA_V2_ID,
+            program_id: crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
             accounts,
             data,
         };

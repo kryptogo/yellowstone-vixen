@@ -7,6 +7,8 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
+pub const COLLECT_COIN_CREATOR_FEE_DISCRIMINATOR: [u8; 8] = [160, 57, 89, 42, 181, 139, 43, 66];
+
 /// Accounts.
 #[derive(Debug)]
 pub struct CollectCoinCreatorFee {
@@ -49,7 +51,7 @@ impl CollectCoinCreatorFee {
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.coin_creator,
-            true,
+            false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.coin_creator_vault_authority,
@@ -72,7 +74,9 @@ impl CollectCoinCreatorFee {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = borsh::to_vec(&CollectCoinCreatorFeeInstructionData::new()).unwrap();
+        let data = CollectCoinCreatorFeeInstructionData::new()
+            .try_to_vec()
+            .unwrap();
 
         solana_instruction::Instruction {
             program_id: crate::PUMP_AMM_ID,
@@ -94,6 +98,8 @@ impl CollectCoinCreatorFeeInstructionData {
             discriminator: [160, 57, 89, 42, 181, 139, 43, 66],
         }
     }
+
+    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
 impl Default for CollectCoinCreatorFeeInstructionData {
@@ -106,7 +112,7 @@ impl Default for CollectCoinCreatorFeeInstructionData {
 ///
 ///   0. `[]` quote_mint
 ///   1. `[]` quote_token_program
-///   2. `[signer]` coin_creator
+///   2. `[]` coin_creator
 ///   3. `[]` coin_creator_vault_authority
 ///   4. `[writable]` coin_creator_vault_ata
 ///   5. `[writable]` coin_creator_token_account
@@ -287,7 +293,7 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
     }
 
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke(&self) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], &[])
     }
 
@@ -295,15 +301,12 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
     pub fn invoke_with_remaining_accounts(
         &self,
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
-    ) -> solana_program_entrypoint::ProgramResult {
+    ) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], remaining_accounts)
     }
 
     #[inline(always)]
-    pub fn invoke_signed(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-    ) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(signers_seeds, &[])
     }
 
@@ -314,7 +317,7 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
-    ) -> solana_program_entrypoint::ProgramResult {
+    ) -> solana_program_error::ProgramResult {
         let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.quote_mint.key,
@@ -326,7 +329,7 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.coin_creator.key,
-            true,
+            false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.coin_creator_vault_authority.key,
@@ -355,7 +358,9 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = borsh::to_vec(&CollectCoinCreatorFeeInstructionData::new()).unwrap();
+        let data = CollectCoinCreatorFeeInstructionData::new()
+            .try_to_vec()
+            .unwrap();
 
         let instruction = solana_instruction::Instruction {
             program_id: crate::PUMP_AMM_ID,
@@ -390,7 +395,7 @@ impl<'a, 'b> CollectCoinCreatorFeeCpi<'a, 'b> {
 ///
 ///   0. `[]` quote_mint
 ///   1. `[]` quote_token_program
-///   2. `[signer]` coin_creator
+///   2. `[]` coin_creator
 ///   3. `[]` coin_creator_vault_authority
 ///   4. `[writable]` coin_creator_vault_ata
 ///   5. `[writable]` coin_creator_token_account
@@ -517,14 +522,11 @@ impl<'a, 'b> CollectCoinCreatorFeeCpiBuilder<'a, 'b> {
     }
 
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult { self.invoke_signed(&[]) }
+    pub fn invoke(&self) -> solana_program_error::ProgramResult { self.invoke_signed(&[]) }
 
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
-    pub fn invoke_signed(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-    ) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         let instruction = CollectCoinCreatorFeeCpi {
             __program: self.instruction.__program,
 

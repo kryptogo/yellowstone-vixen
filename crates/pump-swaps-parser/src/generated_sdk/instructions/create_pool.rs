@@ -8,6 +8,8 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_pubkey::Pubkey;
 
+pub const CREATE_POOL_DISCRIMINATOR: [u8; 8] = [233, 146, 209, 142, 207, 104, 64, 188];
+
 /// Accounts.
 #[derive(Debug)]
 pub struct CreatePool {
@@ -125,8 +127,8 @@ impl CreatePool {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = borsh::to_vec(&CreatePoolInstructionData::new()).unwrap();
-        let mut args = borsh::to_vec(&args).unwrap();
+        let mut data = CreatePoolInstructionData::new().try_to_vec().unwrap();
+        let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
         solana_instruction::Instruction {
@@ -149,6 +151,8 @@ impl CreatePoolInstructionData {
             discriminator: [233, 146, 209, 142, 207, 104, 64, 188],
         }
     }
+
+    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
 impl Default for CreatePoolInstructionData {
@@ -162,6 +166,11 @@ pub struct CreatePoolInstructionArgs {
     pub base_amount_in: u64,
     pub quote_amount_in: u64,
     pub coin_creator: Pubkey,
+    pub is_mayhem_mode: bool,
+}
+
+impl CreatePoolInstructionArgs {
+    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> { borsh::to_vec(self) }
 }
 
 /// Instruction builder for `CreatePool`.
@@ -210,6 +219,7 @@ pub struct CreatePoolBuilder {
     base_amount_in: Option<u64>,
     quote_amount_in: Option<u64>,
     coin_creator: Option<Pubkey>,
+    is_mayhem_mode: Option<bool>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -369,6 +379,12 @@ impl CreatePoolBuilder {
         self
     }
 
+    #[inline(always)]
+    pub fn is_mayhem_mode(&mut self, is_mayhem_mode: bool) -> &mut Self {
+        self.is_mayhem_mode = Some(is_mayhem_mode);
+        self
+    }
+
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -439,6 +455,10 @@ impl CreatePoolBuilder {
                 .clone()
                 .expect("quote_amount_in is not set"),
             coin_creator: self.coin_creator.clone().expect("coin_creator is not set"),
+            is_mayhem_mode: self
+                .is_mayhem_mode
+                .clone()
+                .expect("is_mayhem_mode is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -559,7 +579,7 @@ impl<'a, 'b> CreatePoolCpi<'a, 'b> {
     }
 
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke(&self) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], &[])
     }
 
@@ -567,15 +587,12 @@ impl<'a, 'b> CreatePoolCpi<'a, 'b> {
     pub fn invoke_with_remaining_accounts(
         &self,
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
-    ) -> solana_program_entrypoint::ProgramResult {
+    ) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], remaining_accounts)
     }
 
     #[inline(always)]
-    pub fn invoke_signed(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-    ) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(signers_seeds, &[])
     }
 
@@ -586,7 +603,7 @@ impl<'a, 'b> CreatePoolCpi<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
-    ) -> solana_program_entrypoint::ProgramResult {
+    ) -> solana_program_error::ProgramResult {
         let mut accounts = Vec::with_capacity(18 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.pool.key, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -664,8 +681,8 @@ impl<'a, 'b> CreatePoolCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = borsh::to_vec(&CreatePoolInstructionData::new()).unwrap();
-        let mut args = borsh::to_vec(&self.__args).unwrap();
+        let mut data = CreatePoolInstructionData::new().try_to_vec().unwrap();
+        let mut args = self.__args.try_to_vec().unwrap();
         data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
@@ -758,6 +775,7 @@ impl<'a, 'b> CreatePoolCpiBuilder<'a, 'b> {
             base_amount_in: None,
             quote_amount_in: None,
             coin_creator: None,
+            is_mayhem_mode: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -934,6 +952,12 @@ impl<'a, 'b> CreatePoolCpiBuilder<'a, 'b> {
         self
     }
 
+    #[inline(always)]
+    pub fn is_mayhem_mode(&mut self, is_mayhem_mode: bool) -> &mut Self {
+        self.instruction.is_mayhem_mode = Some(is_mayhem_mode);
+        self
+    }
+
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -964,14 +988,11 @@ impl<'a, 'b> CreatePoolCpiBuilder<'a, 'b> {
     }
 
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult { self.invoke_signed(&[]) }
+    pub fn invoke(&self) -> solana_program_error::ProgramResult { self.invoke_signed(&[]) }
 
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
-    pub fn invoke_signed(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-    ) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         let args = CreatePoolInstructionArgs {
             index: self.instruction.index.clone().expect("index is not set"),
             base_amount_in: self
@@ -989,6 +1010,11 @@ impl<'a, 'b> CreatePoolCpiBuilder<'a, 'b> {
                 .coin_creator
                 .clone()
                 .expect("coin_creator is not set"),
+            is_mayhem_mode: self
+                .instruction
+                .is_mayhem_mode
+                .clone()
+                .expect("is_mayhem_mode is not set"),
         };
         let instruction = CreatePoolCpi {
             __program: self.instruction.__program,
@@ -1098,6 +1124,7 @@ struct CreatePoolCpiBuilderInstruction<'a, 'b> {
     base_amount_in: Option<u64>,
     quote_amount_in: Option<u64>,
     coin_creator: Option<Pubkey>,
+    is_mayhem_mode: Option<bool>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

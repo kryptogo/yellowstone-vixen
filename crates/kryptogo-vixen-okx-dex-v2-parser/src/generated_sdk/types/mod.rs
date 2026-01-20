@@ -5,15 +5,28 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-pub(crate) mod r#aggregation_event;
 pub(crate) mod r#dex;
+pub(crate) mod r#platform_fee_wrap_unwrap_args;
 pub(crate) mod r#route;
 pub(crate) mod r#swap_args;
 pub(crate) mod r#swap_cpi_event;
+pub(crate) mod r#swap_cpi_event2;
 pub(crate) mod r#swap_event;
+pub(crate) mod r#swap_event_data;
+pub(crate) mod r#swap_to_b_with_fees_cpi_event_v2;
+pub(crate) mod r#swap_to_c_with_fees_cpi_event_v2;
+pub(crate) mod r#swap_tob_v2_cpi_event2;
+pub(crate) mod r#swap_toc_v2_cpi_event2;
 pub(crate) mod r#swap_with_fees_cpi_event;
+pub(crate) mod r#swap_with_fees_cpi_event2;
+pub(crate) mod r#swap_with_fees_cpi_event_enhanced;
+pub(crate) mod r#swap_with_fees_cpi_event_enhanced2;
 
 pub use self::{
-    r#aggregation_event::*, r#dex::*, r#route::*, r#swap_args::*, r#swap_cpi_event::*,
-    r#swap_event::*, r#swap_with_fees_cpi_event::*,
+    r#dex::*, r#platform_fee_wrap_unwrap_args::*, r#route::*, r#swap_args::*, r#swap_cpi_event::*,
+    r#swap_cpi_event2::*, r#swap_event::*, r#swap_event_data::*,
+    r#swap_to_b_with_fees_cpi_event_v2::*, r#swap_to_c_with_fees_cpi_event_v2::*,
+    r#swap_tob_v2_cpi_event2::*, r#swap_toc_v2_cpi_event2::*, r#swap_with_fees_cpi_event::*,
+    r#swap_with_fees_cpi_event2::*, r#swap_with_fees_cpi_event_enhanced::*,
+    r#swap_with_fees_cpi_event_enhanced2::*,
 };

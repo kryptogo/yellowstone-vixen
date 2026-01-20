@@ -6,7 +6,10 @@
 //!
 
 use crate::{
-    accounts::{BondingCurve, GlobalConfig, Pool},
+    accounts::{
+        BondingCurve, FeeConfig, GlobalConfig, GlobalVolumeAccumulator, Pool, SharingConfig,
+        UserVolumeAccumulator,
+    },
     deserialize_checked, ID,
 };
 
@@ -16,8 +19,12 @@ use crate::{
 #[cfg_attr(feature = "tracing", derive(strum_macros::Display))]
 pub enum PumpAmmProgramState {
     BondingCurve(BondingCurve),
+    FeeConfig(FeeConfig),
     GlobalConfig(GlobalConfig),
+    GlobalVolumeAccumulator(GlobalVolumeAccumulator),
     Pool(Pool),
+    SharingConfig(SharingConfig),
+    UserVolumeAccumulator(UserVolumeAccumulator),
 }
 
 impl PumpAmmProgramState {
@@ -27,12 +34,28 @@ impl PumpAmmProgramState {
             [23, 183, 248, 55, 96, 216, 172, 96] => Ok(PumpAmmProgramState::BondingCurve(
                 deserialize_checked(data_bytes, &acc_discriminator)?,
             )),
+            [143, 52, 146, 187, 219, 123, 76, 155] => Ok(PumpAmmProgramState::FeeConfig(
+                deserialize_checked(data_bytes, &acc_discriminator)?,
+            )),
             [149, 8, 156, 202, 160, 252, 176, 217] => Ok(PumpAmmProgramState::GlobalConfig(
                 deserialize_checked(data_bytes, &acc_discriminator)?,
             )),
+            [202, 42, 246, 43, 142, 190, 30, 255] => {
+                Ok(PumpAmmProgramState::GlobalVolumeAccumulator(
+                    deserialize_checked(data_bytes, &acc_discriminator)?,
+                ))
+            },
             [241, 154, 109, 4, 17, 177, 109, 188] => Ok(PumpAmmProgramState::Pool(
                 deserialize_checked(data_bytes, &acc_discriminator)?,
             )),
+            [216, 74, 9, 0, 56, 140, 93, 75] => Ok(PumpAmmProgramState::SharingConfig(
+                deserialize_checked(data_bytes, &acc_discriminator)?,
+            )),
+            [86, 255, 112, 14, 102, 53, 154, 250] => {
+                Ok(PumpAmmProgramState::UserVolumeAccumulator(
+                    deserialize_checked(data_bytes, &acc_discriminator)?,
+                ))
+            },
             _ => Err(yellowstone_vixen_core::ParseError::from(
                 "Invalid Account discriminator".to_owned(),
             )),
@@ -128,6 +151,18 @@ mod proto_parser {
                 token_total_supply: self.token_total_supply,
                 complete: self.complete,
                 creator: self.creator.to_string(),
+                is_mayhem_mode: self.is_mayhem_mode,
+            }
+        }
+    }
+    use super::FeeConfig;
+    impl IntoProto<proto_def::FeeConfig> for FeeConfig {
+        fn into_proto(self) -> proto_def::FeeConfig {
+            proto_def::FeeConfig {
+                bump: self.bump.into(),
+                admin: self.admin.to_string(),
+                flat_fees: Some(self.flat_fees.into_proto()),
+                fee_tiers: self.fee_tiers.into_iter().map(|x| x.into_proto()).collect(),
             }
         }
     }
@@ -145,6 +180,28 @@ mod proto_parser {
                     .map(|x| x.to_string())
                     .collect(),
                 coin_creator_fee_basis_points: self.coin_creator_fee_basis_points,
+                admin_set_coin_creator_authority: self.admin_set_coin_creator_authority.to_string(),
+                whitelist_pda: self.whitelist_pda.to_string(),
+                reserved_fee_recipient: self.reserved_fee_recipient.to_string(),
+                mayhem_mode_enabled: self.mayhem_mode_enabled,
+                reserved_fee_recipients: self
+                    .reserved_fee_recipients
+                    .into_iter()
+                    .map(|x| x.to_string())
+                    .collect(),
+            }
+        }
+    }
+    use super::GlobalVolumeAccumulator;
+    impl IntoProto<proto_def::GlobalVolumeAccumulator> for GlobalVolumeAccumulator {
+        fn into_proto(self) -> proto_def::GlobalVolumeAccumulator {
+            proto_def::GlobalVolumeAccumulator {
+                start_time: self.start_time,
+                end_time: self.end_time,
+                seconds_in_a_day: self.seconds_in_a_day,
+                mint: self.mint.to_string(),
+                total_token_supply: self.total_token_supply.to_vec(),
+                sol_volumes: self.sol_volumes.to_vec(),
             }
         }
     }
@@ -162,6 +219,39 @@ mod proto_parser {
                 pool_quote_token_account: self.pool_quote_token_account.to_string(),
                 lp_supply: self.lp_supply,
                 coin_creator: self.coin_creator.to_string(),
+                is_mayhem_mode: self.is_mayhem_mode,
+            }
+        }
+    }
+    use super::SharingConfig;
+    impl IntoProto<proto_def::SharingConfig> for SharingConfig {
+        fn into_proto(self) -> proto_def::SharingConfig {
+            proto_def::SharingConfig {
+                bump: self.bump.into(),
+                version: self.version.into(),
+                status: self.status as i32,
+                mint: self.mint.to_string(),
+                admin: self.admin.to_string(),
+                admin_revoked: self.admin_revoked,
+                shareholders: self
+                    .shareholders
+                    .into_iter()
+                    .map(|x| x.into_proto())
+                    .collect(),
+            }
+        }
+    }
+    use super::UserVolumeAccumulator;
+    impl IntoProto<proto_def::UserVolumeAccumulator> for UserVolumeAccumulator {
+        fn into_proto(self) -> proto_def::UserVolumeAccumulator {
+            proto_def::UserVolumeAccumulator {
+                user: self.user.to_string(),
+                needs_claim: self.needs_claim,
+                total_unclaimed_tokens: self.total_unclaimed_tokens,
+                total_claimed_tokens: self.total_claimed_tokens,
+                current_sol_volume: self.current_sol_volume,
+                last_update_timestamp: self.last_update_timestamp,
+                has_total_claimed_tokens: self.has_total_claimed_tokens,
             }
         }
     }
@@ -172,11 +262,23 @@ mod proto_parser {
                 PumpAmmProgramState::BondingCurve(data) => {
                     proto_def::program_state::StateOneof::BondingCurve(data.into_proto())
                 },
+                PumpAmmProgramState::FeeConfig(data) => {
+                    proto_def::program_state::StateOneof::FeeConfig(data.into_proto())
+                },
                 PumpAmmProgramState::GlobalConfig(data) => {
                     proto_def::program_state::StateOneof::GlobalConfig(data.into_proto())
                 },
+                PumpAmmProgramState::GlobalVolumeAccumulator(data) => {
+                    proto_def::program_state::StateOneof::GlobalVolumeAccumulator(data.into_proto())
+                },
                 PumpAmmProgramState::Pool(data) => {
                     proto_def::program_state::StateOneof::Pool(data.into_proto())
+                },
+                PumpAmmProgramState::SharingConfig(data) => {
+                    proto_def::program_state::StateOneof::SharingConfig(data.into_proto())
+                },
+                PumpAmmProgramState::UserVolumeAccumulator(data) => {
+                    proto_def::program_state::StateOneof::UserVolumeAccumulator(data.into_proto())
                 },
             };
 

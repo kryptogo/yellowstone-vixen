@@ -91,7 +91,7 @@ impl SwapTobWithReceiver {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -102,7 +102,7 @@ impl SwapTobWithReceiver {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -110,7 +110,7 @@ impl SwapTobWithReceiver {
             accounts.push(solana_instruction::AccountMeta::new(sa_authority, false));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -118,7 +118,7 @@ impl SwapTobWithReceiver {
             accounts.push(solana_instruction::AccountMeta::new(source_token_sa, false));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -129,7 +129,7 @@ impl SwapTobWithReceiver {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -140,7 +140,7 @@ impl SwapTobWithReceiver {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -151,7 +151,7 @@ impl SwapTobWithReceiver {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -162,7 +162,7 @@ impl SwapTobWithReceiver {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -173,7 +173,7 @@ impl SwapTobWithReceiver {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -181,7 +181,7 @@ impl SwapTobWithReceiver {
             accounts.push(solana_instruction::AccountMeta::new(sol_receiver, false));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -201,7 +201,7 @@ impl SwapTobWithReceiver {
         data.append(&mut args);
 
         solana_instruction::Instruction {
-            program_id: crate::DEX_SOLANA_V2_ID,
+            program_id: crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
             accounts,
             data,
         }
@@ -676,7 +676,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -687,7 +687,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -698,7 +698,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -709,7 +709,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -720,7 +720,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -731,7 +731,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -742,7 +742,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -753,7 +753,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -764,7 +764,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -775,7 +775,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -801,7 +801,7 @@ impl<'a, 'b> SwapTobWithReceiverCpi<'a, 'b> {
         data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
-            program_id: crate::DEX_SOLANA_V2_ID,
+            program_id: crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
             accounts,
             data,
         };

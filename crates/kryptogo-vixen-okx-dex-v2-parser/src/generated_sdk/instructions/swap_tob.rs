@@ -84,7 +84,7 @@ impl SwapTob {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -95,7 +95,7 @@ impl SwapTob {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -103,7 +103,7 @@ impl SwapTob {
             accounts.push(solana_instruction::AccountMeta::new(sa_authority, false));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -111,7 +111,7 @@ impl SwapTob {
             accounts.push(solana_instruction::AccountMeta::new(source_token_sa, false));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -122,7 +122,7 @@ impl SwapTob {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -133,7 +133,7 @@ impl SwapTob {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -144,7 +144,7 @@ impl SwapTob {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -155,7 +155,7 @@ impl SwapTob {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -166,7 +166,7 @@ impl SwapTob {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -184,7 +184,7 @@ impl SwapTob {
         data.append(&mut args);
 
         solana_instruction::Instruction {
-            program_id: crate::DEX_SOLANA_V2_ID,
+            program_id: crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
             accounts,
             data,
         }
@@ -637,7 +637,7 @@ impl<'a, 'b> SwapTobCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -648,7 +648,7 @@ impl<'a, 'b> SwapTobCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -659,7 +659,7 @@ impl<'a, 'b> SwapTobCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -670,7 +670,7 @@ impl<'a, 'b> SwapTobCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -681,7 +681,7 @@ impl<'a, 'b> SwapTobCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -692,7 +692,7 @@ impl<'a, 'b> SwapTobCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -703,7 +703,7 @@ impl<'a, 'b> SwapTobCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -714,7 +714,7 @@ impl<'a, 'b> SwapTobCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -725,7 +725,7 @@ impl<'a, 'b> SwapTobCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -749,7 +749,7 @@ impl<'a, 'b> SwapTobCpi<'a, 'b> {
         data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
-            program_id: crate::DEX_SOLANA_V2_ID,
+            program_id: crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
             accounts,
             data,
         };

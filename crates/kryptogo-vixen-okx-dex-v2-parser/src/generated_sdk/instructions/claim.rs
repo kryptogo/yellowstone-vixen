@@ -52,7 +52,7 @@ impl Claim {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -63,7 +63,7 @@ impl Claim {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -77,7 +77,7 @@ impl Claim {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -88,7 +88,7 @@ impl Claim {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -103,7 +103,7 @@ impl Claim {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -111,7 +111,7 @@ impl Claim {
         let data = ClaimInstructionData::new().try_to_vec().unwrap();
 
         solana_instruction::Instruction {
-            program_id: crate::DEX_SOLANA_V2_ID,
+            program_id: crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
             accounts,
             data,
         }
@@ -383,7 +383,7 @@ impl<'a, 'b> ClaimCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -394,7 +394,7 @@ impl<'a, 'b> ClaimCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -409,7 +409,7 @@ impl<'a, 'b> ClaimCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -420,7 +420,7 @@ impl<'a, 'b> ClaimCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -435,7 +435,7 @@ impl<'a, 'b> ClaimCpi<'a, 'b> {
             ));
         } else {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::DEX_SOLANA_V2_ID,
+                crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
                 false,
             ));
         }
@@ -449,7 +449,7 @@ impl<'a, 'b> ClaimCpi<'a, 'b> {
         let data = ClaimInstructionData::new().try_to_vec().unwrap();
 
         let instruction = solana_instruction::Instruction {
-            program_id: crate::DEX_SOLANA_V2_ID,
+            program_id: crate::ON_CHAIN_LABS_DEX_ROUTER2_ID,
             accounts,
             data,
         };

@@ -35,3 +35,87 @@ pub struct SwapCpiEvent {
     pub source_token_change: u64,
     pub destination_token_change: u64,
 }
+
+impl SwapCpiEvent {
+    /// CPI log prefix for self CPI events (Anchor standard)
+    pub const CPI_LOG_PREFIX: [u8; 8] = [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d];
+    /// SwapCpiEvent discriminator bytes (from IDL)
+    pub const DISCRIMINATOR: [u8; 8] = [0x55, 0x51, 0x95, 0xef, 0xa3, 0x4a, 0x9e, 0x6f];
+
+    /// Parse from inner instruction data with CPI log prefix
+    pub fn from_inner_instruction_data(data: &[u8]) -> Option<Self> {
+        if !data.starts_with(&Self::CPI_LOG_PREFIX) {
+            return None;
+        }
+
+        // Skip the CPI log prefix (8 bytes)
+        let remaining_data = &data[8..];
+
+        // Check if the remaining data starts with SwapCpiEvent discriminator
+        if !remaining_data.starts_with(&Self::DISCRIMINATOR) {
+            return None;
+        }
+
+        // Skip the discriminator (8 bytes) and deserialize the event
+        Self::try_from_slice(&remaining_data[8..]).ok()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use borsh::BorshSerialize;
+
+    use super::*;
+
+    #[test]
+    fn test_discriminator_constant() {
+        assert_eq!(SwapCpiEvent::DISCRIMINATOR, [
+            0x55, 0x51, 0x95, 0xef, 0xa3, 0x4a, 0x9e, 0x6f
+        ]);
+    }
+
+    #[test]
+    fn test_cpi_log_prefix() {
+        assert_eq!(SwapCpiEvent::CPI_LOG_PREFIX, [
+            0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d
+        ]);
+    }
+
+    #[test]
+    fn test_invalid_cpi_prefix() {
+        let invalid_data = vec![0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07];
+        let result = SwapCpiEvent::from_inner_instruction_data(&invalid_data);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_parse_serialized_event() {
+        let mock_event = SwapCpiEvent {
+            order_id: 12345,
+            source_mint: Pubkey::new_from_array([1u8; 32]),
+            destination_mint: Pubkey::new_from_array([2u8; 32]),
+            source_token_account_owner: Pubkey::new_from_array([3u8; 32]),
+            destination_token_account_owner: Pubkey::new_from_array([4u8; 32]),
+            source_token_change: 1000000,
+            destination_token_change: 500000,
+        };
+
+        let mut event_data = Vec::new();
+        mock_event
+            .serialize(&mut event_data)
+            .expect("Failed to serialize");
+
+        let mut data = Vec::new();
+        data.extend_from_slice(&SwapCpiEvent::CPI_LOG_PREFIX);
+        data.extend_from_slice(&SwapCpiEvent::DISCRIMINATOR);
+        data.extend_from_slice(&event_data);
+
+        let result = SwapCpiEvent::from_inner_instruction_data(&data);
+        assert!(result.is_some());
+
+        let parsed_event = result.unwrap();
+        assert_eq!(parsed_event.order_id, 12345);
+        assert_eq!(parsed_event.source_token_change, 1000000);
+        assert_eq!(parsed_event.destination_token_change, 500000);
+    }
+}
