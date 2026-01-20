@@ -133,6 +133,8 @@ async fn test_okx_dex_v2_parser_flow() {
     .await
     .expect("Swap parser flow test failed");
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
     // SwapTob instruction
     common::assert_okx_v2_parser_flow(
         "3Rrgt5ABbfUNoqerVQNCjfQYwafnSm3VNgmtB31aZ4y11Rc4FSHjdMzrXSkyquNnFVp8NAjrU1fAk6ero1cbw59q",
@@ -142,6 +144,8 @@ async fn test_okx_dex_v2_parser_flow() {
     )
     .await
     .expect("SwapTob parser flow test failed");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     // SwapTobEnhanced instruction
     common::assert_okx_v2_parser_flow(
@@ -153,6 +157,8 @@ async fn test_okx_dex_v2_parser_flow() {
     .await
     .expect("SwapTobEnhanced parser flow test failed");
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
     // SwapTobWithReceiver instruction (called via aggregator)
     common::assert_okx_v2_parser_flow(
         "5H5SLPoNyvKjSQfUfiu3PxMKiqfejMh6wuge2TmteRJc6jGxW77XzbiQsvcd9y5zGrfkQ8E7cATepgTHkTu19shp",
@@ -163,6 +169,8 @@ async fn test_okx_dex_v2_parser_flow() {
     .await
     .expect("SwapTobWithReceiver parser flow test failed");
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
     // SwapToc instruction
     common::assert_okx_v2_parser_flow(
         "X41pjVYMdoZd15v1AnHpqV9sGspTEBfzhJ6uk95X2tdthxnQCiGDz5iLfdkhhPfV6cNX14Jpqivq5wmonDudDMi",
@@ -172,6 +180,8 @@ async fn test_okx_dex_v2_parser_flow() {
     )
     .await
     .expect("SwapToc parser flow test failed");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     // SwapTocV2 instruction
     common::assert_okx_v2_parser_flow(
@@ -200,6 +210,8 @@ async fn test_pump_swaps_parser_flow() {
     .await
     .expect("PumpSwaps Buy parser flow test failed");
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
     // Sell instruction (called via aggregator)
     common::assert_pumpswap_sell_parser_flow(
         "3V41y1wkTjYDQ4UAz6gaLT8h7v75VKEURKn6shgipHuobtM9xdTbjzy2oGbLCW4hiYgJzCZ4hoMQ2TXTJxWkw9sG",
@@ -210,6 +222,8 @@ async fn test_pump_swaps_parser_flow() {
     .await
     .expect("PumpSwaps Sell parser flow test failed");
 
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
     // 202505 data - Buy instruction with base event fields only
     common::assert_pumpswap_buy_parser_flow(
         "MyZn74cbZJfethB6Ps9MtgcS19h7euFRvSZA4eefjEvwUK1YAnfhJzbXwwWhxqeu3ooXgPjgJUuREMRHB5fH29z",
@@ -219,6 +233,8 @@ async fn test_pump_swaps_parser_flow() {
     )
     .await
     .expect("PumpSwaps Buy (May 2025) parser flow test failed");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     // IDL expects 25 bytes (including track_volume: OptionBool) but on-chain data is 24 bytes
     // This is an IDL version mismatch - the parser needs to be regenerated with correct IDL
