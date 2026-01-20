@@ -69,80 +69,169 @@ pub struct SellEvent {
 pub const SELL_EVENT_DISCRIMINATOR: [u8; 8] = [0x3e, 0x2f, 0x37, 0x0a, 0xa5, 0x03, 0xdc, 0x2a];
 pub const SELL_EVENT_CPI_LOG_PREFIX: [u8; 8] = [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d];
 
-/// SellEventBaseVersion only contains the first 304 bytes of data for forward compatibility.
-/// This allows parsing old version events that don't have extra fields like coin_creator.
+// Byte sizes for version-aware parsing
+// SellEventBase: 14 × u64 (112) + 6 × Pubkey (192) = 304 bytes
+const SELL_EVENT_BASE_SIZE: usize = 304;
+// SellEvent: 304 + Pubkey (32) + 2 × u64 (16) = 352 bytes
+const SELL_EVENT_CURRENT_SIZE: usize = 352;
+
+/// Base version struct for parsing old events (first 304 bytes only)
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SellEventBaseVersion {
-    pub timestamp: i64,                       // 8 bytes
-    pub base_amount_in: u64,                  // 8 bytes
-    pub min_quote_amount_out: u64,            // 8 bytes
-    pub user_base_token_reserves: u64,        // 8 bytes
-    pub user_quote_token_reserves: u64,       // 8 bytes
-    pub pool_base_token_reserves: u64,        // 8 bytes
-    pub pool_quote_token_reserves: u64,       // 8 bytes
-    pub quote_amount_out: u64,                // 8 bytes
-    pub lp_fee_basis_points: u64,             // 8 bytes
-    pub lp_fee: u64,                          // 8 bytes
-    pub protocol_fee_basis_points: u64,       // 8 bytes
-    pub protocol_fee: u64,                    // 8 bytes
-    pub quote_amount_out_without_lp_fee: u64, // 8 bytes
-    pub user_quote_amount_out: u64,           // 8 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub pool: Pubkey, // 32 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub user: Pubkey, // 32 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub user_base_token_account: Pubkey, // 32 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub user_quote_token_account: Pubkey, // 32 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub protocol_fee_recipient: Pubkey, // 32 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub protocol_fee_recipient_token_account: Pubkey, // 32 bytes
-                                              // Total: 304 bytes
-                                              // Extra fields (coin_creator, etc.) are ignored - we only parse base fields
+struct SellEventBase {
+    pub timestamp: i64,
+    pub base_amount_in: u64,
+    pub min_quote_amount_out: u64,
+    pub user_base_token_reserves: u64,
+    pub user_quote_token_reserves: u64,
+    pub pool_base_token_reserves: u64,
+    pub pool_quote_token_reserves: u64,
+    pub quote_amount_out: u64,
+    pub lp_fee_basis_points: u64,
+    pub lp_fee: u64,
+    pub protocol_fee_basis_points: u64,
+    pub protocol_fee: u64,
+    pub quote_amount_out_without_lp_fee: u64,
+    pub user_quote_amount_out: u64,
+    pub pool: Pubkey,
+    pub user: Pubkey,
+    pub user_base_token_account: Pubkey,
+    pub user_quote_token_account: Pubkey,
+    pub protocol_fee_recipient: Pubkey,
+    pub protocol_fee_recipient_token_account: Pubkey,
 }
 
-impl SellEventBaseVersion {
-    /// Parse sell event from inner instruction data (CPI log)
+impl SellEvent {
+    /// CPI log prefix for self CPI events
+    pub const CPI_LOG_PREFIX: [u8; 8] = SELL_EVENT_CPI_LOG_PREFIX;
+    /// SellEvent discriminator bytes
+    pub const DISCRIMINATOR: [u8; 8] = SELL_EVENT_DISCRIMINATOR;
+
+    /// Parse SellEvent from inner instruction data
     pub fn from_inner_instruction_data(data: &[u8]) -> Option<Self> {
-        // Check for CPI log prefix
-        if data.len() < 8 || data[..8] != SELL_EVENT_CPI_LOG_PREFIX {
+        // Check if data starts with CPI log prefix
+        if data.len() < 16 || !data.starts_with(&Self::CPI_LOG_PREFIX) {
             return None;
         }
-        let event_data = &data[8..];
+        let event_data = &data[8..]; // Skip CPI log prefix (8 bytes)
 
-        // Check for event discriminator
-        if event_data.len() < 8 || event_data[..8] != SELL_EVENT_DISCRIMINATOR {
+        // Check if the remaining data starts with SellEvent discriminator
+        if !event_data.starts_with(&Self::DISCRIMINATOR) {
             return None;
         }
-        let sell_event_data = &event_data[8..];
+        let sell_event_data = &event_data[8..]; // Skip the discriminator (8 bytes)
 
-        // Parse base version (first 304 bytes) for forward compatibility
-        if sell_event_data.len() >= 304 {
-            if let Ok(event) = SellEventBaseVersion::try_from_slice(&sell_event_data[..304]) {
+        // Try to parse current version first (using fixed size for forward compatibility)
+        // This allows parsing even if new fields are added to the on-chain event
+        if sell_event_data.len() >= SELL_EVENT_CURRENT_SIZE {
+            if let Ok(event) =
+                SellEvent::try_from_slice(&sell_event_data[..SELL_EVENT_CURRENT_SIZE])
+            {
                 return Some(event);
             }
         }
+
+        // Fallback: try parsing base fields only (first 304 bytes)
+        if sell_event_data.len() >= SELL_EVENT_BASE_SIZE {
+            if let Ok(base) =
+                SellEventBase::try_from_slice(&sell_event_data[..SELL_EVENT_BASE_SIZE])
+            {
+                return Some(SellEvent {
+                    timestamp: base.timestamp,
+                    base_amount_in: base.base_amount_in,
+                    min_quote_amount_out: base.min_quote_amount_out,
+                    user_base_token_reserves: base.user_base_token_reserves,
+                    user_quote_token_reserves: base.user_quote_token_reserves,
+                    pool_base_token_reserves: base.pool_base_token_reserves,
+                    pool_quote_token_reserves: base.pool_quote_token_reserves,
+                    quote_amount_out: base.quote_amount_out,
+                    lp_fee_basis_points: base.lp_fee_basis_points,
+                    lp_fee: base.lp_fee,
+                    protocol_fee_basis_points: base.protocol_fee_basis_points,
+                    protocol_fee: base.protocol_fee,
+                    quote_amount_out_without_lp_fee: base.quote_amount_out_without_lp_fee,
+                    user_quote_amount_out: base.user_quote_amount_out,
+                    pool: base.pool,
+                    user: base.user,
+                    user_base_token_account: base.user_base_token_account,
+                    user_quote_token_account: base.user_quote_token_account,
+                    protocol_fee_recipient: base.protocol_fee_recipient,
+                    protocol_fee_recipient_token_account: base.protocol_fee_recipient_token_account,
+                    coin_creator: Pubkey::default(),
+                    coin_creator_fee_basis_points: 0,
+                    coin_creator_fee: 0,
+                });
+            }
+        }
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_sell_event_from_inner_data() {
+        // Test data with coin_creator fields (full event)
+        let hex_data = "e445a52e51cb9a1d3e2f370aa503dc2ac37ed268000000007115bc19000000002cc00431b0000000e5b00c3e00000000e4fae5f80800000020627a3a170000001ce9c6f1faa20000ba7587c9b30000001900000000000000b25610730000000005000000000000008a44031700000000081f7756b30000007eda733fb3000000bb21d533b78de89ad6acab0ef110ba950d1b9fda6ee33cb398e53b8a947a6d36fa9af8b4bdf246a32f969fe644a92fd3978910971dd2937ba914153e2156088b98f68c714ac240a39812f642a2eb6fad0c30c11ca0ca4aa41f07562daeb41c061a5ef4f6e60bf9012c89288aa085c2b56cba15655c429d8efc9dcee37b8c0407d7aa8fb060d8291b4c4d475daff762c96bdc0daceb36c012ead12ed3a94841617d51b5d6ed303aa6834d96dfefb9e8e5530afedf18dd119ec78194b04dd3384b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+
+        let data = hex::decode(hex_data).expect("Failed to decode hex");
+
+        let result = SellEvent::from_inner_instruction_data(&data);
+        assert!(
+            result.is_some(),
+            "Should successfully parse SellEvent from inner instruction data"
+        );
+
+        let sell_event = result.unwrap();
+        assert_eq!(sell_event.timestamp, 1758625475);
+        assert_eq!(sell_event.base_amount_in, 431756657);
+        assert_eq!(sell_event.user_quote_amount_out, 769863703166);
+        // coin_creator fields should be parsed (all zeros in this test data)
+        assert_eq!(sell_event.coin_creator, Pubkey::default());
+        assert_eq!(sell_event.coin_creator_fee_basis_points, 0);
+        assert_eq!(sell_event.coin_creator_fee, 0);
+    }
+
+    #[test]
+    fn test_parse_sell_event_from_inner_data_base_only() {
+        // Test data without coin_creator fields (base event only - 304 bytes)
+        let hex_data = "e445a52e51cb9a1d3e2f370aa503dc2a1d6c056800000000f49f5f55020000000000000000000000f49f5f55020000006c97f898040000005aca4b3fab3b000047399e3f4c000000263efb02000000001400000000000000c8860100000000000500000000000000b2610000000000005eb7f90200000000ac55f902000000003a6a41b14153f8720e8b8ef112fe2be81c3fbfe8e04e30a1cdf02289d5ed0efd567525666abc51671f1de7589b64bc03f7250f02bde0d700a166912240cae01b3f0bde3b3615da051fffea42e0049753b0f08e9d483b9d4b746a0216cbb24056e8e4f85b8ca8a288157bf9588e56278ccbd096920d52cb86db66f579ec5d3ef3638373000ea22cb264d34aff64a04b5efabfbb74ddcd048997b1981547d7d11007b46728c503a7c81598ec5167b9b632a0da7bdce98f07c5967b10ed6f78a1ce";
+
+        let data = hex::decode(hex_data).expect("Failed to decode hex");
+
+        let result = SellEvent::from_inner_instruction_data(&data);
+        assert!(
+            result.is_some(),
+            "Should successfully parse SellEvent from inner instruction data"
+        );
+
+        let sell_event = result.unwrap();
+        assert_eq!(sell_event.timestamp, 1745185821);
+        assert_eq!(sell_event.base_amount_in, 10022264820);
+        assert_eq!(sell_event.user_quote_amount_out, 49894828);
+        // coin_creator fields should be defaults for base-only data
+        assert_eq!(sell_event.coin_creator, Pubkey::default());
+        assert_eq!(sell_event.coin_creator_fee_basis_points, 0);
+        assert_eq!(sell_event.coin_creator_fee, 0);
+    }
+
+    #[test]
+    fn test_invalid_cpi_prefix() {
+        let invalid_data = vec![0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07];
+        let result = SellEvent::from_inner_instruction_data(&invalid_data);
+        assert!(result.is_none(), "Should not parse with invalid CPI prefix");
+    }
+
+    #[test]
+    fn test_invalid_discriminator() {
+        let mut data = SellEvent::CPI_LOG_PREFIX.to_vec();
+        data.extend_from_slice(&[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]); // Invalid discriminator
+
+        let result = SellEvent::from_inner_instruction_data(&data);
+        assert!(
+            result.is_none(),
+            "Should not parse with invalid discriminator"
+        );
     }
 }

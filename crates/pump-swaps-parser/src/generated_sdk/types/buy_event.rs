@@ -76,80 +76,167 @@ pub struct BuyEvent {
 pub const BUY_EVENT_DISCRIMINATOR: [u8; 8] = [0x67, 0xf4, 0x52, 0x1f, 0x2c, 0xf5, 0x77, 0x77];
 pub const BUY_EVENT_CPI_LOG_PREFIX: [u8; 8] = [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d];
 
-/// BuyEventBaseVersion only contains the first 304 bytes of data for forward compatibility.
-/// This allows parsing old version events that don't have extra fields like coin_creator.
+// Byte size for base version parsing
+// BuyEventBase: 14 × u64 (112) + 6 × Pubkey (192) = 304 bytes
+const BUY_EVENT_BASE_SIZE: usize = 304;
+
+/// Base version struct for parsing old events (first 304 bytes only)
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct BuyEventBaseVersion {
-    pub timestamp: i64,                   // 8 bytes
-    pub base_amount_out: u64,             // 8 bytes
-    pub max_quote_amount_in: u64,         // 8 bytes
-    pub user_base_token_reserves: u64,    // 8 bytes
-    pub user_quote_token_reserves: u64,   // 8 bytes
-    pub pool_base_token_reserves: u64,    // 8 bytes
-    pub pool_quote_token_reserves: u64,   // 8 bytes
-    pub quote_amount_in: u64,             // 8 bytes
-    pub lp_fee_basis_points: u64,         // 8 bytes
-    pub lp_fee: u64,                      // 8 bytes
-    pub protocol_fee_basis_points: u64,   // 8 bytes
-    pub protocol_fee: u64,                // 8 bytes
-    pub quote_amount_in_with_lp_fee: u64, // 8 bytes
-    pub user_quote_amount_in: u64,        // 8 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub pool: Pubkey, // 32 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub user: Pubkey, // 32 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub user_base_token_account: Pubkey, // 32 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub user_quote_token_account: Pubkey, // 32 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub protocol_fee_recipient: Pubkey, // 32 bytes
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
-    pub protocol_fee_recipient_token_account: Pubkey, // 32 bytes
-                                          // Total: 304 bytes
-                                          // Extra fields (coin_creator, etc.) are ignored - we only parse base fields
+struct BuyEventBase {
+    pub timestamp: i64,
+    pub base_amount_out: u64,
+    pub max_quote_amount_in: u64,
+    pub user_base_token_reserves: u64,
+    pub user_quote_token_reserves: u64,
+    pub pool_base_token_reserves: u64,
+    pub pool_quote_token_reserves: u64,
+    pub quote_amount_in: u64,
+    pub lp_fee_basis_points: u64,
+    pub lp_fee: u64,
+    pub protocol_fee_basis_points: u64,
+    pub protocol_fee: u64,
+    pub quote_amount_in_with_lp_fee: u64,
+    pub user_quote_amount_in: u64,
+    pub pool: Pubkey,
+    pub user: Pubkey,
+    pub user_base_token_account: Pubkey,
+    pub user_quote_token_account: Pubkey,
+    pub protocol_fee_recipient: Pubkey,
+    pub protocol_fee_recipient_token_account: Pubkey,
 }
 
-impl BuyEventBaseVersion {
-    /// Parse buy event from inner instruction data (CPI log)
+impl BuyEvent {
+    /// CPI log prefix for self CPI events
+    pub const CPI_LOG_PREFIX: [u8; 8] = BUY_EVENT_CPI_LOG_PREFIX;
+    /// BuyEvent discriminator bytes
+    pub const DISCRIMINATOR: [u8; 8] = BUY_EVENT_DISCRIMINATOR;
+
+    /// Parse BuyEvent from inner instruction data
     pub fn from_inner_instruction_data(data: &[u8]) -> Option<Self> {
-        // Check for CPI log prefix
-        if data.len() < 8 || data[..8] != BUY_EVENT_CPI_LOG_PREFIX {
+        // Check if data starts with CPI log prefix
+        if data.len() < 16 || !data.starts_with(&Self::CPI_LOG_PREFIX) {
             return None;
         }
-        let event_data = &data[8..];
+        let event_data = &data[8..]; // Skip CPI log prefix (8 bytes)
 
-        // Check for event discriminator
-        if event_data.len() < 8 || event_data[..8] != BUY_EVENT_DISCRIMINATOR {
+        // Check if the remaining data starts with BuyEvent discriminator
+        if !event_data.starts_with(&Self::DISCRIMINATOR) {
             return None;
         }
-        let buy_event_data = &event_data[8..];
+        let buy_event_data = &event_data[8..]; // Skip the discriminator (8 bytes)
 
-        // Parse base version (first 304 bytes) for forward compatibility
-        if buy_event_data.len() >= 304 {
-            if let Ok(event) = BuyEventBaseVersion::try_from_slice(&buy_event_data[..304]) {
-                return Some(event);
+        // Try to parse current version first using reader-based deserialization
+        // This ignores extra bytes at the end, providing forward compatibility
+        // Note: BuyEvent has a variable-length String field (ix_name), so we can't use fixed-size slicing
+        let mut reader: &[u8] = buy_event_data;
+        if let Ok(event) = BuyEvent::deserialize(&mut reader) {
+            return Some(event);
+        }
+
+        // Fallback: try parsing base fields only (first 304 bytes)
+        if buy_event_data.len() >= BUY_EVENT_BASE_SIZE {
+            if let Ok(base) = BuyEventBase::try_from_slice(&buy_event_data[..BUY_EVENT_BASE_SIZE]) {
+                return Some(BuyEvent {
+                    timestamp: base.timestamp,
+                    base_amount_out: base.base_amount_out,
+                    max_quote_amount_in: base.max_quote_amount_in,
+                    user_base_token_reserves: base.user_base_token_reserves,
+                    user_quote_token_reserves: base.user_quote_token_reserves,
+                    pool_base_token_reserves: base.pool_base_token_reserves,
+                    pool_quote_token_reserves: base.pool_quote_token_reserves,
+                    quote_amount_in: base.quote_amount_in,
+                    lp_fee_basis_points: base.lp_fee_basis_points,
+                    lp_fee: base.lp_fee,
+                    protocol_fee_basis_points: base.protocol_fee_basis_points,
+                    protocol_fee: base.protocol_fee,
+                    quote_amount_in_with_lp_fee: base.quote_amount_in_with_lp_fee,
+                    user_quote_amount_in: base.user_quote_amount_in,
+                    pool: base.pool,
+                    user: base.user,
+                    user_base_token_account: base.user_base_token_account,
+                    user_quote_token_account: base.user_quote_token_account,
+                    protocol_fee_recipient: base.protocol_fee_recipient,
+                    protocol_fee_recipient_token_account: base.protocol_fee_recipient_token_account,
+                    coin_creator: Pubkey::default(),
+                    coin_creator_fee_basis_points: 0,
+                    coin_creator_fee: 0,
+                    track_volume: false,
+                    total_unclaimed_tokens: 0,
+                    total_claimed_tokens: 0,
+                    current_sol_volume: 0,
+                    last_update_timestamp: 0,
+                    min_base_amount_out: 0,
+                    ix_name: String::new(),
+                });
             }
         }
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_buy_event_from_inner_data() {
+        // Test data with coin_creator and extra fields (full event)
+        let hex_data = "e445a52e51cb9a1d67f4521f2cf57777c37ed268000000008d6c1764000000006978dbb6450400000000000000000000039c2449e203000073393441480000004ed77669dcc302009176eae7d9030000190000000000000080d3fa760200000005000000000000004d2a327e00000000114ae55edc0300005e7417dddc030000804c224ff20b532ec72181ec27d5f7b014f7454867c6e525ac73ba1c83b0b268e3983b10957008489fe76a09b72601c7ab21573e077e19d2cc72563b25b046ec48300d36156a14db0355e5015933dd06eee58dc6a417bfb809c9406f25a4d4ad010acc8029eaba9540f16f146065e324c96cf358b8fad81d5df4f4da9aeb56524ac2f8d0dd5cbc97e3289c197cb5062a54f3d956b9ce6e5115f96567aa5cb3e6308dcd4a6268f1014872fee0e9d782c5fe98e23b375b2ed9bb6d37e48171574b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000";
+
+        let data = hex::decode(hex_data).expect("Failed to decode hex");
+
+        let result = BuyEvent::from_inner_instruction_data(&data);
+        assert!(
+            result.is_some(),
+            "Should successfully parse BuyEvent from inner instruction data"
+        );
+
+        let buy_event = result.unwrap();
+        assert_eq!(buy_event.timestamp, 1758625475);
+        assert_eq!(buy_event.base_amount_out, 1679256717);
+        assert_eq!(buy_event.quote_amount_in, 4234433689233);
+    }
+
+    #[test]
+    fn test_parse_buy_event_from_inner_data_base_only() {
+        // Test data without coin_creator fields (base event only - 304 bytes)
+        let hex_data = "e445a52e51cb9a1d67f4521f2cf57777466ae767000000007ab926280400000040d2df0300000000d7dba22d0600000040d2df0300000000a2ad7239ea4a00001ddebece3700000046e81803000000001400000000000000f89501000000000005000000000000007e650000000000003e7e1a0300000000bce31a030000000053f374f6d5d82abec4f7d9fd8c049b34a26d1ca30dedcefce235706d1651aa04224c4b9c12de1f3d475cfaac12bf064a6fa8c72a91215c5aa6421afda96dedd1d3e74285f8661d86000c86590599281aec68c75eee8a7dae154758fb9aea1a59a2888646025021eea1d6df668efa393621de11ccb6a7c71a69b34c0c3b0791a94ac2f8d0dd5cbc97e3289c197cb5062a54f3d956b9ce6e5115f96567aa5cb3e677d915955f8880731ceb4a75a0cc96c174fa4095c4e1d9967acfc42845ae67ae";
+
+        let data = hex::decode(hex_data).expect("Failed to decode hex");
+
+        let result = BuyEvent::from_inner_instruction_data(&data);
+        assert!(
+            result.is_some(),
+            "Should successfully parse BuyEvent from inner instruction data"
+        );
+
+        let buy_event = result.unwrap();
+        assert_eq!(buy_event.timestamp, 1743219270);
+        assert_eq!(buy_event.base_amount_out, 17853495674);
+        assert_eq!(buy_event.quote_amount_in, 51963974);
+        // Extra fields should be defaults for base-only data
+        assert_eq!(buy_event.coin_creator, Pubkey::default());
+        assert_eq!(buy_event.coin_creator_fee_basis_points, 0);
+        assert_eq!(buy_event.coin_creator_fee, 0);
+        assert!(!buy_event.track_volume);
+    }
+
+    #[test]
+    fn test_invalid_cpi_prefix() {
+        let invalid_data = vec![0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07];
+        let result = BuyEvent::from_inner_instruction_data(&invalid_data);
+        assert!(result.is_none(), "Should not parse with invalid CPI prefix");
+    }
+
+    #[test]
+    fn test_invalid_discriminator() {
+        let mut data = BuyEvent::CPI_LOG_PREFIX.to_vec();
+        data.extend_from_slice(&[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]); // Invalid discriminator
+
+        let result = BuyEvent::from_inner_instruction_data(&data);
+        assert!(
+            result.is_none(),
+            "Should not parse with invalid discriminator"
+        );
     }
 }

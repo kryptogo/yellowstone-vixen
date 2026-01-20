@@ -42,7 +42,7 @@ use crate::{
         UpdateFeeConfigInstructionArgs as UpdateFeeConfigIxData, Withdraw as WithdrawIxAccounts,
         WithdrawInstructionArgs as WithdrawIxData,
     },
-    types::{buy_event::BuyEventBaseVersion, sell_event::SellEventBaseVersion},
+    types::{BuyEvent, SellEvent},
     ID,
 };
 
@@ -55,11 +55,11 @@ pub enum PumpAmmProgramIx {
         AdminUpdateTokenIncentivesIxAccounts,
         AdminUpdateTokenIncentivesIxData,
     ),
-    Buy(BuyIxAccounts, BuyIxData, Option<BuyEventBaseVersion>),
+    Buy(BuyIxAccounts, BuyIxData, Option<BuyEvent>),
     BuyExactQuoteIn(
         BuyExactQuoteInIxAccounts,
         BuyExactQuoteInIxData,
-        Option<BuyEventBaseVersion>,
+        Option<BuyEvent>,
     ),
     ClaimTokenIncentives(ClaimTokenIncentivesIxAccounts),
     CloseUserVolumeAccumulator(CloseUserVolumeAccumulatorIxAccounts),
@@ -71,7 +71,7 @@ pub enum PumpAmmProgramIx {
     ExtendAccount(ExtendAccountIxAccounts),
     InitUserVolumeAccumulator(InitUserVolumeAccumulatorIxAccounts),
     MigratePoolCoinCreator(MigratePoolCoinCreatorIxAccounts),
-    Sell(SellIxAccounts, SellIxData, Option<SellEventBaseVersion>),
+    Sell(SellIxAccounts, SellIxData, Option<SellEvent>),
     SetCoinCreator(SetCoinCreatorIxAccounts),
     SetReservedFeeRecipients(
         SetReservedFeeRecipientsIxAccounts,
@@ -150,7 +150,6 @@ impl InstructionParser {
 
         // Filter Jupiter/OKX aggregator to avoid duplicate parsing
         // Check parent_program field if available
-        #[cfg(feature = "shared-data")]
         if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
             return Err(yellowstone_vixen_core::ParseError::Filtered);
         }
@@ -262,9 +261,10 @@ impl InstructionParser {
                 };
                 let de_ix_data: BuyIxData = deserialize_checked(ix_data, &ix_discriminator)?;
                 // Parse buy event from inner instructions
-                let buy_event = ix.inner.iter().find_map(|inner_ix| {
-                    BuyEventBaseVersion::from_inner_instruction_data(&inner_ix.data)
-                });
+                let buy_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| BuyEvent::from_inner_instruction_data(&inner_ix.data));
                 Ok(PumpAmmProgramIx::Buy(ix_accounts, de_ix_data, buy_event))
             },
             [198, 46, 21, 82, 180, 217, 232, 112] => {
@@ -324,9 +324,10 @@ impl InstructionParser {
                 let de_ix_data: BuyExactQuoteInIxData =
                     deserialize_checked(ix_data, &ix_discriminator)?;
                 // Parse buy event from inner instructions
-                let buy_event = ix.inner.iter().find_map(|inner_ix| {
-                    BuyEventBaseVersion::from_inner_instruction_data(&inner_ix.data)
-                });
+                let buy_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| BuyEvent::from_inner_instruction_data(&inner_ix.data));
                 Ok(PumpAmmProgramIx::BuyExactQuoteIn(
                     ix_accounts,
                     de_ix_data,
@@ -541,9 +542,10 @@ impl InstructionParser {
                     return Err(yellowstone_vixen_core::ParseError::Filtered);
                 }
 
-                let sell_event = ix.inner.iter().find_map(|inner_ix| {
-                    SellEventBaseVersion::from_inner_instruction_data(&inner_ix.data)
-                });
+                let sell_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| SellEvent::from_inner_instruction_data(&inner_ix.data));
                 Ok(PumpAmmProgramIx::Sell(ix_accounts, de_ix_data, sell_event))
             },
             [210, 149, 128, 45, 188, 58, 78, 175] => {
