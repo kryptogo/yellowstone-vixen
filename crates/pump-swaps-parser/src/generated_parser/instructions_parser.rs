@@ -259,7 +259,12 @@ impl InstructionParser {
                         solana_pubkey::Pubkey::default()
                     },
                 };
-                let de_ix_data: BuyIxData = deserialize_checked(ix_data, &ix_discriminator)?;
+                let de_ix_data: BuyIxData = yellowstone_vixen_core::deserialize_checked_swap(
+                    ix_data,
+                    &ix_discriminator,
+                    "Buy",
+                    deserialize_checked,
+                )?;
                 // Parse buy event from inner instructions
                 let buy_event = ix
                     .inner
@@ -322,7 +327,12 @@ impl InstructionParser {
                     },
                 };
                 let de_ix_data: BuyExactQuoteInIxData =
-                    deserialize_checked(ix_data, &ix_discriminator)?;
+                    yellowstone_vixen_core::deserialize_checked_swap(
+                        ix_data,
+                        &ix_discriminator,
+                        "BuyExactQuoteIn",
+                        deserialize_checked,
+                    )?;
                 // Parse buy event from inner instructions
                 let buy_event = ix
                     .inner
@@ -534,7 +544,12 @@ impl InstructionParser {
                         solana_pubkey::Pubkey::default()
                     },
                 };
-                let de_ix_data: SellIxData = deserialize_checked(ix_data, &ix_discriminator)?;
+                let de_ix_data: SellIxData = yellowstone_vixen_core::deserialize_checked_swap(
+                    ix_data,
+                    &ix_discriminator,
+                    "Sell",
+                    deserialize_checked,
+                )?;
                 // Parse sell event from inner instructions
 
                 // Filter out trades handled by Jupiter or OKX aggregators

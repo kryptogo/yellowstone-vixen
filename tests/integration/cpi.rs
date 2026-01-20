@@ -209,15 +209,19 @@ async fn test_pump_swaps_parser_flow() {
     )
     .await
     .expect("PumpSwaps Sell parser flow test failed");
-}
 
-/// Test PumpSwap BuyExactQuoteIn instruction (deeply nested)
-/// IDL expects 25 bytes (including track_volume: OptionBool) but on-chain data is 24 bytes
-/// This is an IDL version mismatch - the parser needs to be regenerated with correct IDL
-#[tokio::test]
-async fn test_pump_swaps_buy_exact_quote_in() {
-    init_tracing();
+    // 202505 data - Buy instruction with base event fields only
+    common::assert_pumpswap_buy_parser_flow(
+        "MyZn74cbZJfethB6Ps9MtgcS19h7euFRvSZA4eefjEvwUK1YAnfhJzbXwwWhxqeu3ooXgPjgJUuREMRHB5fH29z",
+        &[5, 0],
+        29611164,
+        3950276478,
+    )
+    .await
+    .expect("PumpSwaps Buy (May 2025) parser flow test failed");
 
+    // IDL expects 25 bytes (including track_volume: OptionBool) but on-chain data is 24 bytes
+    // This is an IDL version mismatch - the parser needs to be regenerated with correct IDL
     common::assert_pumpswap_buy_parser_flow(
         "4toJQMzqWiCNJpTHKdyBXNwrxThVbiAntihtJmZd19Pf2uxqe56W313ZxoGLmXW1wfUEKaW4aiTrygFJksFEDMDD",
         &[3, 0],      // top-level #3 → inner PumpSwap instruction

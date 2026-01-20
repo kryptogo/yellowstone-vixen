@@ -62,16 +62,6 @@ pub mod proto_types_parsers {
                 protocol_fee_recipient_token_account: self
                     .protocol_fee_recipient_token_account
                     .to_string(),
-                coin_creator: self.coin_creator.to_string(),
-                coin_creator_fee_basis_points: self.coin_creator_fee_basis_points,
-                coin_creator_fee: self.coin_creator_fee,
-                track_volume: self.track_volume,
-                total_unclaimed_tokens: self.total_unclaimed_tokens,
-                total_claimed_tokens: self.total_claimed_tokens,
-                current_sol_volume: self.current_sol_volume,
-                last_update_timestamp: self.last_update_timestamp,
-                min_base_amount_out: self.min_base_amount_out,
-                ix_name: self.ix_name,
             }
         }
     }
@@ -294,9 +284,6 @@ pub mod proto_types_parsers {
                 protocol_fee_recipient_token_account: self
                     .protocol_fee_recipient_token_account
                     .to_string(),
-                coin_creator: self.coin_creator.to_string(),
-                coin_creator_fee_basis_points: self.coin_creator_fee_basis_points,
-                coin_creator_fee: self.coin_creator_fee,
             }
         }
     }

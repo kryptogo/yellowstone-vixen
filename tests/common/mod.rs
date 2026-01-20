@@ -593,6 +593,8 @@ pub async fn assert_raydium_amm_v4_parser_flow(
         .await
         .map_err(|e| format!("{e:?}"))?;
 
+    // Raydium AMM V4 has shared-data feature enabled via examples/filtered-pipeline,
+    // so it returns InstructionUpdateOutput instead of the enum directly
     let event = match &parsed.parsed_ix {
         RaydiumAmmV4ProgramIx::SwapBaseIn(_, _, Some(e)) => e,
         RaydiumAmmV4ProgramIx::SwapBaseOut(_, _, Some(e)) => e,

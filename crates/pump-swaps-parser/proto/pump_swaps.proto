@@ -154,16 +154,6 @@ message BuyEvent {
 	string user_quote_token_account = 18;
 	string protocol_fee_recipient = 19;
 	string protocol_fee_recipient_token_account = 20;
-	string coin_creator = 21;
-	uint64 coin_creator_fee_basis_points = 22;
-	uint64 coin_creator_fee = 23;
-	bool track_volume = 24;
-	uint64 total_unclaimed_tokens = 25;
-	uint64 total_claimed_tokens = 26;
-	uint64 current_sol_volume = 27;
-	int64 last_update_timestamp = 28;
-	uint64 min_base_amount_out = 29;
-	string ix_name = 30;
 }
 
 message ClaimTokenIncentivesEvent {
@@ -325,9 +315,6 @@ message SellEvent {
 	string user_quote_token_account = 18;
 	string protocol_fee_recipient = 19;
 	string protocol_fee_recipient_token_account = 20;
-	string coin_creator = 21;
-	uint64 coin_creator_fee_basis_points = 22;
-	uint64 coin_creator_fee = 23;
 }
 
 message SetBondingCurveCoinCreatorEvent {
