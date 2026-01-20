@@ -76,46 +76,21 @@ Event Data Layout:
 
 #### 1.2 Implementation
 
-**Step 1: Define minimal struct with only the fields we need (304 bytes)**
+**Define struct with only the fields we need, then slice data to fixed length:**
 
 ```rust
-// BuyEventBaseVersion only contains the first 304 bytes of data
-pub struct BuyEventBaseVersion {
-    pub timestamp: i64,                              // 8 bytes
-    pub base_amount_out: u64,                        // 8 bytes
-    pub max_quote_amount_in: u64,                    // 8 bytes
-    pub user_base_token_reserves: u64,               // 8 bytes
-    pub user_quote_token_reserves: u64,              // 8 bytes
-    pub pool_base_token_reserves: u64,               // 8 bytes
-    pub pool_quote_token_reserves: u64,              // 8 bytes
-    pub quote_amount_in: u64,                        // 8 bytes
-    pub lp_fee_basis_points: u64,                    // 8 bytes
-    pub lp_fee: u64,                                 // 8 bytes
-    pub protocol_fee_basis_points: u64,              // 8 bytes
-    pub protocol_fee: u64,                           // 8 bytes
-    pub quote_amount_in_with_lp_fee: u64,            // 8 bytes
-    pub user_quote_amount_in: u64,                   // 8 bytes
-    pub pool: Pubkey,                                // 32 bytes
-    pub user: Pubkey,                                // 32 bytes
-    pub user_base_token_account: Pubkey,             // 32 bytes
-    pub user_quote_token_account: Pubkey,            // 32 bytes
-    pub protocol_fee_recipient: Pubkey,              // 32 bytes
-    pub protocol_fee_recipient_token_account: Pubkey, // 32 bytes
-    // Extra fields (coin_creator, etc.) are ignored - we only parse base fields
-}
-// Total: 304 bytes
-```
+// BuyEvent: 14 × u64 (112) + 6 × Pubkey (192) = 304 bytes
+const BUY_EVENT_SIZE: usize = 304;
 
-**Step 2: Slice data to fixed length before parsing**
-
-```rust
-// Only parse first 304 bytes, ignoring anything after
-if buy_event_data.len() >= 304 {
-    if let Ok(event) = BuyEventBaseVersion::try_from_slice(&buy_event_data[..304]) {
+// Parse using fixed size - no need for a separate "base version" struct
+if buy_event_data.len() >= BUY_EVENT_SIZE {
+    if let Ok(event) = BuyEvent::try_from_slice(&buy_event_data[..BUY_EVENT_SIZE]) {
         return Some(event);
     }
 }
 ```
+
+**Note**: We don't need a separate `BuyEventBaseVersion` struct. Just define `BuyEvent` with only the base fields (304 bytes) and use fixed-size slicing to ignore any extra bytes.
 
 This works for ANY version:
 
@@ -125,23 +100,20 @@ This works for ANY version:
 | New event   | 352 bytes    | 304 bytes     | OK - extra 48 bytes ignored |
 | Future event| 400+ bytes   | 304 bytes     | OK - extra bytes ignored |
 
-#### 1.3 Proto Output Handling
+#### 1.3 Proto Schema Design
 
-Since proto schema expects all fields including `coin_creator`, use default values for fields not in base version:
+Keep the proto schema minimal - only define fields that are actually needed:
 
-```rust
-proto_def::BuyEvent {
-    // Base fields - use actual values
-    timestamp: event.timestamp,
-    base_amount_out: event.base_amount_out,
-    // ... other base fields ...
-
-    // Extra fields - use default values (not parsed from base version)
-    coin_creator: "11111111111111111111111111111111".to_string(),
-    coin_creator_fee_basis_points: 0,
-    coin_creator_fee: 0,
+```protobuf
+message BuyEvent {
+    int64 timestamp = 1;
+    uint64 base_amount_out = 2;
+    // ... only include base fields (304 bytes worth)
+    // Do NOT include extra fields like coin_creator that we don't need
 }
 ```
+
+This way, the Rust struct and proto message stay in sync, and there's no need to fill default values for unused fields.
 
 #### 1.4 Same Pattern for Instruction Accounts
 
@@ -202,9 +174,21 @@ This works for ANY version:
 | **Borsh Compatible** | Borsh deserializes exactly the bytes needed by struct definition |
 | **Fail-Safe** | Only requirement: minimum data length or account count |
 
-#### 1.6 Limitation
+#### 1.6 Important Prerequisite
 
-If Pump AMM changes the **order or type** of existing fields/accounts, this approach breaks. However, this is extremely unlikely as it would break backward compatibility for all existing integrations.
+This approach **only works when IDL changes are additive** (new fields added at the end):
+
+```text
+// ✅ Can use fixed-size parsing
+v1: [field_a, field_b, field_c]           // Original 304 bytes
+v2: [field_a, field_b, field_c, field_d]  // New field at end → First 304 bytes still parse correctly
+
+// ❌ Cannot use fixed-size parsing
+v1: [field_a, field_b, field_c]
+v2: [field_a, field_x, field_b, field_c]  // Field inserted in middle → Fixed-size parsing breaks
+```
+
+Most Solana program upgrades follow the additive pattern, but always verify the IDL change type before applying this approach. If the IDL modifies middle fields, you'll need separate version structs to handle each version.
 
 ---
 
@@ -327,16 +311,7 @@ let de_ix_data: BuyIxData = yellowstone_vixen_core::deserialize_checked_swap(
        .find_map(|inner_ix| BuyEvent::from_inner_instruction_data(&inner_ix.data));
    ```
 
-4. **Define BuyEventBaseVersion/SellEventBaseVersion struct**: Only parse base fields (304 bytes), ignoring any extra fields added in future versions. See [Section 1.2](#12-implementation) for full struct definition.
-
-   ```rust
-   // In src/generated_sdk/types/buy_event.rs
-   pub struct BuyEventBaseVersion {
-       pub timestamp: i64,
-       pub base_amount_out: u64,
-       // ... (304 bytes total, see Section 1.2 for complete struct)
-   }
-   ```
+4. **Define BuyEvent/SellEvent struct with only base fields**: Keep the struct minimal (304 bytes), without extra fields like `coin_creator`. See [Section 1.2](#12-implementation).
 
 5. **Added CPI log prefix and discriminator constants**:
 
@@ -345,11 +320,13 @@ let de_ix_data: BuyIxData = yellowstone_vixen_core::deserialize_checked_swap(
    pub const CPI_LOG_PREFIX: [u8; 8] = [0xe4, 0x45, 0xa5, 0x2e, 0x51, 0xcb, 0x9a, 0x1d];
    ```
 
-6. **Added `from_inner_instruction_data` method**: Parses event data from CPI logs
+6. **Added `from_inner_instruction_data` method**: Parses event data from CPI logs using fixed-size slicing
 
    ```rust
    // In src/generated_sdk/types/buy_event.rs
-   impl BuyEventBaseVersion {
+   const BUY_EVENT_SIZE: usize = 304;
+
+   impl BuyEvent {
        pub fn from_inner_instruction_data(data: &[u8]) -> Option<Self> {
            // Check for CPI log prefix
            if data.len() < 8 || &data[..8] != &CPI_LOG_PREFIX {
@@ -363,35 +340,13 @@ let de_ix_data: BuyIxData = yellowstone_vixen_core::deserialize_checked_swap(
            }
            let buy_event_data = &event_data[8..];
 
-           // Parse base version (first 304 bytes)
-           if buy_event_data.len() >= 304 {
-               if let Ok(event) = BuyEventBaseVersion::try_from_slice(&buy_event_data[..304]) {
+           // Parse fixed-size event (first 304 bytes)
+           if buy_event_data.len() >= BUY_EVENT_SIZE {
+               if let Ok(event) = BuyEvent::try_from_slice(&buy_event_data[..BUY_EVENT_SIZE]) {
                    return Some(event);
                }
            }
            None
-       }
-   }
-   ```
-
-7. **Proto helpers support**: Implement `IntoProto` for base version with default values for extra fields
-
-   ```rust
-   // In src/generated_parser/proto_helpers.rs
-   impl IntoProto<proto_def::BuyEvent> for BuyEventBaseVersion {
-       fn into_proto(self) -> proto_def::BuyEvent {
-           proto_def::BuyEvent {
-               // Base fields - use actual values
-               timestamp: self.timestamp,
-               base_amount_out: self.base_amount_out,
-               max_quote_amount_in: self.max_quote_amount_in,
-               // ... other base fields ...
-
-               // Extra fields - use default values
-               coin_creator: "11111111111111111111111111111111".to_string(),
-               coin_creator_fee_basis_points: 0,
-               coin_creator_fee: 0,
-           }
        }
    }
    ```
