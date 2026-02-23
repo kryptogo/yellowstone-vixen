@@ -528,12 +528,12 @@ impl InstructionParser {
                     ))
                 },
                 [41, 5, 238, 175, 100, 225, 6, 205] => {
-                    let expected_accounts_len = 12;
+                    let mut expected_accounts_len = 11;
                     check_min_accounts_req(accounts_len, expected_accounts_len)?;
                     let ix_accounts = AddLiquidityByStrategyOneSideIxAccounts {
                         position: next_account(accounts)?,
                         lb_pair: next_account(accounts)?,
-                        bin_array_bitmap_extension: next_program_id_optional_account(accounts)?,
+                        bin_array_bitmap_extension: next_optional_account(accounts, accounts_len, &mut expected_accounts_len)?,
                         user_token: next_account(accounts)?,
                         reserve: next_account(accounts)?,
                         token_mint: next_account(accounts)?,
@@ -552,12 +552,12 @@ impl InstructionParser {
                     ))
                 },
                 [94, 155, 103, 151, 70, 95, 220, 165] => {
-                    let expected_accounts_len = 12;
+                    let mut expected_accounts_len = 11;
                     check_min_accounts_req(accounts_len, expected_accounts_len)?;
                     let ix_accounts = AddLiquidityOneSideIxAccounts {
                         position: next_account(accounts)?,
                         lb_pair: next_account(accounts)?,
-                        bin_array_bitmap_extension: next_program_id_optional_account(accounts)?,
+                        bin_array_bitmap_extension: next_optional_account(accounts, accounts_len, &mut expected_accounts_len)?,
                         user_token: next_account(accounts)?,
                         reserve: next_account(accounts)?,
                         token_mint: next_account(accounts)?,
@@ -1169,12 +1169,12 @@ impl InstructionParser {
                     ))
                 },
                 [161, 194, 103, 84, 171, 71, 250, 154] => {
-                    let expected_accounts_len = 12;
+                    let mut expected_accounts_len = 11;
                     check_min_accounts_req(accounts_len, expected_accounts_len)?;
                     let ix_accounts = AddLiquidityOneSidePreciseIxAccounts {
                         position: next_account(accounts)?,
                         lb_pair: next_account(accounts)?,
-                        bin_array_bitmap_extension: next_program_id_optional_account(accounts)?,
+                        bin_array_bitmap_extension: next_optional_account(accounts, accounts_len, &mut expected_accounts_len)?,
                         user_token: next_account(accounts)?,
                         reserve: next_account(accounts)?,
                         token_mint: next_account(accounts)?,
