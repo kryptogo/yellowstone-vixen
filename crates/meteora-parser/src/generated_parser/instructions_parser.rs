@@ -533,7 +533,11 @@ impl InstructionParser {
                     let ix_accounts = AddLiquidityByStrategyOneSideIxAccounts {
                         position: next_account(accounts)?,
                         lb_pair: next_account(accounts)?,
-                        bin_array_bitmap_extension: next_optional_account(accounts, accounts_len, &mut expected_accounts_len)?,
+                        bin_array_bitmap_extension: next_optional_account(
+                            accounts,
+                            accounts_len,
+                            &mut expected_accounts_len,
+                        )?,
                         user_token: next_account(accounts)?,
                         reserve: next_account(accounts)?,
                         token_mint: next_account(accounts)?,
@@ -557,7 +561,11 @@ impl InstructionParser {
                     let ix_accounts = AddLiquidityOneSideIxAccounts {
                         position: next_account(accounts)?,
                         lb_pair: next_account(accounts)?,
-                        bin_array_bitmap_extension: next_optional_account(accounts, accounts_len, &mut expected_accounts_len)?,
+                        bin_array_bitmap_extension: next_optional_account(
+                            accounts,
+                            accounts_len,
+                            &mut expected_accounts_len,
+                        )?,
                         user_token: next_account(accounts)?,
                         reserve: next_account(accounts)?,
                         token_mint: next_account(accounts)?,
@@ -1174,7 +1182,11 @@ impl InstructionParser {
                     let ix_accounts = AddLiquidityOneSidePreciseIxAccounts {
                         position: next_account(accounts)?,
                         lb_pair: next_account(accounts)?,
-                        bin_array_bitmap_extension: next_optional_account(accounts, accounts_len, &mut expected_accounts_len)?,
+                        bin_array_bitmap_extension: next_optional_account(
+                            accounts,
+                            accounts_len,
+                            &mut expected_accounts_len,
+                        )?,
                         user_token: next_account(accounts)?,
                         reserve: next_account(accounts)?,
                         token_mint: next_account(accounts)?,
