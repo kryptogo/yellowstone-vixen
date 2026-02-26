@@ -379,6 +379,7 @@ impl InstructionParser {
                 // Search for swap CPI event in inner instructions with fallback support
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
+                    SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
                     SwapWithFeesCpiEventEnhanced => SwapWithFeesCpiEventEnhanced,
                     SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
@@ -464,6 +465,7 @@ impl InstructionParser {
                 // Search for swap CPI event in inner instructions with fallback support
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
+                    SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
                     SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
@@ -504,6 +506,7 @@ impl InstructionParser {
                 // Search for swap CPI event in inner instructions with fallback support
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
+                    SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
                     SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToCWithFeesCpiEventV2 => SwapToCWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
@@ -545,6 +548,7 @@ impl InstructionParser {
                 // Search for swap CPI event in inner instructions with fallback support
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
+                    SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
                     SwapTocV2CpiEvent2 => SwapTocV2CpiEvent2,
                     SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToCWithFeesCpiEventV2 => SwapToCWithFeesCpiEventV2,
