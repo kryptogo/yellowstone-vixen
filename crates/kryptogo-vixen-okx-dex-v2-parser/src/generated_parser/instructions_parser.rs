@@ -299,7 +299,8 @@ impl InstructionParser {
                     ix.inner,
                     SwapCpiEvent2 => SwapCpiEvent2,
                     SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
-                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
+                    SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
                 Ok(OnChainLabsDexRouter2ProgramIx::Swap(
                     ix_accounts,
@@ -423,7 +424,8 @@ impl InstructionParser {
                     SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
                     SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapTobV2CpiEvent2 => SwapTobV2CpiEvent2,
-                    SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2
+                    SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
+                    SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
                 Ok(OnChainLabsDexRouter2ProgramIx::SwapTobV2(
                     ix_accounts,
