@@ -146,7 +146,10 @@ mod tests {
 
         let data = hex::decode(hex_data).expect("Failed to decode hex");
         let result = SwapWithFeesCpiEvent2::from_inner_instruction_data(&data);
-        assert!(result.is_some(), "SwapWithFeesCpiEvent2 should parse real SwapTob CPI event");
+        assert!(
+            result.is_some(),
+            "SwapWithFeesCpiEvent2 should parse real SwapTob CPI event"
+        );
 
         let event = result.unwrap();
         assert_eq!(event.order_id, 219241);
