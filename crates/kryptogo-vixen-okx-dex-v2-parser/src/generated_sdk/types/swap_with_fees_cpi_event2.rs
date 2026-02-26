@@ -135,4 +135,47 @@ mod tests {
         assert_eq!(parsed_event.source_token_change, 1000000);
         assert_eq!(parsed_event.destination_token_change, 500000);
     }
+
+    #[test]
+    fn test_parse_real_swap_tob_inner_instruction_data() {
+        // Real inner instruction data from OKX DEX V2 SwapTob transaction
+        // Transaction: 5u7r6JJbEcacdTUyPicWt12Tf6BtsCkKTY7tsUcVVwRabPsjXBbLf4xaoVeYiP8ahyaQGS18mzU8TbamNqM1him8
+        // Swap: 0.1 SOL -> 6255.774767 gork via PumpSwap AMM
+        // Wallet: EQ7CzwjgzkZmpQ1RWThBAdjk3VkVLVrzZWU9ZdCPwAUN
+        let hex_data = "e445a52e51cb9a1d0c86265da7972a456958030000000000069b8857feab8184fb687f634618c035dac439dc1aeb3b5598a0f000000000010a32a247f364e154b81aa05a04de4c3271746a874a7dee5a86ae60e5d9ca0557c7134e89f757df9c1b1b589267b9e3aa091638c90b02f8c878d9d36a79654927c7134e89f757df9c1b1b589267b9e3aa091638c90b02f8c878d9d36a7965492700e1f5050000000000e1f505000000002f8cdf740100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000064000000000000000057367a00eb91f5ddf46d0944418e20af1642436add27de4567408617c0a92f37";
+
+        let data = hex::decode(hex_data).expect("Failed to decode hex");
+        let result = SwapWithFeesCpiEvent2::from_inner_instruction_data(&data);
+        assert!(
+            result.is_some(),
+            "SwapWithFeesCpiEvent2 should parse real SwapTob CPI event"
+        );
+
+        let event = result.unwrap();
+        assert_eq!(event.order_id, 219241);
+        // source_mint = SOL (So11111111111111111111111111111111111111112)
+        assert_eq!(
+            event.source_mint.to_string(),
+            "So11111111111111111111111111111111111111112"
+        );
+        // destination_mint = gork
+        assert_eq!(
+            event.destination_mint.to_string(),
+            "gorkrgj6k4K449Qa4eF1NaWC5cNLQtMsVEikhpGn7fC"
+        );
+        // wallet = EQ7CzwjgzkZmpQ1RWThBAdjk3VkVLVrzZWU9ZdCPwAUN
+        assert_eq!(
+            event.source_token_account_owner.to_string(),
+            "EQ7CzwjgzkZmpQ1RWThBAdjk3VkVLVrzZWU9ZdCPwAUN"
+        );
+        assert_eq!(
+            event.destination_token_account_owner.to_string(),
+            "EQ7CzwjgzkZmpQ1RWThBAdjk3VkVLVrzZWU9ZdCPwAUN"
+        );
+        // 0.1 SOL = 100_000_000 lamports
+        assert_eq!(event.amount_in, 100_000_000);
+        assert_eq!(event.source_token_change, 100_000_000);
+        // 6255.774767 gork (6 decimals) = 6_255_774_767
+        assert_eq!(event.destination_token_change, 6_255_774_767);
+    }
 }

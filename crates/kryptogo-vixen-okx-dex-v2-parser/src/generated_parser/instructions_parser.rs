@@ -266,6 +266,7 @@ impl InstructionParser {
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
                     SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
@@ -298,7 +299,8 @@ impl InstructionParser {
                     ix.inner,
                     SwapCpiEvent2 => SwapCpiEvent2,
                     SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
-                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
+                    SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
                 Ok(OnChainLabsDexRouter2ProgramIx::Swap(
                     ix_accounts,
@@ -337,6 +339,7 @@ impl InstructionParser {
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
                     SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
@@ -376,7 +379,9 @@ impl InstructionParser {
                 // Search for swap CPI event in inner instructions with fallback support
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
+                    SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
                     SwapWithFeesCpiEventEnhanced => SwapWithFeesCpiEventEnhanced,
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
@@ -418,8 +423,10 @@ impl InstructionParser {
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
                     SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapTobV2CpiEvent2 => SwapTobV2CpiEvent2,
-                    SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2
+                    SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
+                    SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
                 Ok(OnChainLabsDexRouter2ProgramIx::SwapTobV2(
                     ix_accounts,
@@ -458,6 +465,7 @@ impl InstructionParser {
                 // Search for swap CPI event in inner instructions with fallback support
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
+                    SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
                     SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
@@ -498,6 +506,7 @@ impl InstructionParser {
                 // Search for swap CPI event in inner instructions with fallback support
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
+                    SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
                     SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToCWithFeesCpiEventV2 => SwapToCWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
@@ -539,7 +548,9 @@ impl InstructionParser {
                 // Search for swap CPI event in inner instructions with fallback support
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
+                    SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
                     SwapTocV2CpiEvent2 => SwapTocV2CpiEvent2,
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToCWithFeesCpiEventV2 => SwapToCWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
