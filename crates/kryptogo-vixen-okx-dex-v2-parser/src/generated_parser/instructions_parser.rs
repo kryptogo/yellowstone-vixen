@@ -266,6 +266,7 @@ impl InstructionParser {
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
                     SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
@@ -337,6 +338,7 @@ impl InstructionParser {
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
                     SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
@@ -377,6 +379,7 @@ impl InstructionParser {
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
                     SwapWithFeesCpiEventEnhanced => SwapWithFeesCpiEventEnhanced,
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
@@ -418,6 +421,7 @@ impl InstructionParser {
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
                     SwapWithFeesCpiEvent => SwapWithFeesCpiEvent,
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapTobV2CpiEvent2 => SwapTobV2CpiEvent2,
                     SwapToBWithFeesCpiEventV2 => SwapToBWithFeesCpiEventV2
                 );
@@ -540,6 +544,7 @@ impl InstructionParser {
                 let swap_cpi_event = parse_swap_event_with_fallbacks!(
                     ix.inner,
                     SwapTocV2CpiEvent2 => SwapTocV2CpiEvent2,
+                    SwapWithFeesCpiEvent2 => SwapWithFeesCpiEvent2,
                     SwapToCWithFeesCpiEventV2 => SwapToCWithFeesCpiEventV2,
                     SwapWithFeesCpiEventEnhanced2 => SwapWithFeesCpiEventEnhanced2
                 );
