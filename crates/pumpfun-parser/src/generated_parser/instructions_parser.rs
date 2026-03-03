@@ -15,7 +15,8 @@ use yellowstone_vixen_core::InstructionUpdateOutput;
 use crate::{
     deserialize_checked,
     instructions::{
-        Buy as BuyIxAccounts, BuyInstructionArgs as BuyIxData,
+        Buy as BuyIxAccounts, BuyExactSolIn as BuyExactSolInIxAccounts,
+        BuyExactSolInInstructionArgs as BuyExactSolInIxData, BuyInstructionArgs as BuyIxData,
         CollectCreatorFee as CollectCreatorFeeIxAccounts, Create as CreateIxAccounts,
         CreateInstructionArgs as CreateIxData, ExtendAccount as ExtendAccountIxAccounts,
         Initialize as InitializeIxAccounts, Migrate as MigrateIxAccounts, Sell as SellIxAccounts,
@@ -35,6 +36,11 @@ use crate::{
 #[allow(clippy::large_enum_variant)]
 pub enum PumpProgramIx {
     Buy(BuyIxAccounts, BuyIxData, Option<TradeEvent>),
+    BuyExactSolIn(
+        BuyExactSolInIxAccounts,
+        BuyExactSolInIxData,
+        Option<TradeEvent>,
+    ),
     CollectCreatorFee(CollectCreatorFeeIxAccounts),
     Create(CreateIxAccounts, CreateIxData),
     ExtendAccount(ExtendAccountIxAccounts),
@@ -153,6 +159,46 @@ impl InstructionParser {
                     .iter()
                     .find_map(|inner_ix| TradeEvent::from_inner_instruction_data(&inner_ix.data));
                 Ok(PumpProgramIx::Buy(ix_accounts, de_ix_data, trade_event))
+            },
+            [56, 252, 116, 8, 158, 223, 205, 95] => {
+                let expected_accounts_len = 12;
+                check_min_accounts_req(accounts_len, expected_accounts_len)?;
+                let ix_accounts = BuyExactSolInIxAccounts {
+                    global: next_account(accounts)?,
+                    fee_recipient: next_account(accounts)?,
+                    mint: next_account(accounts)?,
+                    bonding_curve: next_account(accounts)?,
+                    associated_bonding_curve: next_account(accounts)?,
+                    associated_user: next_account(accounts)?,
+                    user: next_account(accounts)?,
+                    system_program: next_account(accounts)?,
+                    token_program: next_account(accounts)?,
+                    creator_vault: next_account(accounts)?,
+                    event_authority: next_account(accounts)?,
+                    program: next_account(accounts)?,
+                };
+                let de_ix_data: BuyExactSolInIxData =
+                    yellowstone_vixen_core::deserialize_checked_swap(
+                        ix_data,
+                        &ix_discriminator,
+                        "BuyExactSolIn",
+                        deserialize_checked,
+                    )?;
+                // Filter out trades handled by Jupiter or OKX aggregators
+                if ix.parent_program.as_ref().is_some_and(is_known_aggregator) {
+                    return Err(yellowstone_vixen_core::ParseError::Filtered);
+                }
+
+                // Parse TradeEvent from inner instructions
+                let trade_event = ix
+                    .inner
+                    .iter()
+                    .find_map(|inner_ix| TradeEvent::from_inner_instruction_data(&inner_ix.data));
+                Ok(PumpProgramIx::BuyExactSolIn(
+                    ix_accounts,
+                    de_ix_data,
+                    trade_event,
+                ))
             },
             [20, 22, 86, 123, 198, 28, 219, 132] => {
                 let expected_accounts_len = 5;
@@ -432,8 +478,27 @@ pub fn next_program_id_optional_account<
 mod proto_parser {
     use yellowstone_vixen_core::proto::ParseProto;
 
-    use super::{BuyIxAccounts, InstructionParser, PumpProgramIx};
+    use super::{BuyExactSolInIxAccounts, BuyIxAccounts, InstructionParser, PumpProgramIx};
     use crate::{proto_def, proto_helpers::proto_types_parsers::IntoProto};
+
+    impl IntoProto<proto_def::BuyIxAccounts> for BuyExactSolInIxAccounts {
+        fn into_proto(self) -> proto_def::BuyIxAccounts {
+            proto_def::BuyIxAccounts {
+                global: self.global.to_string(),
+                fee_recipient: self.fee_recipient.to_string(),
+                mint: self.mint.to_string(),
+                bonding_curve: self.bonding_curve.to_string(),
+                associated_bonding_curve: self.associated_bonding_curve.to_string(),
+                associated_user: self.associated_user.to_string(),
+                user: self.user.to_string(),
+                system_program: self.system_program.to_string(),
+                token_program: self.token_program.to_string(),
+                creator_vault: self.creator_vault.to_string(),
+                event_authority: self.event_authority.to_string(),
+                program: self.program.to_string(),
+            }
+        }
+    }
     impl IntoProto<proto_def::BuyIxAccounts> for BuyIxAccounts {
         fn into_proto(self) -> proto_def::BuyIxAccounts {
             proto_def::BuyIxAccounts {
@@ -668,6 +733,15 @@ mod proto_parser {
                     ix_oneof: Some(proto_def::program_ixs::IxOneof::Buy(proto_def::BuyIx {
                         accounts: Some(acc.into_proto()),
                         data: Some(data.into_proto()),
+                    })),
+                },
+                PumpProgramIx::BuyExactSolIn(acc, data, _) => proto_def::ProgramIxs {
+                    ix_oneof: Some(proto_def::program_ixs::IxOneof::Buy(proto_def::BuyIx {
+                        accounts: Some(acc.into_proto()),
+                        data: Some(proto_def::BuyIxData {
+                            amount: data.min_tokens_out,
+                            max_sol_cost: data.spendable_sol_in,
+                        }),
                     })),
                 },
                 PumpProgramIx::CollectCreatorFee(acc) => proto_def::ProgramIxs {

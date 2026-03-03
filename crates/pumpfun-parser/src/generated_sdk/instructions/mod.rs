@@ -6,6 +6,7 @@
 //!
 
 pub(crate) mod r#buy;
+pub(crate) mod r#buy_exact_sol_in;
 pub(crate) mod r#collect_creator_fee;
 pub(crate) mod r#create;
 pub(crate) mod r#extend_account;
@@ -18,7 +19,7 @@ pub(crate) mod r#set_params;
 pub(crate) mod r#update_global_authority;
 
 pub use self::{
-    r#buy::*, r#collect_creator_fee::*, r#create::*, r#extend_account::*, r#initialize::*,
-    r#migrate::*, r#sell::*, r#set_creator::*, r#set_metaplex_creator::*, r#set_params::*,
-    r#update_global_authority::*,
+    r#buy::*, r#buy_exact_sol_in::*, r#collect_creator_fee::*, r#create::*, r#extend_account::*,
+    r#initialize::*, r#migrate::*, r#sell::*, r#set_creator::*, r#set_metaplex_creator::*,
+    r#set_params::*, r#update_global_authority::*,
 };
